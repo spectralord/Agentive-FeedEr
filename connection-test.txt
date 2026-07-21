@@ -1,0 +1,5 @@
+Dummy file to test the connection.
+
+Created: 2026-07-21
+Branch: claude/dummy-file-connection-test-lgecrk
+Purpose: Verify commit and push connectivity.
