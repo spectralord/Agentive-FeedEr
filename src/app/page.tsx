@@ -1,12 +1,8 @@
 import { getReels } from "@/lib/feed";
 import { ReelCard } from "@/components/ReelCard";
+import { FilterBar, type FilterState } from "@/components/FilterBar";
 
-export interface FeedSearchParams {
-  category?: string;
-  new?: string;
-  weak?: string;
-  before?: string;
-}
+export type FeedSearchParams = FilterState;
 
 interface FeedPageProps {
   searchParams: Promise<FeedSearchParams>;
@@ -47,15 +43,18 @@ export default async function FeedPage({ searchParams }: FeedPageProps) {
     before: params.before ? new Date(params.before) : undefined,
   });
 
-  if (reels.length === 0) {
-    return <EmptyState hasFilters={hasFilters} />;
-  }
-
   return (
-    <div className="feed -mt-12 h-dvh snap-y snap-mandatory overflow-y-auto overflow-x-hidden">
-      {reels.map((reel) => (
-        <ReelCard key={reel.id} reel={reel} />
-      ))}
-    </div>
+    <>
+      <FilterBar current={params} />
+      {reels.length === 0 ? (
+        <EmptyState hasFilters={hasFilters} />
+      ) : (
+        <div className="feed -mt-12 h-dvh snap-y snap-mandatory overflow-y-auto overflow-x-hidden">
+          {reels.map((reel) => (
+            <ReelCard key={reel.id} reel={reel} />
+          ))}
+        </div>
+      )}
+    </>
   );
 }
