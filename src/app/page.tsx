@@ -1,6 +1,7 @@
-import { getReels } from "@/lib/feed";
+import Link from "next/link";
+import { DEFAULT_FEED_LIMIT, getReels } from "@/lib/feed";
 import { ReelCard } from "@/components/ReelCard";
-import { FilterBar, type FilterState } from "@/components/FilterBar";
+import { buildLoadMoreHref, FilterBar, type FilterState } from "@/components/FilterBar";
 
 export type FeedSearchParams = FilterState;
 
@@ -53,6 +54,16 @@ export default async function FeedPage({ searchParams }: FeedPageProps) {
           {reels.map((reel) => (
             <ReelCard key={reel.id} reel={reel} />
           ))}
+          {reels.length === DEFAULT_FEED_LIMIT && (
+            <div className="flex min-h-24 items-center justify-center px-6 py-10">
+              <Link
+                href={buildLoadMoreHref(params, reels[reels.length - 1].publishedAt.toISOString())}
+                className="rounded-full border border-zinc-700 px-4 py-2 text-sm text-zinc-300 transition-colors hover:bg-zinc-800"
+              >
+                Ältere laden
+              </Link>
+            </div>
+          )}
         </div>
       )}
     </>

@@ -1,6 +1,6 @@
 import { renderToStaticMarkup } from "react-dom/server";
 import { describe, expect, it } from "vitest";
-import { buildFilterHref, FilterBar, type FilterState } from "./FilterBar";
+import { buildFilterHref, buildLoadMoreHref, FilterBar, type FilterState } from "./FilterBar";
 
 describe("buildFilterHref", () => {
   it("returns / when no filters are set", () => {
@@ -29,6 +29,21 @@ describe("buildFilterHref", () => {
     const current: FilterState = {};
     const href = buildFilterHref(current, { category: "research", new: "1", weak: "1" });
     expect(href).toBe("/?category=research&new=1&weak=1");
+  });
+});
+
+describe("buildLoadMoreHref", () => {
+  it("sets before and keeps active filters", () => {
+    const current: FilterState = { category: "tooling", weak: "1" };
+    expect(buildLoadMoreHref(current, "2026-07-01T00:00:00.000Z")).toBe(
+      "/?category=tooling&weak=1&before=2026-07-01T00%3A00%3A00.000Z",
+    );
+  });
+
+  it("works with no other filters set", () => {
+    expect(buildLoadMoreHref({}, "2026-07-01T00:00:00.000Z")).toBe(
+      "/?before=2026-07-01T00%3A00%3A00.000Z",
+    );
   });
 });
 

@@ -35,6 +35,19 @@ export function buildFilterHref(
   return qs ? `/?${qs}` : "/";
 }
 
+/**
+ * Builds the "Ältere laden" href: keeps category/new/weak from `current`
+ * and sets `before` to the given cursor (T3.5 — server-side pagination).
+ */
+export function buildLoadMoreHref(current: FilterState, beforeIso: string): string {
+  const params = new URLSearchParams();
+  if (current.category) params.set("category", current.category);
+  if (current.new) params.set("new", current.new);
+  if (current.weak) params.set("weak", current.weak);
+  params.set("before", beforeIso);
+  return `/?${params.toString()}`;
+}
+
 function chipClass(active: boolean): string {
   return `shrink-0 rounded-full px-3 py-1 transition-colors ${
     active ? "bg-zinc-100 text-zinc-900" : "bg-zinc-800 text-zinc-300 hover:bg-zinc-700"

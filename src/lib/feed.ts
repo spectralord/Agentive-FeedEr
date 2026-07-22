@@ -6,7 +6,7 @@ import { env } from "@/lib/env";
 
 export type FeedCategory = (typeof CATEGORIES)[number];
 
-const DEFAULT_LIMIT = 50;
+export const DEFAULT_FEED_LIMIT = 50;
 
 export interface GetReelsOptions {
   /** Cursor for "load older": only items published strictly before this. */
@@ -89,7 +89,7 @@ export async function getReels(opts: GetReelsOptions = {}): Promise<FeedReel[]> 
     .innerJoin(sources, eq(rawItems.sourceId, sources.id))
     .where(conditions.length > 0 ? and(...conditions) : undefined)
     .orderBy(desc(rawItems.publishedAt))
-    .limit(opts.limit ?? DEFAULT_LIMIT);
+    .limit(opts.limit ?? DEFAULT_FEED_LIMIT);
 
   return rows;
 }
