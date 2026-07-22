@@ -11,6 +11,7 @@ Rauschunterdrückung, Handlungsbezug und tatsächliches Anwenden.
 - **Architektur-Design & Epics:** [`docs/specs/2026-07-21-agentive-feeder-design.md`](./docs/specs/2026-07-21-agentive-feeder-design.md)
 - **Architektur-Entscheidungen (ADRs):** [`docs/adr/`](./docs/adr/)
 - **Entwicklungsplan (pro Epic, ausführbar):** [`docs/plan/README.md`](./docs/plan/README.md)
+- **Railway-Einrichtung (Schritt-für-Schritt):** [`docs/deployment/railway-setup.md`](./docs/deployment/railway-setup.md)
 
 > Status: Design-Phase. Noch kein Implementierungs-Code — die Docs sind die Grundlage der
 > stückweisen Umsetzung entlang der Epics.
