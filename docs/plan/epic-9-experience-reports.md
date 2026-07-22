@@ -39,7 +39,7 @@ export const experienceReports = pgTable("experience_reports", {
   Default z. B. „Ich"). In `src/lib/env.ts` ergänzen (optional, mit Default).
 - **Verifikation:** Unit-Test env-Default.
 
-### ☐ T9.3 — Datenzugriff (`src/lib/experienceReports.ts`)
+### ☑ T9.3 — Datenzugriff (`src/lib/experienceReports.ts`)
 - `listReports(opts: { authorType?; states?; limit? })` → chronologisch neueste zuerst;
   Default zeigt nur `lifecycle_state = active` (deprecated/archived standardmäßig raus,
   aber abrufbar über `states`).
