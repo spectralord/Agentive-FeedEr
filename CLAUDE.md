@@ -5,8 +5,9 @@
 Sofern der Benutzer nicht explizit etwas anderes anweist, gilt:
 
 - **Konzeption, Architektur, Analyse, Review:** übernimmt das starke Session-Modell
-  (Fable/Opus) selbst — dazu zählen Design-Entscheidungen, ADRs, Plan-Pflege,
+  (Standard: **Opus**) selbst — dazu zählen Design-Entscheidungen, ADRs, Plan-Pflege,
   Code-Review der Subagenten-Ergebnisse und alles, was Urteilsvermögen braucht.
+  **Fable** wird nur verwendet, wenn der Benutzer es explizit anfordert.
 - **Implementierung:** wird an **Subagenten mit schwächerem Modell** delegiert
   (Standard: `sonnet`; rein mechanische Tasks ggf. `haiku`). Auftrag an den Subagenten
   ist immer ein konkretes Epic-/Task-File aus `docs/plan/` inkl. Verweis auf die
