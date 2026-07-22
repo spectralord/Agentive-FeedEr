@@ -2,7 +2,9 @@ import { z } from "zod";
 
 const envSchema = z.object({
   DATABASE_URL: z.string().min(1, "DATABASE_URL is required"),
-  ANTHROPIC_API_KEY: z.string().min(1, "ANTHROPIC_API_KEY is required"),
+  // Optional so the web process boots without it; only Claude calls (enrichment/
+  // daily job) require it — enforced at use in src/lib/claude.ts.
+  ANTHROPIC_API_KEY: z.string().min(1).optional(),
   ANTHROPIC_MODEL: z.string().default("claude-haiku-4-5-20251001"),
   DEEPEN_MODEL: z.string().default("claude-sonnet-5"),
   MAX_ENRICH_PER_RUN: z.coerce.number().int().positive().default(100),

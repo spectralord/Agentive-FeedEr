@@ -4,7 +4,13 @@ import { env } from "./env";
 const globalForClaude = globalThis as unknown as { __anthropicClient?: Anthropic };
 
 export function anthropicClient(): Anthropic {
-  globalForClaude.__anthropicClient ??= new Anthropic({ apiKey: env().ANTHROPIC_API_KEY });
+  const apiKey = env().ANTHROPIC_API_KEY;
+  if (!apiKey) {
+    throw new Error(
+      "ANTHROPIC_API_KEY is not set — required for Claude calls (enrichment / daily job), but not for the web process.",
+    );
+  }
+  globalForClaude.__anthropicClient ??= new Anthropic({ apiKey });
   return globalForClaude.__anthropicClient;
 }
 
