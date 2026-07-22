@@ -99,7 +99,7 @@ Ein Epic ist fertig, wenn:
 
 | Epic | Datei | Tier | Status |
 |---|---|---|---|
-| 0 — Projekt-Skelett | `epic-0-skeleton.md` | MVP | ☐ offen |
+| 0 — Projekt-Skelett | `epic-0-skeleton.md` | MVP | ✅ fertig (Railway-Deploy = Benutzer-Aktion offen) |
 | 1 — Ingestion | `epic-1-ingestion.md` | MVP | ☐ offen |
 | 2 — Enrichment | `epic-2-enrichment.md` | MVP | ☐ offen |
 | 3 — Reel-Feed-UI | `epic-3-feed-ui.md` | MVP | ☐ offen |
