@@ -1,0 +1,15 @@
+// Vitest Snapshot v1, https://vitest.dev/guide/snapshot.html
+
+exports[`prompt > user prompt contains profile and item, matches snapshot 1`] = `
+"## Developer profile (relevance context)
+# Profil
+TypeScript-Entwickler.
+## Raw item
+Source: simon-willison
+Title: New agent SDK
+URL: https://example.com/sdk
+Published: 2026-07-20T08:00:00.000Z
+
+### Content
+The SDK now supports tools."
+`;

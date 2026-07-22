@@ -16,5 +16,7 @@ export default defineConfig({
   },
   test: {
     environment: "node",
+    // Integration tests share one local Postgres — run test files sequentially.
+    fileParallelism: false,
   },
 });

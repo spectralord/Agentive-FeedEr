@@ -40,6 +40,33 @@ export const rawItems = pgTable(
   (t) => [uniqueIndex("raw_items_source_external_uq").on(t.sourceId, t.externalId)],
 );
 
+export const reels = pgTable("reels", {
+  id: serial("id").primaryKey(),
+  rawItemId: integer("raw_item_id")
+    .notNull()
+    .references(() => rawItems.id)
+    .unique(),
+  summary: text("summary").notNull(),
+  category: text("category", {
+    enum: ["claude-feature", "tooling", "technique", "industry-news", "research", "opinion"],
+  }).notNull(),
+  maturity: text("maturity", {
+    enum: ["experimental", "emerging", "established"],
+  }).notNull(),
+  experimental: boolean("experimental").notNull().default(false),
+  relevanceScore: integer("relevance_score").notNull(),
+  qualityScore: integer("quality_score").notNull(),
+  example: text("example"),
+  action: text("action"),
+  effortTag: text("effort_tag", { enum: ["5-min-test", "afternoon", "know-only"] }),
+  skill: text("skill"),
+  topicClusterId: integer("topic_cluster_id"),
+  metadata: jsonb("metadata").notNull().default({}),
+  createdAt: timestamp("created_at", { withTimezone: true }).notNull().defaultNow(),
+});
+
 export type Source = typeof sources.$inferSelect;
 export type RawItem = typeof rawItems.$inferSelect;
 export type NewRawItem = typeof rawItems.$inferInsert;
+export type Reel = typeof reels.$inferSelect;
+export type NewReel = typeof reels.$inferInsert;
