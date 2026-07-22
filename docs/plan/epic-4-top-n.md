@@ -9,7 +9,7 @@ Anti-Doomscroll: fertig sein dürfen. Reine abgeleitete Ansicht, keine neue Date
 
 ## Tasks
 
-### ☐ T4.1 — Ranking (`src/lib/ranking.ts`)
+### ✅ T4.1 — Ranking (`src/lib/ranking.ts`)
 ```ts
 // score ∈ [0,1]; Halbwertszeit der Frische ≈ 7 Tage
 export function topScore(r: { relevanceScore: number; qualityScore: number; publishedAt: Date }, now = new Date()): number {
