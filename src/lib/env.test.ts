@@ -26,6 +26,12 @@ describe("parseEnv", () => {
     expect(() => parseEnv({ ANTHROPIC_API_KEY: "sk-test" })).toThrow(/DATABASE_URL/);
   });
 
+  it("allows ANTHROPIC_API_KEY to be absent (web process needs only DATABASE_URL)", () => {
+    const env = parseEnv({ DATABASE_URL: "postgres://localhost/test" });
+    expect(env.ANTHROPIC_API_KEY).toBeUndefined();
+    expect(env.DATABASE_URL).toBe("postgres://localhost/test");
+  });
+
   it("rejects out-of-range values", () => {
     expect(() => parseEnv({ ...required, QUALITY_THRESHOLD: "101" })).toThrow();
   });

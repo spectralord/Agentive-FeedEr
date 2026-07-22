@@ -26,7 +26,7 @@ verifizierten Reel-Feed getrennt (ADR 0007).
   anregend", nicht „passt zu meinem Profil"
 - `skill` (nullable): kanonischer Skill-Slug — **nicht vom Nutzer**, vom SkillTagger
   (Thema 4) gesetzt
-- `outdated` (bool), `outdated_reason` (nullable), `superseded_by` (nullable → report/reel)
+- `lifecycle_state` (`active`|`deprecated`|`archived`), `lifecycle_reason` (nullable), `superseded_by` (nullable → report/reel)
 - `source_url` (nullable): nur bei `curated`
 - `metadata JSONB`
 
@@ -37,9 +37,10 @@ verifizierten Reel-Feed getrennt (ADR 0007).
   später „hilfreich"-Votes, sobald Mehrbenutzer).
 
 ### Beständigkeit (ADR 0008)
-Eigene Berichte gehören zur **dauerhaften Wissensschicht** — nicht Teil des automatischen
-Churns, aber manuell als `outdated`/`superseded` markierbar (mit Grund/Verweis) und
-manuell löschbar.
+Eigene Berichte gehören zur **dauerhaften Wissensschicht** — rotieren nicht automatisch
+heraus, sind aber manuell über den `lifecycle_state` (`active → deprecated → archived`,
+mit Grund/`superseded_by`) verschiebbar. **Kein Auto-Delete**; alles bleibt historisch
+nachvollziehbar (ADR 0008). Hartes Löschen nur als seltener manueller Notausgang.
 
 ### Skill-Bezug & Actionables
 - Berichte tragen denselben optionalen `skill`-Bezug wie Reels ⇒ tauchen auf Skill-Nodes
@@ -51,7 +52,7 @@ manuell löschbar.
 ### MVP-Schnitt (Epic 9)
 **Drin:** Entität + Migration · eigene/Firmen-Berichte erfassen/bearbeiten (Formular:
 Titel, Markdown, optional „⭐ wichtig") · Anzeige-Seite, filterbar nach `author_type` ·
-`outdated`-Tagging mit Grund + optionalem `superseded_by`.
+Lifecycle-Aktionen (`deprecated`/`archived`/reaktivieren) mit Grund + optionalem `superseded_by`.
 **Nicht drin (Folge-Themen):** kuratierte Berichte + Scraping (Reddit/Kommentare) ·
 KI-Selbst-Feedback · Skill-Tagging (Thema 4) · Actionables (eigenes Thema, greift Epic 7).
 
@@ -71,8 +72,8 @@ unvalidierte Erfahrungsberichte. Berührt den Enrichment-Pfad und rüttelt an AD
 
 `isSota` ist bewusst altersunabhängig (Epic 5), daher können überholte Einträge als „State
 of the Art" hängenbleiben. Ein periodischer Job re-evaluiert aktuelle SOTA-Einträge gegen
-Neueres und markiert Überholtes (`outdated`/`superseded_by` — dieselbe Mechanik wie bei
-Berichten) oder stuft `maturity` herab. Passt ins Daily-Job-Muster. Eigener Grill vor
+Neueres und setzt Überholtes auf `lifecycle_state = deprecated` (`superseded_by` — dieselbe
+Mechanik wie bei Berichten, ADR 0008) oder stuft `maturity` herab. Passt ins Daily-Job-Muster. Eigener Grill vor
 Umsetzung (Kriterien „noch SOTA?").
 
 ---

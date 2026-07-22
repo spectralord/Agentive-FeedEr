@@ -16,10 +16,20 @@ churnen und Fortschritt/Notizen gingen verloren.
 
 Es gibt zwei Schichten mit unterschiedlichem Lebenszyklus:
 
-- **Ephemere Inhaltsschicht:** News-Reels + `curated` Experience Reports. Dürfen altern,
-  überholt/ersetzt werden.
+- **Ephemere Inhaltsschicht:** News-Reels + `curated` Experience Reports. Rotieren mit der
+  Zeit automatisch aus den *aktiven* Ansichten heraus — **nicht** durch Löschen, sondern
+  über den Lebenszyklus `active → deprecated → archived`.
 - **Dauerhafte Wissensschicht:** Skill-Nodes + `user_progress`/Adoption-Log + `own`
-  Experience Reports. Wächst an, wird **nie automatisch** verworfen.
+  Experience Reports. Wächst an, bleibt aktiv, bis *manuell* zustandsverschoben.
+
+**Einheitlicher Lebenszyklus (kein Auto-Delete):** Alles — Reels, Reports *und*
+Skill-Nodes — trägt einen `lifecycle_state`:
+- `active` → in normalen Ansichten sichtbar.
+- `deprecated` → überholt (mit `reason`/`superseded_by`); raus aus aktiven Ansichten, aber
+  im Verlauf/History weiter auffindbar.
+- `archived` → nur noch in expliziter Archiv-/Historien-Ansicht.
+Nichts wird **automatisch gelöscht**; alles bleibt historisch nachvollziehbar. Hartes
+Löschen ist ausschließlich eine seltene, bewusste manuelle Aktion.
 
 Regeln, die Beständigkeit garantieren:
 1. **Skill-Nodes sind First-Class-Entitäten.** Inhalte *referenzieren* Nodes
@@ -29,9 +39,9 @@ Regeln, die Beständigkeit garantieren:
    Archivieren). Ein Node darf null aktuelle Inhalte haben und trotzdem bestehen.
 3. **Fortschritt und Notizen leben am Node**, nicht am Inhalt — sie überleben jeden
    Inhalts-Austausch.
-4. **„Dauerhaft" ≠ „unsterblich":** Auch `own`/Firmen-Berichte können manuell als
-   `outdated`/`superseded` markiert (mit Grund/Verweis) und manuell gelöscht werden — sie
-   sind nur nicht Teil des *automatischen* Churns.
+4. **„Dauerhaft" ≠ „für immer aktiv":** Auch `own`/Firmen-Berichte können manuell
+   `deprecated`/`archived` werden (mit Grund/`superseded_by`) — sie sind nur nicht Teil des
+   *automatischen* Herausrotierens. Auch sie werden nicht auto-gelöscht.
 
 ## Alternativen
 
@@ -41,7 +51,8 @@ Regeln, die Beständigkeit garantieren:
 
 ## Konsequenzen
 
-- Der Feed churnt, der Skill-Tree akkumuliert.
+- Der Feed rotiert (aktive Ansicht), der Skill-Tree akkumuliert — beide Schichten
+  behalten ihre volle Historie.
 - Eigene Erfahrungsberichte **verankern** Nodes zusätzlich (dauerhafter Inhalt, der
   bleibt, wenn alle News zum Thema veraltet sind).
 - Erfordert Aufräum-Disziplin (Archivieren) statt Auto-Delete; bewusst gewählt.
