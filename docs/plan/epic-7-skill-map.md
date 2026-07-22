@@ -8,6 +8,13 @@ Entscheidung: Skill-*Map*, Variante A).
 **Referenzen:** Glossar: Skill-Node, Skill-Map, user_progress, Adoption-Log;
 Grill-Entscheidungen (Knoten = Kompetenzen; Selbst-Bestätigung; keine Gates).
 
+> **Revidiert 2026-07-22** (siehe `docs/specs/2026-07-22-experience-reports-design.md`):
+> (1) **Epic 12 (SkillTagger) zuerst bauen** — T7.2 (Node-Aggregation) wird davon
+> ersetzt/erweitert; `skill_nodes` ist in Epic 12 T12.1 definiert (inkl. `pending`-Status).
+> (2) Fortschritt läuft zusätzlich über abgehakte **Actionables** (aus Reels *und*
+> Erfahrungsberichten), nicht nur über Selbst-Status; beides existiert nebeneinander.
+> (3) Auf Skill-Nodes tauchen auch **Erfahrungsberichte** (Epic 9) gelabelt neben Reels auf.
+
 ---
 
 ## Tasks

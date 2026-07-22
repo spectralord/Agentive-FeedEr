@@ -6,6 +6,11 @@ Spaced Resurfacing gespeicherter Reels.
 
 **Referenzen:** Design-Doc §7, Grill-Entscheidung „kontextbasiert, kein ML".
 
+> **Revidiert 2026-07-22** (siehe `docs/specs/2026-07-22-experience-reports-design.md`):
+> Die `tried`-Interaktion bezieht sich künftig auf abgeleitete **Actionables/To-Trys**,
+> nicht auf Reels/Reports selbst (die werden nie abgehakt). Save/hide/👍👎 auf Reels
+> bleiben unverändert.
+
 ---
 
 ## Tasks
