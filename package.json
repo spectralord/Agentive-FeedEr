@@ -9,7 +9,7 @@
     "lint": "eslint",
     "db:generate": "drizzle-kit generate",
     "db:migrate": "drizzle-kit migrate",
-    "job:daily": "tsx src/jobs/daily.ts",
+    "job:daily": "tsx --env-file-if-exists=.env src/jobs/daily.ts",
     "test": "vitest run"
   },
   "dependencies": {
