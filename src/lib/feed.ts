@@ -15,6 +15,8 @@ export interface GetReelsOptions {
   category?: string;
   /** Only items published within env().NEW_DAYS. */
   onlyNew?: boolean;
+  /** Only items ingested at or after this instant (Today's Top-N candidates, Epic 4). */
+  sinceIngested?: Date;
   /** Lift the default quality_score >= env().QUALITY_THRESHOLD floor. */
   showWeak?: boolean;
   /** Max rows returned, default 50. */
@@ -63,6 +65,9 @@ export async function getReels(opts: GetReelsOptions = {}): Promise<FeedReel[]> 
   }
   if (opts.before) {
     conditions.push(lt(rawItems.publishedAt, opts.before));
+  }
+  if (opts.sinceIngested) {
+    conditions.push(gte(rawItems.ingestedAt, opts.sinceIngested));
   }
 
   const rows = await db()
