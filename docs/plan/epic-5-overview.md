@@ -27,12 +27,14 @@ export const isBestPractice = (r) =>
 - `isSota` ist bewusst **altersunabhängig** (das war die explizite Anforderung).
 - **Verifikation:** Unit-Tests inkl. Grenzwerte (Score 69/70, Maturity-Varianten).
 
-### ☐ T5.2 — `/overview`-Seite: SOTA-Sektion
+### ✅ T5.2 — `/overview`-Seite: SOTA-Sektion
 - Oben: „⭐ Aktueller State of the Art" — SOTA-Reels gruppiert nach Kategorie,
   innerhalb der Gruppe sortiert nach `relevanceScore * qualityScore` (nicht nach Datum!),
   max. 5 je Kategorie, kompakte Listendarstellung (Titel, Summary 1. Satz, Datum, Link
   → springt zur Karte im Feed via `/?category=…`).
-- **Verifikation:** Altes Reel (> 30 Tage) mit hohen Scores erscheint in SOTA.
+- **Verifikation:** Altes Reel (> 30 Tage) mit hohen Scores erscheint in SOTA. ✅ Bestätigt
+  gegen `scripts/seed-dev.sql`: "Seed Item 13" (39 Tage alt, established, R94/Q98) erscheint
+  als einziges SOTA-Reel unter Kategorie „Technik", Link zeigt auf `/?category=technique`.
 
 ### ☐ T5.3 — `/overview`-Seite: Verlauf mit Filtern
 - Darunter: chronologische Kompaktliste (kein Snap — normale Scroll-Liste) mit
@@ -52,3 +54,13 @@ export const isBestPractice = (r) =>
 
 ## Abweichungen/Fragen
 _(vom ausführenden Modell zu pflegen)_
+
+- **`showWeak: true` für die SOTA-Abfrage:** Der globale `QUALITY_THRESHOLD`-Floor von
+  `getReels` (Default 60) ist eine Feed-spezifische Vereinfachung (Epic 3, „schwaches
+  Signal ausblenden"). `isSota` hat ohnehin eine strengere eigene Quality-Schwelle (≥70),
+  daher wird die SOTA-Kandidatenmenge mit `showWeak: true` geholt, um sicherzugehen, dass
+  kein potenzielles SOTA-Reel durch den Feed-Floor verloren geht.
+- **Kein eigener Seiten-Test für `src/app/overview/page.tsx`:** Wie bei `/` (Epic 3) und
+  `/today` (Epic 4) bleibt die Server-Component-Seite selbst ungetestet (DB-Zugriff async);
+  stattdessen Unit-/Rendertests für die extrahierte Komponente (`SotaSection.test.tsx`)
+  plus manuelle curl-Verifikation.
