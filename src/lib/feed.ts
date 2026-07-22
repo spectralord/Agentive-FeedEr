@@ -1,10 +1,11 @@
 import { and, desc, eq, gt, gte, lt } from "drizzle-orm";
 import { db } from "@/db/client";
 import { rawItems, reels, sources } from "@/db/schema";
-import { CATEGORIES } from "@/lib/enrichment/schema";
+import { CATEGORIES, MATURITIES } from "@/lib/enrichment/schema";
 import { env } from "@/lib/env";
 
 export type FeedCategory = (typeof CATEGORIES)[number];
+export type FeedMaturity = (typeof MATURITIES)[number];
 
 export const DEFAULT_FEED_LIMIT = 50;
 
@@ -19,6 +20,17 @@ export interface GetReelsOptions {
   sinceIngested?: Date;
   /** Lift the default quality_score >= env().QUALITY_THRESHOLD floor. */
   showWeak?: boolean;
+  /** Exact maturity match. Unknown values are ignored (no filter applied). */
+  maturity?: string;
+  /** Only items with relevance_score >= this value (Übersicht "Min-Relevanz", T5.3). */
+  minRelevance?: number;
+  /** Only items published at or after this instant (Übersicht "Zeitraum", T5.3). */
+  publishedAfter?: Date;
+  /**
+   * Exclude reels flagged `experimental` (the stored boolean, not the
+   * `maturity` enum) — Übersicht "🧪 experimentell zeigen" toggle, T5.3.
+   */
+  excludeExperimental?: boolean;
   /** Max rows returned, default 50. */
   limit?: number;
 }
@@ -46,6 +58,10 @@ function isKnownCategory(value: string): value is FeedCategory {
   return (CATEGORIES as readonly string[]).includes(value);
 }
 
+function isKnownMaturity(value: string): value is FeedMaturity {
+  return (MATURITIES as readonly string[]).includes(value);
+}
+
 /**
  * Reels joined with their raw item + source, newest first.
  * Low-quality reels are hidden by default (never deleted) — see ADR 0004.
@@ -68,6 +84,18 @@ export async function getReels(opts: GetReelsOptions = {}): Promise<FeedReel[]> 
   }
   if (opts.sinceIngested) {
     conditions.push(gte(rawItems.ingestedAt, opts.sinceIngested));
+  }
+  if (opts.maturity && isKnownMaturity(opts.maturity)) {
+    conditions.push(eq(reels.maturity, opts.maturity));
+  }
+  if (opts.minRelevance !== undefined) {
+    conditions.push(gte(reels.relevanceScore, opts.minRelevance));
+  }
+  if (opts.publishedAfter) {
+    conditions.push(gte(rawItems.publishedAt, opts.publishedAfter));
+  }
+  if (opts.excludeExperimental) {
+    conditions.push(eq(reels.experimental, false));
   }
 
   const rows = await db()

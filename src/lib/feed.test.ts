@@ -18,6 +18,9 @@ interface SeedSpec {
   qualityScore: number;
   example?: string | null;
   action?: string | null;
+  maturity?: "experimental" | "emerging" | "established";
+  experimental?: boolean;
+  relevanceScore?: number;
 }
 
 async function seedReel(sourceId: number, spec: SeedSpec) {
@@ -40,9 +43,9 @@ async function seedReel(sourceId: number, spec: SeedSpec) {
       rawItemId: item.id,
       summary: `Summary for ${spec.externalId}`,
       category: spec.category,
-      maturity: "established",
-      experimental: false,
-      relevanceScore: 50,
+      maturity: spec.maturity ?? "established",
+      experimental: spec.experimental ?? false,
+      relevanceScore: spec.relevanceScore ?? 50,
       qualityScore: spec.qualityScore,
       example: spec.example ?? null,
       action: spec.action ?? null,
@@ -174,5 +177,94 @@ describe("getReels (integration)", () => {
     expect(reel.url).toBe("https://example.com/x");
     expect(reel.example).toBe("const x = 1;");
     expect(reel.action).toBe("Do the thing");
+  });
+
+  it("filters by exact maturity and ignores unknown maturity values (T5.3)", async () => {
+    const [source] = await db().insert(sources).values({ name: "s", type: "rss", url: "u" }).returning();
+    await seedReel(source.id, {
+      externalId: "est",
+      publishedAt: daysAgo(1),
+      category: "tooling",
+      qualityScore: 90,
+      maturity: "established",
+    });
+    await seedReel(source.id, {
+      externalId: "exp",
+      publishedAt: daysAgo(1),
+      category: "tooling",
+      qualityScore: 90,
+      maturity: "experimental",
+    });
+
+    const established = await getReels({ maturity: "established" });
+    expect(established).toHaveLength(1);
+    expect(established[0].maturity).toBe("established");
+
+    const unknown = await getReels({ maturity: "not-a-real-maturity" });
+    expect(unknown).toHaveLength(2); // filter silently ignored
+  });
+
+  it("minRelevance restricts to relevance_score >= threshold (T5.3)", async () => {
+    const [source] = await db().insert(sources).values({ name: "s", type: "rss", url: "u" }).returning();
+    await seedReel(source.id, {
+      externalId: "high",
+      publishedAt: daysAgo(1),
+      category: "tooling",
+      qualityScore: 90,
+      relevanceScore: 70,
+    });
+    await seedReel(source.id, {
+      externalId: "low",
+      publishedAt: daysAgo(1),
+      category: "tooling",
+      qualityScore: 90,
+      relevanceScore: 69,
+    });
+
+    const highOnly = await getReels({ minRelevance: 70 });
+    expect(highOnly.map((r) => r.rawItemId)).toEqual([1]);
+  });
+
+  it("publishedAfter restricts to an explicit cutoff, unlike NEW_DAYS-based onlyNew (T5.3)", async () => {
+    const [source] = await db().insert(sources).values({ name: "s", type: "rss", url: "u" }).returning();
+    await seedReel(source.id, {
+      externalId: "within-90",
+      publishedAt: daysAgo(60),
+      category: "tooling",
+      qualityScore: 90,
+    });
+    await seedReel(source.id, {
+      externalId: "beyond-90",
+      publishedAt: daysAgo(120),
+      category: "tooling",
+      qualityScore: 90,
+    });
+
+    const within90 = await getReels({ publishedAfter: daysAgo(90) });
+    expect(within90.map((r) => r.rawItemId)).toEqual([1]);
+  });
+
+  it("excludeExperimental filters out reels with the stored experimental flag set (T5.3)", async () => {
+    const [source] = await db().insert(sources).values({ name: "s", type: "rss", url: "u" }).returning();
+    await seedReel(source.id, {
+      externalId: "flagged",
+      publishedAt: daysAgo(1),
+      category: "tooling",
+      qualityScore: 90,
+      experimental: true,
+    });
+    await seedReel(source.id, {
+      externalId: "not-flagged",
+      publishedAt: daysAgo(1),
+      category: "tooling",
+      qualityScore: 90,
+      experimental: false,
+    });
+
+    const all = await getReels({});
+    expect(all).toHaveLength(2);
+
+    const withoutExperimental = await getReels({ excludeExperimental: true });
+    expect(withoutExperimental.map((r) => r.rawItemId)).toEqual([2]);
   });
 });
