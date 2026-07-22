@@ -77,7 +77,7 @@ export const experienceReports = pgTable("experience_reports", {
   zeigen" (Grund/Link sichtbar); archived → nur mit „archivierte zeigen"; Reaktivieren
   bringt zurück in die Default-Liste.
 
-### ☐ T9.7 — Markdown-Rendering (ohne neue Dependency, wenn möglich)
+### ☑ T9.7 — Markdown-Rendering (ohne neue Dependency, wenn möglich)
 - Prüfen, ob eine bereits vorhandene Lib Markdown rendert. Falls **keine** ohne neue
   Abhängigkeit verfügbar: MVP zeigt den Body als sicher escapte, `whitespace-pre-wrap`
   Vorformatierung und dokumentiert das als Abweichung (echtes Markdown = Folge-Task).
@@ -112,3 +112,14 @@ _(vom ausführenden Modell zu pflegen)_
   lässt (Umgebungsvorgabe: curl-Verifikation statt manuell in Safari). Route-Handler sind
   einfache POST-Endpunkte mit 303-Redirect zurück auf `/experience` — end-to-end per curl
   verifizierbar und funktional äquivalent (T9.5 erlaubt ausdrücklich beide Varianten).
+
+- **T9.7 — Kein echtes Markdown-Rendering:** `package.json` enthält keine Markdown-Lib
+  (`dependencies`: `@anthropic-ai/sdk`, `drizzle-orm`, `next`, `pg`, `react`, `react-dom`,
+  `rss-parser`, `zod`). Wie in der Task-Vorgabe für diesen Fall vorgesehen: `body` wird als
+  sicher escapte, `whitespace-pre-wrap` vorformatierte Klartext-Ausgabe gerendert
+  (`<p className="whitespace-pre-wrap">{report.body}</p>` in `ExperienceList.tsx`) — React
+  escaped Text-Children automatisch, kein `dangerouslySetInnerHTML`. Echtes
+  Markdown-Rendering (z. B. `marked`/`react-markdown` + Sanitizer) ist ein Folge-Task.
+  XSS-Sanity per Unit-Test (`ExperienceList.test.tsx`) **und** per curl gegen
+  `npm run start -p 3200` verifiziert: ein `<script>`-Tag im Body erscheint im
+  HTML-Response nur als `&lt;script&gt;...&lt;/script&gt;`, nie als ausführbares Tag.

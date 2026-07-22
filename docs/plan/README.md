@@ -108,7 +108,7 @@ Ein Epic ist fertig, wenn:
 | 6 — Saves/Feedback/Resurfacing | `epic-6-interactions.md` | Fast-Follow | ☐ offen (siehe Revidierte Annahmen unten) |
 | 7 — Skill-Map | `epic-7-skill-map.md` | Vision | ☐ offen (nach Epic 12; siehe Revidierte Annahmen) |
 | 8 — Agentisches Vertiefen | `epic-8-deep-dive.md` | Vision | ☐ offen |
-| 9 — Erfahrungs-Sektion | `epic-9-experience-reports.md` | Fast-Follow | ☐ offen |
+| 9 — Erfahrungs-Sektion | `epic-9-experience-reports.md` | Fast-Follow | ✅ fertig (kein echtes Markdown-Rendering ohne neue Dependency — siehe Abweichungen in `epic-9-experience-reports.md`) |
 | 10 — Content Verifier | `epic-10-verifier.md` | Vision (erst grillen) | ☐ offen |
 | 11 — SOTA-Frische-Re-Check | `epic-11-sota-recheck.md` | Vision (erst grillen) | ☐ offen |
 | 12 — SkillTagger | `epic-12-skill-tagger.md` | Fast-Follow (vor Epic 7) | ☐ offen |
