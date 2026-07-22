@@ -51,7 +51,7 @@ export const experienceReports = pgTable("experience_reports", {
   nach `author_type`, `setLifecycleState('deprecated')` blendet aus der Default-Liste aus,
   bleibt aber über `states` abrufbar; Update setzt `updated_at`.
 
-### ☐ T9.4 — Seite `/experience` (Liste)
+### ☑ T9.4 — Seite `/experience` (Liste)
 - Neue Route + Nav-Eintrag „Erfahrung" (nach „Übersicht").
 - Kompakte, chronologische Liste (kein Snap): Titel, `author_label`, relatives Datum
   (`formatRelativeTime` aus Epic 3 wiederverwenden), gerendertes Markdown (nur wenn eine

@@ -26,6 +26,7 @@ const navItems = [
   { href: "/today", label: "Heute" },
   { href: "/", label: "Feed" },
   { href: "/overview", label: "Übersicht" },
+  { href: "/experience", label: "Erfahrung" },
 ];
 
 export default function RootLayout({
