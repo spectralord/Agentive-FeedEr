@@ -62,7 +62,7 @@ export const experienceReports = pgTable("experience_reports", {
 - `export const dynamic = "force-dynamic"` (DB pro Request; im Build prüfen: `ƒ`).
 - **Verifikation:** curl gegen `npm run start` nach Seed; Filterkombinationen geprüft.
 
-### ☐ T9.5 — Bericht erfassen/bearbeiten (`/experience/new`, `/experience/[id]/edit`)
+### ☑ T9.5 — Bericht erfassen/bearbeiten (`/experience/new`, `/experience/[id]/edit`)
 - Einfaches Formular (Server Action oder Route-Handler): Titel, Markdown-Body, Checkbox
   „⭐ wichtig". `author_type` = `own`, `author_label` aus Konfiguration (T9.2).
 - Nach Speichern Redirect auf die Liste; optimistisch, kein Skill-Tagging im MVP.
@@ -103,3 +103,12 @@ _(vom ausführenden Modell zu pflegen)_
   Ändern der beiden `host ... 127.0.0.1/32` / `::1/128`-Zeilen in `pg_hba.conf` von
   `scram-sha-256` auf `trust` + `service postgresql reload`. Reine Infra-Anpassung, keine
   Projektdatei geändert; danach lief `npm run db:migrate` grün.
+
+- **T9.5 — Route-Handler statt Server Action:** Formulare in `/experience/new` und
+  `/experience/[id]/edit` sind reine HTML-`<form method="post">`, die auf eigene
+  Route-Handler (`/experience/create`, `/experience/[id]/update`) posten, statt Next.js
+  Server Actions zu nutzen. Grund: Server Actions kodieren die Aktion über einen
+  build-generierten `Next-Action`-Header/-ID, der sich nicht stabil per `curl` ansprechen
+  lässt (Umgebungsvorgabe: curl-Verifikation statt manuell in Safari). Route-Handler sind
+  einfache POST-Endpunkte mit 303-Redirect zurück auf `/experience` — end-to-end per curl
+  verifizierbar und funktional äquivalent (T9.5 erlaubt ausdrücklich beide Varianten).
