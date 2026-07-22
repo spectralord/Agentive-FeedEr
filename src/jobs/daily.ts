@@ -1,27 +1,49 @@
 // Daily pipeline entrypoint — run via `npm run job:daily` (Railway cron or locally).
-// Phase 1: ingestion (cheap, no AI). Phase 2: enrichment (added in Epic 2).
+// Runs the same tracked pipeline the admin console triggers (ADR 0010): ingestion
+// (cheap, no AI) then enrichment (Claude). The run is recorded in pipeline_runs.
 import { db, getPool } from "@/db/client";
-import { runEnrichment } from "@/lib/enrichment/run";
-import { runIngestion } from "@/lib/ingestion/run";
+import { executeTrackedRun, PipelineBusyError } from "@/lib/pipeline";
+import { pipelineRuns } from "@/db/schema";
+import { eq } from "drizzle-orm";
 
 async function main(): Promise<number> {
   console.log(`[daily] starting at ${new Date().toISOString()}`);
 
-  const ingestion = await runIngestion(db());
-  for (const s of ingestion.perSource) {
-    const status = s.error ? `ERROR: ${s.error}` : `fetched ${s.fetched}, inserted ${s.inserted}`;
-    console.log(`[ingestion] ${s.name}: ${status}`);
+  let runId: number;
+  try {
+    runId = await executeTrackedRun(db(), { trigger: "cron", mode: "full" });
+  } catch (error) {
+    if (error instanceof PipelineBusyError) {
+      console.log("[daily] skipped: a pipeline run is already in progress.");
+      return 0;
+    }
+    throw error;
   }
-  console.log(`[ingestion] total inserted: ${ingestion.totalInserted}`);
 
-  const enrichment = await runEnrichment(db());
-  console.log(
-    `[enrichment] processed ${enrichment.processed}, succeeded ${enrichment.succeeded}, failed ${enrichment.failed}`,
-  );
+  const [run] = await db().select().from(pipelineRuns).where(eq(pipelineRuns.id, runId));
+  const summary = (run?.summary ?? {}) as {
+    ingestion?: { perSource: { name: string; fetched: number; inserted: number; error?: string }[]; totalInserted: number };
+    enrichment?: { processed: number; succeeded: number; failed: number };
+  };
 
-  const allFailed =
-    ingestion.perSource.length > 0 && ingestion.perSource.every((s) => s.error);
-  return allFailed ? 1 : 0;
+  if (summary.ingestion) {
+    for (const s of summary.ingestion.perSource) {
+      const status = s.error ? `ERROR: ${s.error}` : `fetched ${s.fetched}, inserted ${s.inserted}`;
+      console.log(`[ingestion] ${s.name}: ${status}`);
+    }
+    console.log(`[ingestion] total inserted: ${summary.ingestion.totalInserted}`);
+  }
+  if (summary.enrichment) {
+    const e = summary.enrichment;
+    console.log(`[enrichment] processed ${e.processed}, succeeded ${e.succeeded}, failed ${e.failed}`);
+  }
+
+  if (run?.status === "failed") {
+    console.error(`[daily] run ${runId} failed: ${run.error}`);
+    return 1;
+  }
+  console.log(`[daily] run ${runId} ${run?.status}`);
+  return 0;
 }
 
 main()

@@ -27,6 +27,7 @@ const navItems = [
   { href: "/", label: "Feed" },
   { href: "/overview", label: "Übersicht" },
   { href: "/experience", label: "Erfahrung" },
+  { href: "/admin", label: "Admin" },
 ];
 
 export default function RootLayout({

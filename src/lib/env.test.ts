@@ -22,6 +22,17 @@ describe("parseEnv", () => {
     expect(env.OWNER_NAME).toBe("Max");
   });
 
+  it("treats an empty ANTHROPIC_API_KEY as unset (T13/robustness)", () => {
+    const env = parseEnv({ DATABASE_URL: "postgres://localhost/test", ANTHROPIC_API_KEY: "" });
+    expect(env.ANTHROPIC_API_KEY).toBeUndefined();
+  });
+
+  it("ADMIN_TOKEN is undefined by default and empty is treated as unset (T13.1)", () => {
+    expect(parseEnv(required).ADMIN_TOKEN).toBeUndefined();
+    expect(parseEnv({ ...required, ADMIN_TOKEN: "" }).ADMIN_TOKEN).toBeUndefined();
+    expect(parseEnv({ ...required, ADMIN_TOKEN: "s3cret" }).ADMIN_TOKEN).toBe("s3cret");
+  });
+
   it("coerces numeric strings", () => {
     const env = parseEnv({ ...required, TOP_N: "5", QUALITY_THRESHOLD: "70" });
     expect(env.TOP_N).toBe(5);

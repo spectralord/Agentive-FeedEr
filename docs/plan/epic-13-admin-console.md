@@ -12,11 +12,11 @@
 
 ## Tasks
 
-### ☐ T13.1 — Env: `ADMIN_TOKEN`
+### ☑ T13.1 — Env: `ADMIN_TOKEN`
 - `src/lib/env.ts`: `ADMIN_TOKEN` optional (kein Default). Ungesetzt ⇒ Admin deaktiviert.
 - `.env.example` ergänzen. **Verifikation:** env-Test (gesetzt/ungesetzt).
 
-### ☐ T13.2 — Schema: `pipeline_runs`
+### ☑ T13.2 — Schema: `pipeline_runs`
 ```ts
 export const pipelineRuns = pgTable("pipeline_runs", {
   id: serial("id").primaryKey(),
@@ -31,7 +31,7 @@ export const pipelineRuns = pgTable("pipeline_runs", {
 ```
 - Migration. **Verifikation:** Migration grün.
 
-### ☐ T13.3 — Pipeline-Refactor (`src/lib/pipeline.ts`)
+### ☑ T13.3 — Pipeline-Refactor (`src/lib/pipeline.ts`)
 - `runDailyPipeline(db, { mode }): Promise<PipelineSummary>` — kapselt
   `runIngestion` und/oder `runEnrichment` je nach `mode`; gibt strukturierte Summary zurück.
 - `src/jobs/daily.ts` auf `runDailyPipeline(db,{mode:'full'})` umstellen und zusätzlich eine
@@ -39,13 +39,13 @@ export const pipelineRuns = pgTable("pipeline_runs", {
 - **Verifikation:** bestehende Ingestion/Enrichment-Integrationstests bleiben grün; neuer
   Test für `runDailyPipeline` (mode-Varianten mit gemocktem Enrichment-Caller).
 
-### ☐ T13.4 — Auth-Gate (`src/lib/admin/auth.ts` + `/admin/login`)
+### ☑ T13.4 — Auth-Gate (`src/lib/admin/auth.ts` + `/admin/login`)
 - Token-Vergleich constant-time; httpOnly-Cookie `admin_session` = HMAC(Token) (nicht das
   Token selbst). Helper `requireAdmin()` für Seiten/Routen.
 - `ADMIN_TOKEN` ungesetzt ⇒ Login zeigt „Admin deaktiviert".
 - **Verifikation:** Unit-Tests: falscher Token abgelehnt, richtiger akzeptiert, Cookie-Check.
 
-### ☐ T13.5 — Trigger-API + Admin-Seite (Kern)
+### ☑ T13.5 — Trigger-API + Admin-Seite (Kern)
 - `POST /api/admin/run` (token-gated): body `{ mode }`; Guard „kein laufender Run";
   legt `running`-Zeile an, startet `runDailyPipeline` **ohne await**, schreibt am Ende
   Ergebnis; antwortet sofort `{ runId }`. Ungesetzter `ADMIN_TOKEN` ⇒ 503.
@@ -55,7 +55,7 @@ export const pipelineRuns = pgTable("pipeline_runs", {
 - **Verifikation:** curl mit/ohne Token (401/503 vs. 200); ein manueller Lauf erzeugt eine
   `pipeline_runs`-Zeile und füllt (lokal) reels; Doppelklick startet keinen zweiten Lauf.
 
-### ☐ T13.6 — Bonus: Letzte Läufe + System-Status
+### ☑ T13.6 — Bonus: Letzte Läufe + System-Status
 - Tabelle der letzten `pipeline_runs` (Status, Dauer, Ingestion-Zahlen pro Quelle,
   Enrichment-Zahlen, Fehler). Status-Kacheln: DB ok, `ANTHROPIC_API_KEY` gesetzt?, Counts
   (raw_items, reels, unenriched, enrich_errors).
@@ -79,4 +79,26 @@ export const pipelineRuns = pgTable("pipeline_runs", {
   da der Button die Pipeline im Web-Container ausführt.
 
 ## Abweichungen/Fragen
-_(vom ausführenden Modell zu pflegen)_
+- **Umgesetzt: T13.1–T13.6** (der vom Benutzer verlangte Kern + Bonus-Status/Läufe).
+  **T13.7 (Quellen-Liste + Fehler-Retry) bewusst offen** gelassen (Bonus, Zeit/Scope in der
+  autonomen Nacht-Session) — bleibt als Folge-Task.
+- **Pipeline-API leicht anders als skizziert:** statt einer einzelnen `runDailyPipeline`
+  wurde in `src/lib/pipeline.ts` aufgeteilt in `runPipelinePhases` (reiner Phasen-Runner),
+  `beginRun`/`runAndFinish` (Tracking + Guard) und `executeTrackedRun` (Cron). Grund:
+  Der Admin-Button muss die Run-ID **sofort** zurückgeben und die Ausführung
+  fire-and-forget laufen lassen — dafür braucht es das Auftrennen von „Zeile anlegen" und
+  „ausführen". `PhaseRunner` ist injizierbar → Tracking-Layer ohne Netzwerk/Claude testbar.
+- **Robustheits-Fix (Root Cause des Cron-Crashes):** `ANTHROPIC_API_KEY` als **leerer
+  String** wird in `env.ts` jetzt als „nicht gesetzt" behandelt (`z.preprocess`), damit ein
+  falsch aufgelöster Railway-Shared-Var-Verweis den Prozess nicht mehr beim Boot crasht.
+  Gleiches Muster für `ADMIN_TOKEN`.
+- **Cookie `secure`** ist an `NODE_ENV === "production"` gekoppelt (in Railway/https aktiv,
+  lokal über http aus) — sonst wäre die curl-Verifikation über http nicht möglich.
+- **Verifikation** via Dev-Server + curl (wie Epics 3–5/9): Auth-Redirect, falsches/richtiges
+  Token, Cookie, Run-Trigger (401 ohne Cookie, 303 mit, Busy-Guard beim 2. Klick), erzeugte
+  `pipeline_runs`-Zeile mit real +20 Items (GitHub-Feeds in der Sandbox), Safe-Default
+  (ohne `ADMIN_TOKEN`: 503 + „deaktiviert" + Redirect). 128/128 Tests grün, Build grün,
+  alle `/admin`- und `/api/admin/*`-Routen dynamisch.
+- **Benutzer-Aktion offen:** `ADMIN_TOKEN` in Railway am Web-Service setzen (sonst bleibt
+  Admin sicher deaktiviert). `ANTHROPIC_API_KEY` am Web-Service wurde bereits per
+  `${{shared.ANTHROPIC_API_KEY}}` ergänzt (für den Button-Enrichment-Lauf).

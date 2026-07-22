@@ -88,6 +88,19 @@ export const experienceReports = pgTable("experience_reports", {
   updatedAt: timestamp("updated_at", { withTimezone: true }).notNull().defaultNow(),
 });
 
+// Epic 13: history of daily-pipeline runs (cron and manual admin triggers share
+// this table). See ADR 0010.
+export const pipelineRuns = pgTable("pipeline_runs", {
+  id: serial("id").primaryKey(),
+  trigger: text("trigger", { enum: ["manual", "cron"] }).notNull(),
+  mode: text("mode", { enum: ["full", "ingestion", "enrichment"] }).notNull(),
+  status: text("status", { enum: ["running", "success", "failed"] }).notNull(),
+  startedAt: timestamp("started_at", { withTimezone: true }).notNull().defaultNow(),
+  finishedAt: timestamp("finished_at", { withTimezone: true }),
+  summary: jsonb("summary"),
+  error: text("error"),
+});
+
 export type Source = typeof sources.$inferSelect;
 export type RawItem = typeof rawItems.$inferSelect;
 export type NewRawItem = typeof rawItems.$inferInsert;
@@ -95,3 +108,5 @@ export type Reel = typeof reels.$inferSelect;
 export type NewReel = typeof reels.$inferInsert;
 export type ExperienceReport = typeof experienceReports.$inferSelect;
 export type NewExperienceReport = typeof experienceReports.$inferInsert;
+export type PipelineRun = typeof pipelineRuns.$inferSelect;
+export type NewPipelineRun = typeof pipelineRuns.$inferInsert;
