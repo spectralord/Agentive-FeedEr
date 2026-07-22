@@ -1,5 +1,5 @@
 import type { FeedReel } from "@/lib/feed";
-import { env } from "@/lib/env";
+import { isNew } from "@/lib/labels";
 import { formatRelativeTime } from "@/lib/relativeTime";
 import { CATEGORY_LABELS, EFFORT_LABELS, MATURITY_LABELS } from "./labels";
 
@@ -11,7 +11,7 @@ function Badge({ children }: { children: React.ReactNode }) {
 
 /** One reel card, sized to fill the viewport (see .reel/.feed scroll-snap in page.tsx). */
 export function ReelCard({ reel }: { reel: FeedReel }) {
-  const isNew = reel.publishedAt.getTime() > Date.now() - env().NEW_DAYS * 86_400_000;
+  const showNewBadge = isNew(reel);
 
   return (
     <article className="reel min-h-dvh snap-start [scroll-snap-stop:always]">
@@ -28,7 +28,7 @@ export function ReelCard({ reel }: { reel: FeedReel }) {
           <Badge>{CATEGORY_LABELS[reel.category]}</Badge>
           <Badge>{MATURITY_LABELS[reel.maturity]}</Badge>
           {reel.experimental && <Badge>🧪 experimentell</Badge>}
-          {isNew && <Badge>🆕 Neu</Badge>}
+          {showNewBadge && <Badge>🆕 Neu</Badge>}
         </div>
 
         <h2 className="mt-3 text-lg font-semibold leading-snug text-zinc-50">{reel.title}</h2>

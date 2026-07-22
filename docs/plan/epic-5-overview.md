@@ -10,7 +10,7 @@ Alles abgeleitete Ansichten über dieselben Reels.
 
 ## Tasks
 
-### ☐ T5.1 — Label-Logik (`src/lib/labels.ts`)
+### ✅ T5.1 — Label-Logik (`src/lib/labels.ts`)
 Eine Funktion pro Label, pure Functions, zentral und getestet — **nirgendwo sonst
 Label-Logik duplizieren** (ReelCard aus Epic 3 auf diese Funktionen umstellen):
 
