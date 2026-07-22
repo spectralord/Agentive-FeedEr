@@ -23,8 +23,9 @@ export const experienceReports = pgTable("experience_reports", {
   important: boolean("important").notNull().default(false),  // "⭐ wichtig" (Selbst-Hervorhebung)
   relevanceScore: integer("relevance_score"),               // nur curated; MVP immer null
   skill: text("skill"),                                      // vom SkillTagger (Epic 12); MVP null
-  outdated: boolean("outdated").notNull().default(false),
-  outdatedReason: text("outdated_reason"),
+  lifecycleState: text("lifecycle_state", { enum: ["active", "deprecated", "archived"] })
+    .notNull().default("active"),                            // ADR 0008; kein Auto-Delete
+  lifecycleReason: text("lifecycle_reason"),                 // Grund bei deprecated/archived
   supersededByReportId: integer("superseded_by_report_id"),
   sourceUrl: text("source_url"),                            // nur curated
   createdAt: timestamp("created_at", { withTimezone: true }).notNull().defaultNow(),
@@ -39,21 +40,25 @@ export const experienceReports = pgTable("experience_reports", {
 - **Verifikation:** Unit-Test env-Default.
 
 ### ☐ T9.3 — Datenzugriff (`src/lib/experienceReports.ts`)
-- `listReports(opts: { authorType?; includeOutdated?; limit? })` → chronologisch neueste
-  zuerst; `includeOutdated` default false (veraltete standardmäßig ausblenden, nicht löschen).
+- `listReports(opts: { authorType?; states?; limit? })` → chronologisch neueste zuerst;
+  Default zeigt nur `lifecycle_state = active` (deprecated/archived standardmäßig raus,
+  aber abrufbar über `states`).
 - `getReport(id)`, `createReport(input)`, `updateReport(id, input)`,
-  `markOutdated(id, { reason?, supersededByReportId? })`, `deleteReport(id)` (harte, manuelle Löschung).
+  `setLifecycleState(id, state, { reason?, supersededByReportId? })` (active↔deprecated↔archived).
+  Hartes `deleteReport(id)` existiert als seltener manueller Notausgang, ist aber **nicht**
+  der Normalweg (ADR 0008).
 - **Verifikation:** Integrationstests gegen lokale DB (eigene Seed-Daten): Anlegen, Filter
-  nach `author_type`, `markOutdated` blendet aus `listReports` aus, Update setzt `updated_at`.
+  nach `author_type`, `setLifecycleState('deprecated')` blendet aus der Default-Liste aus,
+  bleibt aber über `states` abrufbar; Update setzt `updated_at`.
 
 ### ☐ T9.4 — Seite `/experience` (Liste)
 - Neue Route + Nav-Eintrag „Erfahrung" (nach „Übersicht").
 - Kompakte, chronologische Liste (kein Snap): Titel, `author_label`, relatives Datum
   (`formatRelativeTime` aus Epic 3 wiederverwenden), gerendertes Markdown (nur wenn eine
   Markdown-Lib ohne neue Dependency nutzbar ist — sonst als Vorformatierung; siehe T9.7),
-  `⭐`-Marker wenn `important`, `⚠️ veraltet`-Badge (+ Grund/Link) wenn `outdated`.
+  `⭐`-Marker wenn `important`, `⚠️ veraltet`-Badge (+ Grund/Link) wenn `deprecated`.
 - Filterleiste (URL-searchParams, Muster von `OverviewFilterBar`): `author_type`
-  (alle/own/curated), Checkbox „veraltete zeigen".
+  (alle/own/curated), Checkbox „veraltete (deprecated) zeigen", Checkbox „archivierte zeigen".
 - `export const dynamic = "force-dynamic"` (DB pro Request; im Build prüfen: `ƒ`).
 - **Verifikation:** curl gegen `npm run start` nach Seed; Filterkombinationen geprüft.
 
@@ -64,11 +69,13 @@ export const experienceReports = pgTable("experience_reports", {
 - **Verifikation:** Anlegen + Bearbeiten end-to-end (curl POST oder Playwright falls
   vorhanden); neuer Eintrag erscheint in der Liste.
 
-### ☐ T9.6 — „Als veraltet markieren"-Aktion
-- Auf der Detail-/Listenansicht: Aktion `markOutdated` mit optionalem Grund und optionalem
-  Verweis auf einen ablösenden Bericht (`superseded_by_report_id`). Getrennt von harter Löschung.
-- **Verifikation:** Markierter Bericht verschwindet aus Default-Liste, erscheint mit
-  „veraltete zeigen"; Grund/Link werden angezeigt.
+### ☐ T9.6 — Lifecycle-Aktionen (deprecate / archive / reaktivieren)
+- Auf der Detail-/Listenansicht: `setLifecycleState` nach `deprecated` (mit optionalem
+  Grund + optionalem `superseded_by_report_id`) bzw. `archived`, und zurück nach `active`.
+  Getrennt vom harten Löschen (seltener Notausgang, ADR 0008).
+- **Verifikation:** deprecated → verschwindet aus Default-Liste, erscheint mit „veraltete
+  zeigen" (Grund/Link sichtbar); archived → nur mit „archivierte zeigen"; Reaktivieren
+  bringt zurück in die Default-Liste.
 
 ### ☐ T9.7 — Markdown-Rendering (ohne neue Dependency, wenn möglich)
 - Prüfen, ob eine bereits vorhandene Lib Markdown rendert. Falls **keine** ohne neue
