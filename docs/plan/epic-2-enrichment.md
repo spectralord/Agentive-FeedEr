@@ -10,7 +10,7 @@ ADR 0005 (Sourced-only), Glossar: Enrichment, Reel, Attribut, Developer-Profil.
 
 ## Tasks
 
-### ☐ T2.1 — Schema: `reels`
+### ☑ T2.1 — Schema: `reels`
 ```ts
 export const reels = pgTable("reels", {
   id: serial("id").primaryKey(),
@@ -33,7 +33,7 @@ export const reels = pgTable("reels", {
 - Invariante: `action == null ⇒ effortTag == null`.
 - Migration generieren + ausführen. **Verifikation:** Migration grün.
 
-### ☐ T2.2 — Developer-Profil (`/profile.md`)
+### ☑ T2.2 — Developer-Profil (`/profile.md`)
 Template anlegen (Benutzer füllt/verfeinert später — **Benutzer-Aktion** vermerken):
 
 ```md
@@ -52,7 +52,7 @@ Marketing-Hype ohne Substanz; Clickbait; „Top 10 Tools"-Listicles.
 - Loader `src/lib/enrichment/profile.ts`: liest Datei, wirft klaren Fehler wenn fehlt.
 - **Verifikation:** Unit-Test Loader.
 
-### ☐ T2.3 — Output-Vertrag: zod + JSON-Schema (`src/lib/enrichment/schema.ts`)
+### ☑ T2.3 — Output-Vertrag: zod + JSON-Schema (`src/lib/enrichment/schema.ts`)
 - zod-Schema `ReelOutput` exakt spiegelnd zu T2.1 (Felder: `summary`, `category`,
   `maturity`, `experimental`, `relevance_score`, `quality_score`, `example|null`,
   `action|null`, `effort_tag|null`, `skill|null`).
@@ -61,7 +61,7 @@ Marketing-Hype ohne Substanz; Clickbait; „Top 10 Tools"-Listicles.
 - **Verifikation:** Unit-Tests: valides Objekt passt; Verstöße (Score 101,
   effort ohne action) schlagen fehl.
 
-### ☐ T2.4 — Prompt-Builder (`src/lib/enrichment/prompt.ts`)
+### ☑ T2.4 — Prompt-Builder (`src/lib/enrichment/prompt.ts`)
 System-Prompt (englisch, sinngemäß — exakte Formulierung darf das ausführende Modell
 feinschleifen, die **Regeln sind bindend**):
 - Rolle: „You turn one raw AI-news item into one structured 'reel' for a developer."
@@ -83,7 +83,7 @@ feinschleifen, die **Regeln sind bindend**):
 - User-Content: Profil-Text + Quelle (name), Titel, URL, publishedAt, rawContent.
 - **Verifikation:** Snapshot-Test des gebauten Prompts.
 
-### ☐ T2.5 — Enrichment-Runner (`src/lib/enrichment/run.ts`)
+### ☑ T2.5 — Enrichment-Runner (`src/lib/enrichment/run.ts`)
 `runEnrichment()`:
 1. Select `raw_items` mit `enriched_at IS NULL AND enrich_error IS NULL`,
    Reihenfolge `published_at ASC`, Limit `env.MAX_ENRICH_PER_RUN`.
@@ -96,7 +96,7 @@ feinschleifen, die **Regeln sind bindend**):
   Antwort): valide ⇒ Reel existiert; invalide 2× ⇒ `enrich_error` gesetzt, kein Reel;
   zweiter Lauf verarbeitet 0 Items (Idempotenz).
 
-### ☐ T2.6 — In den Daily-Job einhängen
+### ☑ T2.6 — In den Daily-Job einhängen
 - `src/jobs/daily.ts`: nach Ingestion `runEnrichment()` aufrufen; Gesamtsummary loggen.
 - **Verifikation (echt, kleiner API-Spend):** `MAX_ENRICH_PER_RUN=5 npm run job:daily`
   mit echtem API-Key; 5 Reels stichprobenartig prüfen: deutsche Summary, plausible
@@ -111,4 +111,14 @@ feinschleifen, die **Regeln sind bindend**):
 - Sourced-only-Stichprobe dokumentiert. Build + Tests grün.
 
 ## Abweichungen/Fragen
-_(vom ausführenden Modell zu pflegen)_
+- **Ergänzung zu T2.5 (bewusste Verbesserung):** API-/Infrastrukturfehler
+  (`Anthropic.APIError`: Auth, Rate-Limit, 5xx) setzen **kein** `enrich_error`,
+  sondern brechen den Lauf ab — die Items bleiben unangetastet und werden beim
+  nächsten Lauf erneut versucht. Nur inhaltliche Fehler (Schema-Validierung nach
+  Retry) markieren ein Item dauerhaft. Verhindert, dass z. B. ein fehlender
+  API-Key die gesamte Queue vergiftet. Durch Integrationstest abgedeckt.
+- **T2.6-Echtlauf offen (Benutzer-Aktion):** In der Build-Umgebung gibt es keinen
+  echten `ANTHROPIC_API_KEY`. Der Stichproben-Lauf
+  (`MAX_ENRICH_PER_RUN=5 npm run job:daily`) muss beim ersten Lauf mit echtem Key
+  (lokal/Railway) gemacht und das Ergebnis hier notiert werden. Der Code-Pfad ist
+  vollständig durch Integrationstests mit gemocktem Claude-Call verifiziert.

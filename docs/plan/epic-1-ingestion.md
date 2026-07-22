@@ -10,7 +10,7 @@ Source, Ingestion, Raw Item.
 
 ## Tasks
 
-### ☐ T1.1 — Schema: `sources` + `raw_items`
+### ☑ T1.1 — Schema: `sources` + `raw_items`
 In `src/db/schema.ts`:
 
 ```ts
@@ -40,7 +40,7 @@ export const rawItems = pgTable("raw_items", {
 - Migration generieren + ausführen.
 - **Verifikation:** Migration läuft; Unique-Index existiert.
 
-### ☐ T1.2 — Source-Registry (`src/lib/sources.ts`)
+### ☑ T1.2 — Source-Registry (`src/lib/sources.ts`)
 - Deklaratives Array `SOURCE_REGISTRY: Array<{ name; type; url; config? }>` — **Code ist
   die Quelle der Wahrheit**; ein Seed-Schritt upsertet die Registry beim Jobstart in die
   `sources`-Tabelle (match auf `name`; DB hält nur Zustand wie `lastPolledAt`/`enabled`).
@@ -63,7 +63,7 @@ export const rawItems = pgTable("raw_items", {
 
 - **Verifikation:** Seed-Funktion zweimal ausführen ⇒ keine Duplikate in `sources`.
 
-### ☐ T1.3 — Fetcher (ein Modul pro `type`, gemeinsames Interface)
+### ☑ T1.3 — Fetcher (ein Modul pro `type`, gemeinsames Interface)
 `src/lib/ingestion/fetchers/*.ts`, alle mit Signatur
 `fetchItems(source): Promise<NormalizedItem[]>` und
 `NormalizedItem = { externalId; title; url; content; publishedAt }`:
@@ -76,7 +76,7 @@ export const rawItems = pgTable("raw_items", {
 - **Verifikation:** Unit-Tests mit fixture-Daten (gespeicherte Beispiel-XML/JSON-Antworten,
   keine Netz-Calls im Test).
 
-### ☐ T1.4 — Ingestion-Runner (`src/lib/ingestion/run.ts`)
+### ☑ T1.4 — Ingestion-Runner (`src/lib/ingestion/run.ts`)
 Ablauf `runIngestion()`:
 1. Registry-Seed (T1.2).
 2. Für jede `enabled`-Source: Fetcher aufrufen → Items einfügen mit
@@ -87,14 +87,14 @@ Ablauf `runIngestion()`:
 - **Verifikation:** Integrationstest gegen lokale DB mit gemockten Fetchern:
   zweimaliger Lauf ⇒ zweiter Lauf `inserted = 0` (Idempotenz).
 
-### ☐ T1.5 — Job-Einstieg (`src/jobs/daily.ts`)
+### ☑ T1.5 — Job-Einstieg (`src/jobs/daily.ts`)
 - Ruft `runIngestion()` auf, loggt Zusammenfassung, `process.exit(0)`
   (Exit-Code 1 nur, wenn **alle** Quellen fehlschlagen).
 - Platzhalter-Aufruf `runEnrichment()` (kommt in Epic 2) als auskommentierter TODO.
 - **Verifikation:** `npm run job:daily` lokal gegen echte Feeds: mind. 3 Quellen liefern
   Items; erneuter Lauf fügt 0 Duplikate ein.
 
-### ☐ T1.6 — Quellen-Verifikation (teilweise Benutzer-Aktion)
+### ☑ T1.6 — Quellen-Verifikation (teilweise Benutzer-Aktion)
 - Jede ⚠-URL real prüfen (Abruf + Parse). Ergebnis in der Tabelle in T1.2 festhalten
   (URL korrigiert / `enabled:false` + Grund).
 - **Benutzer-Aktion:** Finale Quellenliste kurz bestätigen lassen.
@@ -107,4 +107,16 @@ Ablauf `runIngestion()`:
 - Build + Tests grün.
 
 ## Abweichungen/Fragen
-_(vom ausführenden Modell zu pflegen)_
+- **T1.5/T1.6 — Live-Verifikation nur teilweise möglich:** Die Build-Umgebung
+  (Sandbox) erlaubt ausgehend nur GitHub-Hosts; alle anderen Feeds antworten hier
+  mit Proxy-403. Erfolgreich live verifiziert: `claude-code-releases` und
+  `anthropic-sdk-releases` (je 10 Items, 2. Lauf 0 Inserts ⇒ Idempotenz real
+  bestätigt). Die übrigen URLs sind **nicht** als defekt markiert — sie müssen beim
+  ersten Lauf in einer Umgebung ohne Egress-Sperre (lokal/Railway) gegengeprüft
+  werden. ⇒ **Benutzer-Aktion:** ersten Railway-/Lokal-Lauf im Log prüfen.
+- `anthropic-news` (⚠ ohne bestätigte Feed-URL) ist noch nicht in der Registry —
+  nachtragen, sobald eine verifizierbare URL vorliegt.
+- Atom-Feeds: `externalId` nutzt `item.id` (Atom) bzw. `guid` (RSS), Fallback Link.
+- DoD-Kriterium „≥ 6 funktionierende Quellen" ist aus der Sandbox heraus nicht
+  abschließend prüfbar (nur 2 GitHub-Quellen erreichbar); Code-Pfad für alle
+  Typen ist durch Fixture- und Integrationstests abgedeckt.

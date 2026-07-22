@@ -99,16 +99,31 @@ Ein Epic ist fertig, wenn:
 
 | Epic | Datei | Tier | Status |
 |---|---|---|---|
-| 0 — Projekt-Skelett | `epic-0-skeleton.md` | MVP | ☐ offen |
-| 1 — Ingestion | `epic-1-ingestion.md` | MVP | ☐ offen |
-| 2 — Enrichment | `epic-2-enrichment.md` | MVP | ☐ offen |
-| 3 — Reel-Feed-UI | `epic-3-feed-ui.md` | MVP | ☐ offen |
-| 4 — Today's Top-N | `epic-4-top-n.md` | MVP | ☐ offen |
-| 5 — Übersicht/SOTA | `epic-5-overview.md` | MVP-nah | ☐ offen |
-| 6 — Saves/Feedback/Resurfacing | `epic-6-interactions.md` | Fast-Follow | ☐ offen |
-| 7 — Skill-Map | `epic-7-skill-map.md` | Vision | ☐ offen |
+| 0 — Projekt-Skelett | `epic-0-skeleton.md` | MVP | ✅ fertig (Railway-Deploy = Benutzer-Aktion offen) |
+| 1 — Ingestion | `epic-1-ingestion.md` | MVP | ✅ fertig (Feed-URLs außerhalb GitHubs erst im ersten Railway-/Lokal-Lauf voll verifizierbar — siehe Abweichungen) |
+| 2 — Enrichment | `epic-2-enrichment.md` | MVP | ✅ fertig (Echtlauf-Stichprobe mit API-Key = Benutzer-Aktion offen) |
+| 3 — Reel-Feed-UI | `epic-3-feed-ui.md` | MVP | ✅ fertig (Verifikation via `curl` gegen `npm run start` statt manuell in Safari/iPad — siehe Abweichungen) |
+| 4 — Today's Top-N | `epic-4-top-n.md` | MVP | ✅ fertig (Verifikation via `curl` gegen `npm run start` statt manuell in Safari/iPad — siehe Abweichungen) |
+| 5 — Übersicht/SOTA | `epic-5-overview.md` | MVP-nah | ✅ fertig (Verifikation via `curl` gegen `npm run start` statt manuell in Safari/iPad — siehe Abweichungen) |
+| 6 — Saves/Feedback/Resurfacing | `epic-6-interactions.md` | Fast-Follow | ☐ offen (siehe Revidierte Annahmen unten) |
+| 7 — Skill-Map | `epic-7-skill-map.md` | Vision | ☐ offen (nach Epic 12; siehe Revidierte Annahmen) |
 | 8 — Agentisches Vertiefen | `epic-8-deep-dive.md` | Vision | ☐ offen |
-| 9 — Vision-Backlog (optional) | `vision-backlog.md` | Vision | ☐ offen |
+| 9 — Erfahrungs-Sektion | `epic-9-experience-reports.md` | Fast-Follow | ☐ offen |
+| 10 — Content Verifier | `epic-10-verifier.md` | Vision (erst grillen) | ☐ offen |
+| 11 — SOTA-Frische-Re-Check | `epic-11-sota-recheck.md` | Vision (erst grillen) | ☐ offen |
+| 12 — SkillTagger | `epic-12-skill-tagger.md` | Fast-Follow (vor Epic 7) | ☐ offen |
+| — Vision-Backlog (optional) | `vision-backlog.md` | Vision | ☐ offen |
 
-**MVP = Epic 0–4.** Epic 5 direkt danach (fast geschenkt). 6 nach erster
-Nutzungserfahrung. 7–9 nur nach explizitem Benutzer-Go.
+**MVP = Epic 0–5 (fertig).** Danach Fast-Follow: 6 (Saves), 9 (Erfahrung), 12 (SkillTagger,
+vor 7). Vision: 7 (Skill-Map), 8 (Vertiefen), 10 (Verifier), 11 (SOTA-Re-Check). 7–12 nur
+nach explizitem Benutzer-Go; 10 und 11 zusätzlich erst nach eigenem Grill.
+
+### Revidierte Annahmen (Grill-Session 2026-07-22)
+Siehe `docs/specs/2026-07-22-experience-reports-design.md` → „Revidierte Annahmen". Kurz:
+- **Actionable/To-Try** ist die abhakbare Fortschritts-Einheit (abgeleitet aus Reels *und*
+  Erfahrungsberichten) — nicht Reels/Reports selbst. Betrifft Epic 6 („tried") und Epic 7.
+- **Skill-Nodes** haben zusätzlich einen Selbst-Status („kenne ich"/„schon verprobt");
+  Selbst-Deklaration und Actionable-Belege existieren nebeneinander. Betrifft Epic 7.
+- **Skill-Zuordnung** kommt vom **SkillTagger (Epic 12)**, nicht aus dem Enrichment-Pass
+  und nicht vom Nutzer. Epic 7 T7.2 (Node-Aggregation) wird durch Epic 12 ersetzt/erweitert
+  — deshalb Epic 12 **vor** Epic 7 bauen.
