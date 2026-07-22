@@ -14,6 +14,23 @@ describe("parseEnv", () => {
     expect(env.QUALITY_THRESHOLD).toBe(60);
     expect(env.TOP_N).toBe(3);
     expect(env.NEW_DAYS).toBe(7);
+    expect(env.OWNER_NAME).toBe("Ich");
+  });
+
+  it("allows overriding OWNER_NAME (T9.2)", () => {
+    const env = parseEnv({ ...required, OWNER_NAME: "Max" });
+    expect(env.OWNER_NAME).toBe("Max");
+  });
+
+  it("treats an empty ANTHROPIC_API_KEY as unset (T13/robustness)", () => {
+    const env = parseEnv({ DATABASE_URL: "postgres://localhost/test", ANTHROPIC_API_KEY: "" });
+    expect(env.ANTHROPIC_API_KEY).toBeUndefined();
+  });
+
+  it("ADMIN_TOKEN is undefined by default and empty is treated as unset (T13.1)", () => {
+    expect(parseEnv(required).ADMIN_TOKEN).toBeUndefined();
+    expect(parseEnv({ ...required, ADMIN_TOKEN: "" }).ADMIN_TOKEN).toBeUndefined();
+    expect(parseEnv({ ...required, ADMIN_TOKEN: "s3cret" }).ADMIN_TOKEN).toBe("s3cret");
   });
 
   it("coerces numeric strings", () => {

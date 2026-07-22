@@ -76,13 +76,15 @@
 | Variable | Pflicht | Default | Zweck |
 |---|---|---|---|
 | `DATABASE_URL` | ja | — | Postgres-Verbindung |
-| `ANTHROPIC_API_KEY` | ja | — | Claude API |
+| `ANTHROPIC_API_KEY` | nur Job/Enrichment | — | Claude API. Web-Prozess bootet auch ohne (leer = ungesetzt); Enrichment/Cron brauchen ihn. |
 | `ANTHROPIC_MODEL` | nein | `claude-haiku-4-5-20251001` | Enrichment-Modell |
 | `DEEPEN_MODEL` | nein | `claude-sonnet-5` | Vertiefen (Epic 8) |
 | `MAX_ENRICH_PER_RUN` | nein | `100` | Kosten-Guard pro Lauf |
 | `QUALITY_THRESHOLD` | nein | `60` | Feed blendet darunter aus |
 | `TOP_N` | nein | `3` | Today's Top-N |
 | `NEW_DAYS` | nein | `7` | „Neu"-Fenster in Tagen |
+| `OWNER_NAME` | nein | `Ich` | Autor-Anzeigename eigener Erfahrungsberichte (Epic 9) |
+| `ADMIN_TOKEN` | nein | — | Aktiviert die Admin-Console (Epic 13). Ungesetzt ⇒ Admin deaktiviert. |
 
 `.env.example` führt alle Variablen; `src/lib/env.ts` validiert sie mit zod
 (Defaults dort zentral, nirgendwo sonst hartkodiert).
@@ -108,10 +110,11 @@ Ein Epic ist fertig, wenn:
 | 6 — Saves/Feedback/Resurfacing | `epic-6-interactions.md` | Fast-Follow | ☐ offen (siehe Revidierte Annahmen unten) |
 | 7 — Skill-Map | `epic-7-skill-map.md` | Vision | ☐ offen (nach Epic 12; siehe Revidierte Annahmen) |
 | 8 — Agentisches Vertiefen | `epic-8-deep-dive.md` | Vision | ☐ offen |
-| 9 — Erfahrungs-Sektion | `epic-9-experience-reports.md` | Fast-Follow | ☐ offen |
+| 9 — Erfahrungs-Sektion | `epic-9-experience-reports.md` | Fast-Follow | ✅ fertig (kein echtes Markdown-Rendering ohne neue Dependency — siehe Abweichungen in `epic-9-experience-reports.md`) |
 | 10 — Content Verifier | `epic-10-verifier.md` | Vision (erst grillen) | ☐ offen |
 | 11 — SOTA-Frische-Re-Check | `epic-11-sota-recheck.md` | Vision (erst grillen) | ☐ offen |
 | 12 — SkillTagger | `epic-12-skill-tagger.md` | Fast-Follow (vor Epic 7) | ☐ offen |
+| 13 — Admin-Console | `epic-13-admin-console.md` | Fast-Follow | ✅ T13.1–T13.6 fertig (Cron-Button + Status; `ADMIN_TOKEN` in Railway = Benutzer-Aktion; T13.7 offen) |
 | — Vision-Backlog (optional) | `vision-backlog.md` | Vision | ☐ offen |
 
 **MVP = Epic 0–5 (fertig).** Danach Fast-Follow: 6 (Saves), 9 (Erfahrung), 12 (SkillTagger,

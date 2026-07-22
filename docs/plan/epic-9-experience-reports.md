@@ -12,7 +12,7 @@ author_type, outdated/superseded.
 
 ## Tasks
 
-### ☐ T9.1 — Schema: `experience_reports`
+### ☑ T9.1 — Schema: `experience_reports`
 ```ts
 export const experienceReports = pgTable("experience_reports", {
   id: serial("id").primaryKey(),
@@ -34,12 +34,12 @@ export const experienceReports = pgTable("experience_reports", {
 ```
 - Migration generieren + ausführen. **Verifikation:** Migration grün.
 
-### ☐ T9.2 — Konfiguration `author_label` für eigene Berichte
+### ☑ T9.2 — Konfiguration `author_label` für eigene Berichte
 - Der Anzeigename für `own`-Berichte kommt aus einer Konfiguration (Env `OWNER_NAME`,
   Default z. B. „Ich"). In `src/lib/env.ts` ergänzen (optional, mit Default).
 - **Verifikation:** Unit-Test env-Default.
 
-### ☐ T9.3 — Datenzugriff (`src/lib/experienceReports.ts`)
+### ☑ T9.3 — Datenzugriff (`src/lib/experienceReports.ts`)
 - `listReports(opts: { authorType?; states?; limit? })` → chronologisch neueste zuerst;
   Default zeigt nur `lifecycle_state = active` (deprecated/archived standardmäßig raus,
   aber abrufbar über `states`).
@@ -51,7 +51,7 @@ export const experienceReports = pgTable("experience_reports", {
   nach `author_type`, `setLifecycleState('deprecated')` blendet aus der Default-Liste aus,
   bleibt aber über `states` abrufbar; Update setzt `updated_at`.
 
-### ☐ T9.4 — Seite `/experience` (Liste)
+### ☑ T9.4 — Seite `/experience` (Liste)
 - Neue Route + Nav-Eintrag „Erfahrung" (nach „Übersicht").
 - Kompakte, chronologische Liste (kein Snap): Titel, `author_label`, relatives Datum
   (`formatRelativeTime` aus Epic 3 wiederverwenden), gerendertes Markdown (nur wenn eine
@@ -62,14 +62,14 @@ export const experienceReports = pgTable("experience_reports", {
 - `export const dynamic = "force-dynamic"` (DB pro Request; im Build prüfen: `ƒ`).
 - **Verifikation:** curl gegen `npm run start` nach Seed; Filterkombinationen geprüft.
 
-### ☐ T9.5 — Bericht erfassen/bearbeiten (`/experience/new`, `/experience/[id]/edit`)
+### ☑ T9.5 — Bericht erfassen/bearbeiten (`/experience/new`, `/experience/[id]/edit`)
 - Einfaches Formular (Server Action oder Route-Handler): Titel, Markdown-Body, Checkbox
   „⭐ wichtig". `author_type` = `own`, `author_label` aus Konfiguration (T9.2).
 - Nach Speichern Redirect auf die Liste; optimistisch, kein Skill-Tagging im MVP.
 - **Verifikation:** Anlegen + Bearbeiten end-to-end (curl POST oder Playwright falls
   vorhanden); neuer Eintrag erscheint in der Liste.
 
-### ☐ T9.6 — Lifecycle-Aktionen (deprecate / archive / reaktivieren)
+### ☑ T9.6 — Lifecycle-Aktionen (deprecate / archive / reaktivieren)
 - Auf der Detail-/Listenansicht: `setLifecycleState` nach `deprecated` (mit optionalem
   Grund + optionalem `superseded_by_report_id`) bzw. `archived`, und zurück nach `active`.
   Getrennt vom harten Löschen (seltener Notausgang, ADR 0008).
@@ -77,7 +77,7 @@ export const experienceReports = pgTable("experience_reports", {
   zeigen" (Grund/Link sichtbar); archived → nur mit „archivierte zeigen"; Reaktivieren
   bringt zurück in die Default-Liste.
 
-### ☐ T9.7 — Markdown-Rendering (ohne neue Dependency, wenn möglich)
+### ☑ T9.7 — Markdown-Rendering (ohne neue Dependency, wenn möglich)
 - Prüfen, ob eine bereits vorhandene Lib Markdown rendert. Falls **keine** ohne neue
   Abhängigkeit verfügbar: MVP zeigt den Body als sicher escapte, `whitespace-pre-wrap`
   Vorformatierung und dokumentiert das als Abweichung (echtes Markdown = Folge-Task).
@@ -94,3 +94,32 @@ export const experienceReports = pgTable("experience_reports", {
 
 ## Abweichungen/Fragen
 _(vom ausführenden Modell zu pflegen)_
+
+- **T9.1 — Umgebung:** Die lokale Postgres-Instanz war zu Beginn dieser Session gestoppt
+  und die Datenbank `agentive_feeder` existierte nicht (leerer Container-Neustart). Zusätzlich
+  erlaubte `pg_hba.conf` für TCP/`localhost`-Verbindungen nur `scram-sha-256`, während
+  `.env` einen passwortlosen `DATABASE_URL` (`postgres://postgres@localhost:5432/...`)
+  vorgibt. Behoben durch: `service postgresql start`, `createdb agentive_feeder` sowie
+  Ändern der beiden `host ... 127.0.0.1/32` / `::1/128`-Zeilen in `pg_hba.conf` von
+  `scram-sha-256` auf `trust` + `service postgresql reload`. Reine Infra-Anpassung, keine
+  Projektdatei geändert; danach lief `npm run db:migrate` grün.
+
+- **T9.5 — Route-Handler statt Server Action:** Formulare in `/experience/new` und
+  `/experience/[id]/edit` sind reine HTML-`<form method="post">`, die auf eigene
+  Route-Handler (`/experience/create`, `/experience/[id]/update`) posten, statt Next.js
+  Server Actions zu nutzen. Grund: Server Actions kodieren die Aktion über einen
+  build-generierten `Next-Action`-Header/-ID, der sich nicht stabil per `curl` ansprechen
+  lässt (Umgebungsvorgabe: curl-Verifikation statt manuell in Safari). Route-Handler sind
+  einfache POST-Endpunkte mit 303-Redirect zurück auf `/experience` — end-to-end per curl
+  verifizierbar und funktional äquivalent (T9.5 erlaubt ausdrücklich beide Varianten).
+
+- **T9.7 — Kein echtes Markdown-Rendering:** `package.json` enthält keine Markdown-Lib
+  (`dependencies`: `@anthropic-ai/sdk`, `drizzle-orm`, `next`, `pg`, `react`, `react-dom`,
+  `rss-parser`, `zod`). Wie in der Task-Vorgabe für diesen Fall vorgesehen: `body` wird als
+  sicher escapte, `whitespace-pre-wrap` vorformatierte Klartext-Ausgabe gerendert
+  (`<p className="whitespace-pre-wrap">{report.body}</p>` in `ExperienceList.tsx`) — React
+  escaped Text-Children automatisch, kein `dangerouslySetInnerHTML`. Echtes
+  Markdown-Rendering (z. B. `marked`/`react-markdown` + Sanitizer) ist ein Folge-Task.
+  XSS-Sanity per Unit-Test (`ExperienceList.test.tsx`) **und** per curl gegen
+  `npm run start -p 3200` verifiziert: ein `<script>`-Tag im Body erscheint im
+  HTML-Response nur als `&lt;script&gt;...&lt;/script&gt;`, nie als ausführbares Tag.

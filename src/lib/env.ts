@@ -3,14 +3,28 @@ import { z } from "zod";
 const envSchema = z.object({
   DATABASE_URL: z.string().min(1, "DATABASE_URL is required"),
   // Optional so the web process boots without it; only Claude calls (enrichment/
-  // daily job) require it — enforced at use in src/lib/claude.ts.
-  ANTHROPIC_API_KEY: z.string().min(1).optional(),
+  // daily job) require it — enforced at use in src/lib/claude.ts. An empty
+  // string (e.g. a misconfigured Railway shared-var reference) is treated as
+  // unset so the process boots instead of crashing at env validation.
+  ANTHROPIC_API_KEY: z.preprocess(
+    (v) => (v === "" ? undefined : v),
+    z.string().min(1).optional(),
+  ),
   ANTHROPIC_MODEL: z.string().default("claude-haiku-4-5-20251001"),
   DEEPEN_MODEL: z.string().default("claude-sonnet-5"),
   MAX_ENRICH_PER_RUN: z.coerce.number().int().positive().default(100),
   QUALITY_THRESHOLD: z.coerce.number().int().min(0).max(100).default(60),
   TOP_N: z.coerce.number().int().positive().default(3),
   NEW_DAYS: z.coerce.number().int().positive().default(7),
+  // Epic 9 (T9.2): display name for `own` experience reports — stands in for
+  // real multi-user auth, which doesn't exist in the MVP (ADR 0007).
+  OWNER_NAME: z.string().min(1).default("Ich"),
+  // Epic 13 (T13.1): shared secret gating the admin console. Unset (or empty)
+  // ⇒ the admin area is disabled (safe default on a public URL). ADR 0010.
+  ADMIN_TOKEN: z.preprocess(
+    (v) => (v === "" ? undefined : v),
+    z.string().min(1).optional(),
+  ),
 });
 
 export type Env = z.infer<typeof envSchema>;
