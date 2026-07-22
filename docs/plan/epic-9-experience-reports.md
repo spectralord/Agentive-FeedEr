@@ -34,7 +34,7 @@ export const experienceReports = pgTable("experience_reports", {
 ```
 - Migration generieren + ausführen. **Verifikation:** Migration grün.
 
-### ☐ T9.2 — Konfiguration `author_label` für eigene Berichte
+### ☑ T9.2 — Konfiguration `author_label` für eigene Berichte
 - Der Anzeigename für `own`-Berichte kommt aus einer Konfiguration (Env `OWNER_NAME`,
   Default z. B. „Ich"). In `src/lib/env.ts` ergänzen (optional, mit Default).
 - **Verifikation:** Unit-Test env-Default.

@@ -14,6 +14,12 @@ describe("parseEnv", () => {
     expect(env.QUALITY_THRESHOLD).toBe(60);
     expect(env.TOP_N).toBe(3);
     expect(env.NEW_DAYS).toBe(7);
+    expect(env.OWNER_NAME).toBe("Ich");
+  });
+
+  it("allows overriding OWNER_NAME (T9.2)", () => {
+    const env = parseEnv({ ...required, OWNER_NAME: "Max" });
+    expect(env.OWNER_NAME).toBe("Max");
   });
 
   it("coerces numeric strings", () => {

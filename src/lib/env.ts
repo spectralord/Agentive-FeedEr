@@ -11,6 +11,9 @@ const envSchema = z.object({
   QUALITY_THRESHOLD: z.coerce.number().int().min(0).max(100).default(60),
   TOP_N: z.coerce.number().int().positive().default(3),
   NEW_DAYS: z.coerce.number().int().positive().default(7),
+  // Epic 9 (T9.2): display name for `own` experience reports — stands in for
+  // real multi-user auth, which doesn't exist in the MVP (ADR 0007).
+  OWNER_NAME: z.string().min(1).default("Ich"),
 });
 
 export type Env = z.infer<typeof envSchema>;
