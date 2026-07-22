@@ -12,7 +12,7 @@ author_type, outdated/superseded.
 
 ## Tasks
 
-### ☐ T9.1 — Schema: `experience_reports`
+### ☑ T9.1 — Schema: `experience_reports`
 ```ts
 export const experienceReports = pgTable("experience_reports", {
   id: serial("id").primaryKey(),
@@ -94,3 +94,12 @@ export const experienceReports = pgTable("experience_reports", {
 
 ## Abweichungen/Fragen
 _(vom ausführenden Modell zu pflegen)_
+
+- **T9.1 — Umgebung:** Die lokale Postgres-Instanz war zu Beginn dieser Session gestoppt
+  und die Datenbank `agentive_feeder` existierte nicht (leerer Container-Neustart). Zusätzlich
+  erlaubte `pg_hba.conf` für TCP/`localhost`-Verbindungen nur `scram-sha-256`, während
+  `.env` einen passwortlosen `DATABASE_URL` (`postgres://postgres@localhost:5432/...`)
+  vorgibt. Behoben durch: `service postgresql start`, `createdb agentive_feeder` sowie
+  Ändern der beiden `host ... 127.0.0.1/32` / `::1/128`-Zeilen in `pg_hba.conf` von
+  `scram-sha-256` auf `trust` + `service postgresql reload`. Reine Infra-Anpassung, keine
+  Projektdatei geändert; danach lief `npm run db:migrate` grün.
