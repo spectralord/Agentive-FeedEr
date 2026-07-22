@@ -69,7 +69,7 @@ export const experienceReports = pgTable("experience_reports", {
 - **Verifikation:** Anlegen + Bearbeiten end-to-end (curl POST oder Playwright falls
   vorhanden); neuer Eintrag erscheint in der Liste.
 
-### ☐ T9.6 — Lifecycle-Aktionen (deprecate / archive / reaktivieren)
+### ☑ T9.6 — Lifecycle-Aktionen (deprecate / archive / reaktivieren)
 - Auf der Detail-/Listenansicht: `setLifecycleState` nach `deprecated` (mit optionalem
   Grund + optionalem `superseded_by_report_id`) bzw. `archived`, und zurück nach `active`.
   Getrennt vom harten Löschen (seltener Notausgang, ADR 0008).

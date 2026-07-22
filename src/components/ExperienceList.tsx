@@ -74,8 +74,83 @@ export function ExperienceList({ reports }: { reports: ExperienceReport[] }) {
           )}
 
           <p className="whitespace-pre-wrap text-sm text-zinc-300">{report.body}</p>
+
+          <LifecycleActions report={report} />
         </li>
       ))}
     </ol>
+  );
+}
+
+const actionButtonClass =
+  "rounded-full bg-zinc-800 px-2.5 py-1 text-xs text-zinc-300 transition-colors hover:bg-zinc-700";
+const actionInputClass =
+  "w-28 rounded-full bg-zinc-800 px-2 py-1 text-xs text-zinc-200 placeholder:text-zinc-500 outline-none focus:ring-1 focus:ring-zinc-500";
+
+/**
+ * Lifecycle transition forms (T9.6): plain `<form method="post">`s posting to
+ * `/experience/[id]/lifecycle`, one per action so each is a single click (or
+ * a single curl POST) — no client JS needed. Deliberately separate from the
+ * hard-delete escape hatch (ADR 0008), which has no UI here.
+ */
+function LifecycleActions({ report }: { report: ExperienceReport }) {
+  if (report.lifecycleState === "active") {
+    return (
+      <div className="flex flex-wrap items-center gap-2 pt-1">
+        <form
+          action={`/experience/${report.id}/lifecycle`}
+          method="post"
+          className="flex flex-wrap items-center gap-1"
+        >
+          <input type="hidden" name="state" value="deprecated" />
+          <input type="text" name="reason" placeholder="Grund (optional)" className={actionInputClass} />
+          <input
+            type="number"
+            name="supersededByReportId"
+            placeholder="ersetzt durch #"
+            className={actionInputClass}
+          />
+          <button type="submit" className={actionButtonClass}>
+            Als veraltet markieren
+          </button>
+        </form>
+        <form action={`/experience/${report.id}/lifecycle`} method="post">
+          <input type="hidden" name="state" value="archived" />
+          <button type="submit" className={actionButtonClass}>
+            Archivieren
+          </button>
+        </form>
+      </div>
+    );
+  }
+
+  if (report.lifecycleState === "deprecated") {
+    return (
+      <div className="flex flex-wrap items-center gap-2 pt-1">
+        <form action={`/experience/${report.id}/lifecycle`} method="post">
+          <input type="hidden" name="state" value="active" />
+          <button type="submit" className={actionButtonClass}>
+            Reaktivieren
+          </button>
+        </form>
+        <form action={`/experience/${report.id}/lifecycle`} method="post">
+          <input type="hidden" name="state" value="archived" />
+          <button type="submit" className={actionButtonClass}>
+            Archivieren
+          </button>
+        </form>
+      </div>
+    );
+  }
+
+  return (
+    <div className="flex flex-wrap items-center gap-2 pt-1">
+      <form action={`/experience/${report.id}/lifecycle`} method="post">
+        <input type="hidden" name="state" value="active" />
+        <button type="submit" className={actionButtonClass}>
+          Reaktivieren
+        </button>
+      </form>
+    </div>
   );
 }

@@ -65,6 +65,32 @@ describe("ExperienceList", () => {
     expect(html).toContain("🗄️ archiviert");
   });
 
+  it("shows deprecate/archive actions for an active report (T9.6)", () => {
+    const html = renderToStaticMarkup(<ExperienceList reports={[baseReport]} />);
+    expect(html).toContain("Als veraltet markieren");
+    expect(html).toContain("Archivieren");
+    expect(html).not.toContain("Reaktivieren");
+    expect(html).toContain(`action="/experience/${baseReport.id}/lifecycle"`);
+  });
+
+  it("shows reactivate/archive actions for a deprecated report", () => {
+    const html = renderToStaticMarkup(
+      <ExperienceList reports={[{ ...baseReport, lifecycleState: "deprecated" }]} />,
+    );
+    expect(html).toContain("Reaktivieren");
+    expect(html).toContain("Archivieren");
+    expect(html).not.toContain("Als veraltet markieren");
+  });
+
+  it("shows only reactivate for an archived report", () => {
+    const html = renderToStaticMarkup(
+      <ExperienceList reports={[{ ...baseReport, lifecycleState: "archived" }]} />,
+    );
+    expect(html).toContain("Reaktivieren");
+    expect(html).not.toContain("Archivieren");
+    expect(html).not.toContain("Als veraltet markieren");
+  });
+
   it("renders an empty-state message for no reports", () => {
     const html = renderToStaticMarkup(<ExperienceList reports={[]} />);
     expect(html).toContain("Keine Berichte für diese Filterkombination.");
