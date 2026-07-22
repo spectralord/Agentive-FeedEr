@@ -103,7 +103,7 @@ Ein Epic ist fertig, wenn:
 | 1 — Ingestion | `epic-1-ingestion.md` | MVP | ✅ fertig (Feed-URLs außerhalb GitHubs erst im ersten Railway-/Lokal-Lauf voll verifizierbar — siehe Abweichungen) |
 | 2 — Enrichment | `epic-2-enrichment.md` | MVP | ✅ fertig (Echtlauf-Stichprobe mit API-Key = Benutzer-Aktion offen) |
 | 3 — Reel-Feed-UI | `epic-3-feed-ui.md` | MVP | ✅ fertig (Verifikation via `curl` gegen `npm run start` statt manuell in Safari/iPad — siehe Abweichungen) |
-| 4 — Today's Top-N | `epic-4-top-n.md` | MVP | ☐ offen |
+| 4 — Today's Top-N | `epic-4-top-n.md` | MVP | ✅ fertig (Verifikation via `curl` gegen `npm run start` statt manuell in Safari/iPad — siehe Abweichungen) |
 | 5 — Übersicht/SOTA | `epic-5-overview.md` | MVP-nah | ☐ offen |
 | 6 — Saves/Feedback/Resurfacing | `epic-6-interactions.md` | Fast-Follow | ☐ offen |
 | 7 — Skill-Map | `epic-7-skill-map.md` | Vision | ☐ offen |

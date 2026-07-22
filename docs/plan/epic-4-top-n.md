@@ -35,7 +35,7 @@ export function topScore(r: { relevanceScore: number; qualityScore: number; publ
 - **Verifikation:** Integrationstest der Kandidaten-/Fallback-Logik mit Seed-Daten;
   manueller Blick auf die Seite.
 
-### ☐ T4.3 — Navigation & Default
+### ✅ T4.3 — Navigation & Default
 - „Heute" als **Startpunkt der Navigation** prominent links/erste Position; die
   App-Route `/` bleibt der volle Feed (kein Redirect).
 - **Verifikation:** Nav-Reihenfolge: Heute · Feed · Übersicht.
@@ -78,3 +78,6 @@ _(vom ausführenden Modell zu pflegen)_
   3, Scores 0.1597 vs. 0.1554) ist deterministisch durch die exakte Formel
   gegeben, nicht durch zusätzliche Tie-Break-Regeln — keine Abweichung vom
   Epic-Text, nur zur Nachvollziehbarkeit notiert.
+- **Nav-Reihenfolge:** in `src/app/layout.tsx` von Feed·Heute·Übersicht auf
+  Heute·Feed·Übersicht getauscht (T4.3); `/` bleibt unverändert die Route für
+  den vollen Feed, kein Redirect.
