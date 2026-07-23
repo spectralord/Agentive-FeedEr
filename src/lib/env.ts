@@ -25,6 +25,20 @@ const envSchema = z.object({
     (v) => (v === "" ? undefined : v),
     z.string().min(1).optional(),
   ),
+  // Epic 17 (ADR 0015): execution model on two axes (trigger × executor) via
+  // profiles. APP_PROFILE sets defaults; the two overrides win when set. The
+  // profile matrix / illegal-combo validation lives in
+  // src/lib/executor/config.ts (resolveExecutionConfig), not here, because it
+  // is cross-field.
+  APP_PROFILE: z.enum(["local", "cloud"]).default("cloud"),
+  PIPELINE_EXECUTOR: z.preprocess(
+    (v) => (v === "" ? undefined : v),
+    z.enum(["api", "claude-code"]).optional(),
+  ),
+  PIPELINE_TRIGGER: z.preprocess(
+    (v) => (v === "" ? undefined : v),
+    z.enum(["railway-cron", "claude-code-cron", "manual"]).optional(),
+  ),
 });
 
 export type Env = z.infer<typeof envSchema>;
