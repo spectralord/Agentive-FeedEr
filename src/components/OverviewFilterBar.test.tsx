@@ -48,7 +48,7 @@ describe("OverviewFilterBar", () => {
 
     expect(html).toContain("30 Tage");
     expect(html).toContain("Tooling");
-    expect(html).toContain("Etabliert");
+    expect(html).toContain("Established");
     expect(html).toContain("Relevanz ≥ 70");
     expect(html).toContain("🛠️ Nur Best Practice");
     expect(html).toContain("experimentell ausblenden"); // default: shown, click hides

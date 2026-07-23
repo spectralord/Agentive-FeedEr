@@ -41,7 +41,7 @@ describe("ReelCard", () => {
     expect(html).toContain("const x = 42;");
     expect(html).toContain("➜ Für dich:");
     expect(html).toContain("Probiere das Feature");
-    expect(html).toContain("5-Min-Test");
+    expect(html).toContain("5-min test");
     expect(html).toContain("🧪 experimentell");
     expect(html).toContain("🆕 Neu");
     expect(html).toContain("R 82");

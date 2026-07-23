@@ -31,7 +31,7 @@ describe("SavedList", () => {
     expect(html).toContain("Gespeichert vor 2 Tagen");
     expect(html).toContain("some-source");
     expect(html).toContain("Tooling");
-    expect(html).toContain("Etabliert");
+    expect(html).toContain("Established");
     expect(html).toContain("R 90");
     expect(html).toContain("Q 90");
     expect(html).toContain('action="/saved/1/remove"');

@@ -52,7 +52,7 @@ describe("FilterBar", () => {
     const html = renderToStaticMarkup(<FilterBar current={{ category: "tooling", new: "1" }} />);
 
     expect(html).toContain("Tooling");
-    expect(html).toContain("Technik");
+    expect(html).toContain("Technique");
     expect(html).toContain("🆕 Neu");
     expect(html).toContain("Schwaches Signal zeigen");
     expect(html).toContain('href="/?new=1"'); // toggling active category off keeps other filters
