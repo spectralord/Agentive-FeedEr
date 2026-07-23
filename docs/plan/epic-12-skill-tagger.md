@@ -15,7 +15,7 @@ SkillTagger, Actionable.
 
 ## Tasks
 
-### ☐ T12.1 — Schema: `skill_nodes` (+ pending-Status)
+### ☒ T12.1 — Schema: `skill_nodes` (+ pending-Status)
 - `skill_nodes` wie in Epic 7 T7.1 (`id`, `slug` unique, `title`, `theme`, `description`)
   **plus** `status: text({ enum: ["active","pending"] }).default("pending")` — `pending` =
   vorgeschlagen, noch nicht bestätigt.

@@ -88,6 +88,20 @@ export const experienceReports = pgTable("experience_reports", {
   updatedAt: timestamp("updated_at", { withTimezone: true }).notNull().defaultNow(),
 });
 
+// Epic 12: canonical skill/competency nodes the SkillTagger assigns content to
+// (Match-or-Propose, ADR 0009). This is the authoritative schema until Epic 7
+// (Skill-Map) builds on top of it. `status: pending` = proposed by the tagger,
+// not yet confirmed by the user (T12.6); `active` = confirmed, matchable.
+export const skillNodes = pgTable("skill_nodes", {
+  id: serial("id").primaryKey(),
+  slug: text("slug").notNull().unique(),
+  title: text("title").notNull(),
+  theme: text("theme").notNull(),
+  description: text("description").notNull(),
+  status: text("status", { enum: ["active", "pending"] }).notNull().default("pending"),
+  createdAt: timestamp("created_at", { withTimezone: true }).notNull().defaultNow(),
+});
+
 // Epic 13: history of daily-pipeline runs (cron and manual admin triggers share
 // this table). See ADR 0010.
 export const pipelineRuns = pgTable("pipeline_runs", {
@@ -129,6 +143,8 @@ export type RawItem = typeof rawItems.$inferSelect;
 export type NewRawItem = typeof rawItems.$inferInsert;
 export type Reel = typeof reels.$inferSelect;
 export type NewReel = typeof reels.$inferInsert;
+export type SkillNode = typeof skillNodes.$inferSelect;
+export type NewSkillNode = typeof skillNodes.$inferInsert;
 export type ExperienceReport = typeof experienceReports.$inferSelect;
 export type NewExperienceReport = typeof experienceReports.$inferInsert;
 export type PipelineRun = typeof pipelineRuns.$inferSelect;
