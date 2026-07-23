@@ -83,6 +83,16 @@ Ausführungspfad als das deterministische, tool-use-strukturierte Enrichment (AD
   Claude-Code-/local-Modus laufen **null** API-Calls und es gibt **keinen stillen API-Fallback**
   (sonst entstünden Kosten). Fehlt/misslingt der CC-Weg, wird **abgebrochen/geskippt**, nie über
   die API nachgeholt. `ANTHROPIC_API_KEY` darf im local-Modus ungesetzt sein.
+- **F5 — Trigger/Scheduling → ENTSCHIEDEN: zwei unabhängige Achsen + Profil-Matrix.**
+  - **Achse 1 Trigger:** `railway-cron` | `claude-code-cron` | `manuell/lokal`.
+  - **Achse 2 Executor:** `api` | `claude-code` (siehe F4).
+  - **local:** Trigger manuell/lokal, Executor `claude-code`, DB lokal — **nie Railway, nie API**
+    (hart abgeschottet).
+  - **cloud** (DB=Railway), drei nutzbare Kombis:
+    - „Cloud" = `railway-cron` + `api` (Status quo).
+    - „Claude Code Cron" = `claude-code-cron` + `claude-code` (Kontingent, kein API).
+    - „Claude Code API" = `claude-code-cron` + `api` (CC plant, API inferiert).
+  - **Ausgeschlossen:** `railway-cron` + `claude-code` (Railway kann kein CC-Kontingent nutzen).
 
 ### Erweiterung (Benutzer 2026-07-23): zwei **Umgebungs-Profile** lokal ↔ cloud
 Der Schalter ist eigentlich **zweidimensional** — Umgebung *und* Inferenz:
