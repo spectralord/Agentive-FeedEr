@@ -33,8 +33,11 @@ export const SOURCE_REGISTRY: RegistryEntry[] = [
     url: "https://hn.algolia.com/api/v1/search_by_date",
     config: { query: "AI agent", minPoints: 30 },
   },
-  { name: "reddit-claudeai", type: "reddit_rss", url: "https://www.reddit.com/r/ClaudeAI/top/.rss?t=day" },
-  { name: "reddit-localllama", type: "reddit_rss", url: "https://www.reddit.com/r/LocalLLaMA/top/.rss?t=day" },
+  // Reddit blocks automated/cloud-IP access to its feeds (403/429) — deactivated
+  // until we add proper Reddit OAuth (see vision-backlog V6). Rows stay in the DB
+  // (disabled) for history; re-enable by removing `disabled` once OAuth exists.
+  { name: "reddit-claudeai", type: "reddit_rss", url: "https://www.reddit.com/r/ClaudeAI/top/.rss?t=day", disabled: true },
+  { name: "reddit-localllama", type: "reddit_rss", url: "https://www.reddit.com/r/LocalLLaMA/top/.rss?t=day", disabled: true },
   { name: "huggingface-blog", type: "rss", url: "https://huggingface.co/blog/feed.xml" },
   { name: "openai-news", type: "rss", url: "https://openai.com/news/rss.xml" },
   {
@@ -51,9 +54,14 @@ export const SOURCE_REGISTRY: RegistryEntry[] = [
 ];
 
 /**
- * Upserts the registry into the sources table, matching on name.
- * Existing rows keep their state (enabled, last_polled_at); type/url/config are
- * refreshed from code. New entries are inserted (enabled unless disabled here).
+ * Upserts the registry into the sources table, matching on name. The registry is
+ * authoritative for type/url/config **and** `enabled` (via the `disabled` flag) —
+ * so flipping `disabled` in code takes effect for existing rows on the next seed.
+ * `last_polled_at` stays DB-owned.
+ *
+ * Note: once an admin source-toggle (Epic 13 T13.7) or auto-disable via source
+ * health (Epic 14) exists, introduce a separate manual-override flag so those
+ * choices are not clobbered by this seed.
  */
 export async function seedSources(db: NodePgDatabase<typeof schema>): Promise<void> {
   for (const entry of SOURCE_REGISTRY) {
@@ -68,7 +76,7 @@ export async function seedSources(db: NodePgDatabase<typeof schema>): Promise<vo
       })
       .onConflictDoUpdate({
         target: sources.name,
-        set: { type: entry.type, url: entry.url, config: entry.config ?? {} },
+        set: { type: entry.type, url: entry.url, config: entry.config ?? {}, enabled: !entry.disabled },
       });
   }
 }

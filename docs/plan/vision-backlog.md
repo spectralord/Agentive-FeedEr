@@ -36,3 +36,12 @@ Benutzer führen und ggf. einen ADR ergänzen.
 - Wöchentliche Digest-Mail (Top der Woche) · Health-Alarm, wenn Daily-Job 2× in Folge
   scheitert (einfacher Webhook/Mail) · Backfill-Kommando für neue Quellen
   (`npm run job:backfill -- --source=<name> --days=90`).
+
+## V6 — Reddit via OAuth (TODO, Benutzerwunsch)
+- Reddit blockt serverseitigen/Cloud-IP-Zugriff auf die `.rss`-Feeds (403/429). Deshalb
+  sind `reddit-claudeai` und `reddit-localllama` in `sources.ts` mit `disabled: true`.
+- Für echten Zugriff: eine Reddit-App (Typ „script") registrieren (client id/secret),
+  Client-Credentials-Token holen, gegen `oauth.reddit.com` mit sauberem User-Agent und
+  Rate-Limits abfragen. Neuer Fetcher-Typ `reddit_oauth` (Secrets als Env-Vars).
+- Passt thematisch zu den **kuratierten Erfahrungsberichten** (Thema 1/Epic 9-Folge:
+  Tipps aus Comment-Sections) — dort gemeinsam angehen. Reaktivieren = `disabled` entfernen.

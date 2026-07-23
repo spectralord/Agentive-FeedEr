@@ -115,6 +115,7 @@ Ein Epic ist fertig, wenn:
 | 11 — SOTA-Frische-Re-Check | `epic-11-sota-recheck.md` | Vision (erst grillen) | ☐ offen |
 | 12 — SkillTagger | `epic-12-skill-tagger.md` | Fast-Follow (vor Epic 7) | ☐ offen |
 | 13 — Admin-Console | `epic-13-admin-console.md` | Fast-Follow | ✅ T13.1–T13.6 fertig (Cron-Button + Status; `ADMIN_TOKEN` in Railway = Benutzer-Aktion; T13.7 offen) |
+| 14 — Quellen-Validierung & -Überprüfung | `epic-14-source-health.md` | Fast-Follow (erst grillen) | ☐ geparkt (bauen „wenn der Rest steht") |
 | — Vision-Backlog (optional) | `vision-backlog.md` | Vision | ☐ offen |
 
 **MVP = Epic 0–5 (fertig).** Danach Fast-Follow: 6 (Saves), 9 (Erfahrung), 12 (SkillTagger,
