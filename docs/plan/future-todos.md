@@ -36,6 +36,8 @@ Wie viel echten Mehrwert/Erfahrung gewinnt ein Entwickler daraus? Gut über eine
 **Persona-Agenten** abbildbar. Bewusst Zukunftsmusik.
 
 ## T6 — Zweiter Ausführungsmodus: Pipeline über Claude-Code-Kontingent statt API-Key
+> **Hochgezogen 2026-07-23:** gegrillt (F1–F5 unten) → **ADR 0015** + **Epic 17**
+> (`epic-17-execution-modes.md`). Bauen erst auf Benutzer-Go.
 **Motiv:** Der Daily-Task ruft die LLM-Arbeit (Enrichment/Summaries etc.) heute über die
 **Anthropic-API** (`ANTHROPIC_API_KEY`) → verbraucht **API-Tokens (Geld)**. Wenn noch
 **Claude-Code-Kontingent** (Subscription) übrig ist, soll dieselbe Arbeit stattdessen darüber
