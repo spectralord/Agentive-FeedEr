@@ -6,10 +6,11 @@ Spaced Resurfacing gespeicherter Reels.
 
 **Referenzen:** Design-Doc §7, Grill-Entscheidung „kontextbasiert, kein ML".
 
-> **Revidiert 2026-07-22** (siehe `docs/specs/2026-07-22-experience-reports-design.md`):
-> Die `tried`-Interaktion bezieht sich künftig auf abgeleitete **Actionables/To-Trys**,
-> nicht auf Reels/Reports selbst (die werden nie abgehakt). Save/hide/👍👎 auf Reels
-> bleiben unverändert.
+> **Revidiert 2026-07-23** (siehe `docs/specs/2026-07-22-experience-reports-design.md`):
+> **Kein `tried`/Abhaken auf Reels in diesem Epic** — Reels/Reports werden nie abgehakt;
+> „ausprobiert" gehört zu den abgeleiteten **Actionables/To-Trys** (später, Epic 7-Ära).
+> Epic 6 baut daher nur `save`/`hide`/`up`/`down`. Resurfacing nudged gespeicherte Reels
+> rein zeitbasiert (rotiert nach 21 Tagen natürlich raus), ohne „erledigt"-Häkchen.
 
 ---
 
@@ -20,8 +21,8 @@ Spaced Resurfacing gespeicherter Reels.
 export const interactions = pgTable("interactions", {
   id: serial("id").primaryKey(),
   reelId: integer("reel_id").notNull().references(() => reels.id),
-  type: text("type", { enum: ["save","hide","up","down","tried"] }).notNull(),
-  note: text("note"),                                   // optional, v. a. bei "tried"
+  type: text("type", { enum: ["save","hide","up","down"] }).notNull(),
+  note: text("note"),                                   // optional (z. B. „warum gespeichert")
   createdAt: timestamp("created_at", { withTimezone: true }).notNull().defaultNow(),
 });
 
@@ -43,10 +44,10 @@ export const appState = pgTable("app_state", {          // generischer Key-Value
 
 ### ☐ T6.3 — `/saved`-Seite
 - Liste aller Reels mit aktiver `save`-Interaction, neueste Speicherung zuerst,
-  Kompaktdarstellung wie Overview-Verlauf; „tried ✓"-Knopf mit optionaler Notiz
-  (legt `type:"tried"` + note an — Vorstufe des Adoption-Logs aus Epic 7).
+  Kompaktdarstellung wie Overview-Verlauf; je Eintrag „Entfernen" (Save zurücknehmen).
+  **Kein** „tried/erledigt"-Häkchen (siehe Revision).
 - Navigation um „Gespeichert" erweitern.
-- **Verifikation:** Save im Feed ⇒ erscheint hier; tried-Notiz wird gespeichert.
+- **Verifikation:** Save im Feed ⇒ erscheint hier; Entfernen nimmt ihn wieder raus.
 
 ### ☐ T6.4 — Rollierende Feedback-Zusammenfassung
 - Im Daily-Job, nach dem Enrichment: falls ≥ 10 neue Interactions seit letzter
@@ -59,9 +60,10 @@ export const appState = pgTable("app_state", {          // generischer Key-Value
 
 ### ☐ T6.5 — Spaced Resurfacing auf `/today`
 - Unter den Top-N eine Zusatzkarte „🔁 Dranbleiben": bis zu 2 gespeicherte Reels,
-  die 7–21 Tage alt (Speicherzeitpunkt) sind **und** kein `tried` haben —
-  Text: „Vor N Tagen gespeichert — schon ausprobiert?" + tried-Knopf.
-- **Verifikation:** Seed-Daten mit passenden/unpassenden Zeitfenstern.
+  deren Save 7–21 Tage her ist — Text: „Vor N Tagen gespeichert — nochmal ansehen?"
+  mit Link zum Reel/zur Quelle. Kein „erledigt"-Häkchen: Items rotieren nach 21 Tagen
+  natürlich raus; wer es weg will, nimmt den Save zurück.
+- **Verifikation:** Seed-Daten mit passenden/unpassenden Zeitfenstern (Save-Alter).
 
 ---
 
