@@ -3,6 +3,9 @@ import type { NodePgDatabase } from "drizzle-orm/node-postgres";
 import type * as schema from "@/db/schema";
 import { pipelineRuns } from "@/db/schema";
 import { runEnrichment, type EnrichmentResult } from "@/lib/enrichment/run";
+import { env } from "@/lib/env";
+import { resolveExecutionConfig } from "@/lib/executor/config";
+import { getExecutor } from "@/lib/executor/executor";
 import { runFeedbackSummary, type FeedbackSummaryResult } from "@/lib/feedback/run";
 import { runIngestion, type IngestionResult } from "@/lib/ingestion/run";
 
@@ -36,12 +39,16 @@ export async function runPipelinePhases(
     summary.ingestion = await runIngestion(db);
   }
   if (mode === "full" || mode === "enrichment") {
-    summary.enrichment = await runEnrichment(db);
+    // Epic 17 (ADR 0015): resolve the executor once and inject it into every
+    // LLM step (uniform executor, no per-step mixing). `api` uses the paid API,
+    // `claude-code` uses subscription quota via the local CLI — never both.
+    const executor = getExecutor(resolveExecutionConfig(env()));
+    summary.enrichment = await runEnrichment(db, executor);
     // T6.4: rolling feedback summary, right after enrichment. Never aborts
     // the run — a failure here is logged and simply skipped; the next run
     // retries (the "new since last summary" count only grows in the meantime).
     try {
-      summary.feedback = await runFeedbackSummary(db);
+      summary.feedback = await runFeedbackSummary(db, executor);
     } catch (error) {
       console.error("[pipeline] feedback summary failed:", error);
     }
