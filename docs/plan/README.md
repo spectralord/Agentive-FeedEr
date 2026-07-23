@@ -112,11 +112,11 @@ Ein Epic ist fertig, wenn:
 | 8 — Agentisches Vertiefen | `epic-8-deep-dive.md` | Vision | ☐ offen |
 | 9 — Erfahrungs-Sektion | `epic-9-experience-reports.md` | Fast-Follow | ✅ fertig (kein echtes Markdown-Rendering ohne neue Dependency — siehe Abweichungen in `epic-9-experience-reports.md`) |
 | 10 — Content Verifier | `epic-10-verifier.md` | Fast-Follow | ✅ gegrillt (ADR 0011); Stufe-1 (Reel-`caveat`) baubar; Stufe 2 → in Epic 11 aufgegangen |
-| 11 — Topic-Knowledge-Check (Freshness + Korroboration) | `epic-11-sota-recheck.md` | Fast-Follow | ✅ gegrillt (ADR 0012, vereint Verifier-Stufe-2 + SOTA-Re-Check); braucht Epic 15 |
+| 11 — Topic-Knowledge-Check (Freshness + Korroboration) | `epic-11-sota-recheck.md` | Fast-Follow | ✅ gegrillt + **Plan** (ADR 0012/0013; T11.1–T11.8); braucht Epic 15 |
 | 12 — SkillTagger | `epic-12-skill-tagger.md` | Fast-Follow (vor Epic 7) | ☐ offen |
 | 13 — Admin-Console | `epic-13-admin-console.md` | Fast-Follow | ✅ T13.1–T13.6 fertig (Cron-Button + Status; `ADMIN_TOKEN` in Railway = Benutzer-Aktion; T13.7 offen) |
 | 14 — Quellen-Validierung & -Überprüfung | `epic-14-source-health.md` | Fast-Follow (erst grillen) | ☐ geparkt (bauen „wenn der Rest steht") |
-| 15 — Topic-Clustering (Fundament) | `epic-15-topic-clustering.md` | Fast-Follow (erst grillen) | ☐ Vorläufer für Epic 11 (aus Vision V1 hochgezogen) |
+| 15 — Topic-Clustering (Fundament) | `epic-15-topic-clustering.md` | Fast-Follow | ✅ gegrillt + **Plan** (ADR 0013; T15.1–T15.5); Vorläufer für Epic 11 |
 | — Vision-Backlog (optional) | `vision-backlog.md` | Vision | ☐ offen |
 
 **MVP = Epic 0–5 (fertig).** Danach Fast-Follow: 6 (Saves), 9 (Erfahrung), 12 (SkillTagger,
