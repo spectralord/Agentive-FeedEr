@@ -59,3 +59,23 @@ Ausführungspfad als das deterministische, tool-use-strukturierte Enrichment (AD
   und ob nur *Teile* (z. B. Enrichment) oder die ganze Pipeline umgeschaltet werden.
 - **Ergebnis vermutlich:** eigener ADR (Ausführungs-Modell) + Env-Schalter + zweite
   `StructuredCaller`-Implementierung. **Vor Bau grillen** (echte architektonische Weggabelung).
+
+### Grill-Protokoll (läuft, 2026-07-23)
+- **F1 — Datenpfad im `claude-code`-Modus → ENTSCHIEDEN: A (direkter DB-Zugriff).** Die
+  CC-Session nutzt dieselbe Drizzle-Schicht wie die App (liest `raw_items`, schreibt `reels`),
+  gleiche Idempotenz/Validierung — kein Endpunkt-Zoo. Für ein Single-User-Tool der einfachste,
+  robusteste Weg.
+
+### Erweiterung (Benutzer 2026-07-23): zwei **Umgebungs-Profile** lokal ↔ cloud
+Der Schalter ist eigentlich **zweidimensional** — Umgebung *und* Inferenz:
+- **Umgebung:** **`local`** (eigener Rechner, **lokale DB**, Ausführung in Claude Code) vs.
+  **`cloud`** (Railway + Cloud-DB).
+- **Inferenz:** **`api`** (Anthropic-Key) vs. **`claude-code`** (Kontingent).
+- **Kopplung/Motiv:** **`local` ⇒ Claude Code + lokale DB** — spart *sowohl* Railway- *als auch*
+  API-Kosten (Entwicklung/Nutzung am eigenen Rechner). **`cloud`** ist v. a. für **Tablet-Nutzung**
+  interessant (kein eigener Rechner zur Hand); auch dort ist eine `api`-vs-`claude-code`-Unterscheidung
+  gewünscht. Ziel: unsere Tools/Services **einmal „lokal" und einmal „cloud" startbar** machen.
+- **Folgen für den Bau:** nicht nur ein `PIPELINE_EXECUTOR`-Flag, sondern **Umgebungs-Profile**
+  (DB-Ziel + Executor + Scheduling gebündelt), z. B. `APP_PROFILE=local|cloud` mit sinnvollen
+  Defaults (`local`→`claude-code`+lokale DB; `cloud`→heute `api`+Railway, optional `claude-code`).
+  Lokaler Start-Pfad ohne Railway (eigenes `npm`-Kommando / Claude-Code-Routine gegen lokale DB).
