@@ -1,5 +1,6 @@
 import Link from "next/link";
 import { ReelCard } from "@/components/ReelCard";
+import { getInteractionFlags } from "@/lib/interactions";
 import { getTodayTopReels } from "@/lib/today";
 
 // The 24h/48h ingestion window and the ranking both depend on "now" — this
@@ -29,6 +30,8 @@ export default async function TodayPage() {
     return <EmptyState />;
   }
 
+  const interactionFlags = await getInteractionFlags(reels.map((r) => r.id));
+
   return (
     <>
       <nav
@@ -46,7 +49,7 @@ export default async function TodayPage() {
 
       <div className="feed -mt-12 h-dvh snap-y snap-mandatory overflow-y-auto overflow-x-hidden">
         {reels.map((reel) => (
-          <ReelCard key={reel.id} reel={reel} />
+          <ReelCard key={reel.id} reel={reel} interactions={interactionFlags.get(reel.id)} />
         ))}
 
         <div className="reel flex min-h-dvh snap-start items-center justify-center [scroll-snap-stop:always]">

@@ -1,5 +1,6 @@
 import Link from "next/link";
 import { DEFAULT_FEED_LIMIT, getReels } from "@/lib/feed";
+import { getInteractionFlags } from "@/lib/interactions";
 import { ReelCard } from "@/components/ReelCard";
 import { buildLoadMoreHref, FilterBar, type FilterState } from "@/components/FilterBar";
 
@@ -43,6 +44,7 @@ export default async function FeedPage({ searchParams }: FeedPageProps) {
     showWeak: params.weak === "1",
     before: params.before ? new Date(params.before) : undefined,
   });
+  const interactionFlags = await getInteractionFlags(reels.map((r) => r.id));
 
   return (
     <>
@@ -52,7 +54,7 @@ export default async function FeedPage({ searchParams }: FeedPageProps) {
       ) : (
         <div className="feed -mt-12 h-dvh snap-y snap-mandatory overflow-y-auto overflow-x-hidden">
           {reels.map((reel) => (
-            <ReelCard key={reel.id} reel={reel} />
+            <ReelCard key={reel.id} reel={reel} interactions={interactionFlags.get(reel.id)} />
           ))}
           {reels.length === DEFAULT_FEED_LIMIT && (
             <div className="flex min-h-24 items-center justify-center px-6 py-10">

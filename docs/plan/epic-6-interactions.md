@@ -34,7 +34,7 @@ export const appState = pgTable("app_state", {          // generischer Key-Value
 ```
 - **Verifikation:** Migration grün.
 
-### ☐ T6.2 — API + Buttons
+### ✅ T6.2 — API + Buttons
 - `POST /api/interactions` `{ reelId, type, note? }` (zod-validiert) → Insert;
   gleicher `type` fürs gleiche Reel togglet (vorhandene Zeile löschen = zurücknehmen).
 - `ReelCard` bekommt eine dezente Aktionsleiste (Client-Component): 🔖 Save ·
