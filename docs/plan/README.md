@@ -85,6 +85,9 @@
 | `NEW_DAYS` | nein | `7` | „Neu"-Fenster in Tagen |
 | `OWNER_NAME` | nein | `Ich` | Autor-Anzeigename eigener Erfahrungsberichte (Epic 9) |
 | `ADMIN_TOKEN` | nein | — | Aktiviert die Admin-Console (Epic 13). Ungesetzt ⇒ Admin deaktiviert. |
+| `APP_PROFILE` | nein | `cloud` | Ausführungs-Profil (Epic 17/ADR 0015): `cloud` (railway-cron+api) oder `local` (manual+claude-code, nie Railway/API). |
+| `PIPELINE_EXECUTOR` | nein | profil-abh. | Override: `api` \| `claude-code` (Kontingent via lokales CLI). |
+| `PIPELINE_TRIGGER` | nein | profil-abh. | Override: `railway-cron` \| `claude-code-cron` \| `manual`. Illegale Kombi wirft. |
 
 `.env.example` führt alle Variablen; `src/lib/env.ts` validiert sie mit zod
 (Defaults dort zentral, nirgendwo sonst hartkodiert).
@@ -118,7 +121,7 @@ Ein Epic ist fertig, wenn:
 | 14 — Quellen-Validierung & -Überprüfung | `epic-14-source-health.md` | Fast-Follow (erst grillen) | ☐ geparkt (bauen „wenn der Rest steht") |
 | 15 — Topic-Clustering (Fundament) | `epic-15-topic-clustering.md` | Fast-Follow | ✅ gegrillt + **Plan** (ADR 0013; T15.1–T15.5); Vorläufer für Epic 11 |
 | 16 — Refactoring-Agent (nächtl. Claude-Code-Cron) | `epic-16-refactoring-agent.md` | Tooling/Vision (erst grillen) | ☐ geparkt (teilt CC-Routine-Mechanik mit Epic 17) |
-| 17 — Ausführungs-Modi (Trigger × Executor) | `epic-17-execution-modes.md` | Tooling/Vision | ✅ gegrillt + **Plan** (ADR 0015; T17.1–T17.7); geparkt bis Benutzer-Go |
+| 17 — Ausführungs-Modi (Trigger × Executor) | `epic-17-execution-modes.md` | Tooling/Vision | ◑ in Umsetzung (ADR 0015): T17.1–T17.4+T17.7 fertig & getestet; T17.5 teilw.; T17.6 offen (Infra) |
 | — Vision-Backlog (optional) | `vision-backlog.md` | Vision | ☐ offen |
 
 **MVP = Epic 0–5 (fertig).** Danach Fast-Follow: 6 (Saves), 9 (Erfahrung), 12 (SkillTagger,
