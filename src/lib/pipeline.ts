@@ -3,6 +3,7 @@ import type { NodePgDatabase } from "drizzle-orm/node-postgres";
 import type * as schema from "@/db/schema";
 import { pipelineRuns } from "@/db/schema";
 import { runEnrichment, type EnrichmentResult } from "@/lib/enrichment/run";
+import { runFeedbackSummary, type FeedbackSummaryResult } from "@/lib/feedback/run";
 import { runIngestion, type IngestionResult } from "@/lib/ingestion/run";
 
 export type PipelineMode = "full" | "ingestion" | "enrichment";
@@ -11,6 +12,7 @@ export type PipelineTrigger = "manual" | "cron";
 export interface PipelineSummary {
   ingestion?: IngestionResult;
   enrichment?: EnrichmentResult;
+  feedback?: FeedbackSummaryResult;
 }
 
 /** A run older than this that is still "running" is treated as stale (e.g. the
@@ -35,6 +37,14 @@ export async function runPipelinePhases(
   }
   if (mode === "full" || mode === "enrichment") {
     summary.enrichment = await runEnrichment(db);
+    // T6.4: rolling feedback summary, right after enrichment. Never aborts
+    // the run — a failure here is logged and simply skipped; the next run
+    // retries (the "new since last summary" count only grows in the meantime).
+    try {
+      summary.feedback = await runFeedbackSummary(db);
+    } catch (error) {
+      console.error("[pipeline] feedback summary failed:", error);
+    }
   }
   return summary;
 }

@@ -1,6 +1,6 @@
-import { and, desc, eq, gt, gte, lt } from "drizzle-orm";
+import { and, desc, eq, gt, gte, lt, notExists } from "drizzle-orm";
 import { db } from "@/db/client";
-import { rawItems, reels, sources } from "@/db/schema";
+import { interactions, rawItems, reels, sources } from "@/db/schema";
 import { CATEGORIES, MATURITIES } from "@/lib/enrichment/schema";
 import { env } from "@/lib/env";
 
@@ -68,6 +68,19 @@ function isKnownMaturity(value: string): value is FeedMaturity {
  */
 export async function getReels(opts: GetReelsOptions = {}): Promise<FeedReel[]> {
   const conditions = [];
+
+  // Epic 6 (T6.2): reels with an active `hide` interaction are excluded
+  // everywhere getReels is used (feed, today, overview) — hide is never
+  // deleted, just always filtered out, same "never delete" spirit as
+  // low-quality reels (ADR 0004).
+  conditions.push(
+    notExists(
+      db()
+        .select({ id: interactions.id })
+        .from(interactions)
+        .where(and(eq(interactions.reelId, reels.id), eq(interactions.type, "hide"))),
+    ),
+  );
 
   if (!opts.showWeak) {
     conditions.push(gte(reels.qualityScore, env().QUALITY_THRESHOLD));

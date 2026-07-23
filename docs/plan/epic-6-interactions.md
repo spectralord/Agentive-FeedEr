@@ -6,22 +6,23 @@ Spaced Resurfacing gespeicherter Reels.
 
 **Referenzen:** Design-Doc §7, Grill-Entscheidung „kontextbasiert, kein ML".
 
-> **Revidiert 2026-07-22** (siehe `docs/specs/2026-07-22-experience-reports-design.md`):
-> Die `tried`-Interaktion bezieht sich künftig auf abgeleitete **Actionables/To-Trys**,
-> nicht auf Reels/Reports selbst (die werden nie abgehakt). Save/hide/👍👎 auf Reels
-> bleiben unverändert.
+> **Revidiert 2026-07-23** (siehe `docs/specs/2026-07-22-experience-reports-design.md`):
+> **Kein `tried`/Abhaken auf Reels in diesem Epic** — Reels/Reports werden nie abgehakt;
+> „ausprobiert" gehört zu den abgeleiteten **Actionables/To-Trys** (später, Epic 7-Ära).
+> Epic 6 baut daher nur `save`/`hide`/`up`/`down`. Resurfacing nudged gespeicherte Reels
+> rein zeitbasiert (rotiert nach 21 Tagen natürlich raus), ohne „erledigt"-Häkchen.
 
 ---
 
 ## Tasks
 
-### ☐ T6.1 — Schema: `interactions` + `app_state`
+### ✅ T6.1 — Schema: `interactions` + `app_state`
 ```ts
 export const interactions = pgTable("interactions", {
   id: serial("id").primaryKey(),
   reelId: integer("reel_id").notNull().references(() => reels.id),
-  type: text("type", { enum: ["save","hide","up","down","tried"] }).notNull(),
-  note: text("note"),                                   // optional, v. a. bei "tried"
+  type: text("type", { enum: ["save","hide","up","down"] }).notNull(),
+  note: text("note"),                                   // optional (z. B. „warum gespeichert")
   createdAt: timestamp("created_at", { withTimezone: true }).notNull().defaultNow(),
 });
 
@@ -33,7 +34,7 @@ export const appState = pgTable("app_state", {          // generischer Key-Value
 ```
 - **Verifikation:** Migration grün.
 
-### ☐ T6.2 — API + Buttons
+### ✅ T6.2 — API + Buttons
 - `POST /api/interactions` `{ reelId, type, note? }` (zod-validiert) → Insert;
   gleicher `type` fürs gleiche Reel togglet (vorhandene Zeile löschen = zurücknehmen).
 - `ReelCard` bekommt eine dezente Aktionsleiste (Client-Component): 🔖 Save ·
@@ -41,14 +42,14 @@ export const appState = pgTable("app_state", {          // generischer Key-Value
 - `hide` wirkt sofort: Feed-Query schließt Reels mit aktiver hide-Interaction aus.
 - **Verifikation:** Toggle-Semantik per API-Test; Hide entfernt Karte aus Feed.
 
-### ☐ T6.3 — `/saved`-Seite
+### ✅ T6.3 — `/saved`-Seite
 - Liste aller Reels mit aktiver `save`-Interaction, neueste Speicherung zuerst,
-  Kompaktdarstellung wie Overview-Verlauf; „tried ✓"-Knopf mit optionaler Notiz
-  (legt `type:"tried"` + note an — Vorstufe des Adoption-Logs aus Epic 7).
+  Kompaktdarstellung wie Overview-Verlauf; je Eintrag „Entfernen" (Save zurücknehmen).
+  **Kein** „tried/erledigt"-Häkchen (siehe Revision).
 - Navigation um „Gespeichert" erweitern.
-- **Verifikation:** Save im Feed ⇒ erscheint hier; tried-Notiz wird gespeichert.
+- **Verifikation:** Save im Feed ⇒ erscheint hier; Entfernen nimmt ihn wieder raus.
 
-### ☐ T6.4 — Rollierende Feedback-Zusammenfassung
+### ✅ T6.4 — Rollierende Feedback-Zusammenfassung
 - Im Daily-Job, nach dem Enrichment: falls ≥ 10 neue Interactions seit letzter
   Zusammenfassung, ein kleiner Claude-Call (Haiku): Input = letzte 100 Interactions
   (mit Reel-Titel/Kategorie/Skill), Output = 5–8 Bullet-Points
@@ -57,11 +58,12 @@ export const appState = pgTable("app_state", {          // generischer Key-Value
   Zusatzkontext unter das Profil („Beobachtetes Verhalten: …").
 - **Verifikation:** Test mit gemocktem Call; Prompt-Snapshot enthält Summary.
 
-### ☐ T6.5 — Spaced Resurfacing auf `/today`
+### ✅ T6.5 — Spaced Resurfacing auf `/today`
 - Unter den Top-N eine Zusatzkarte „🔁 Dranbleiben": bis zu 2 gespeicherte Reels,
-  die 7–21 Tage alt (Speicherzeitpunkt) sind **und** kein `tried` haben —
-  Text: „Vor N Tagen gespeichert — schon ausprobiert?" + tried-Knopf.
-- **Verifikation:** Seed-Daten mit passenden/unpassenden Zeitfenstern.
+  deren Save 7–21 Tage her ist — Text: „Vor N Tagen gespeichert — nochmal ansehen?"
+  mit Link zum Reel/zur Quelle. Kein „erledigt"-Häkchen: Items rotieren nach 21 Tagen
+  natürlich raus; wer es weg will, nimmt den Save zurück.
+- **Verifikation:** Seed-Daten mit passenden/unpassenden Zeitfenstern (Save-Alter).
 
 ---
 
@@ -71,3 +73,26 @@ export const appState = pgTable("app_state", {          // generischer Key-Value
 
 ## Abweichungen/Fragen
 _(vom ausführenden Modell zu pflegen)_
+
+- **T6.4 — Threshold-Basis:** "≥ 10 neue Interactions seit der letzten
+  Zusammenfassung" wird über einen Zähler-Vergleich umgesetzt
+  (`interactionCountAtGeneration` in `app_state["feedback_summary"]` vs.
+  aktuelle Gesamtzahl in `interactions`), nicht über eine Timestamp-Grenze —
+  robuster gegen Interactions, die zwischenzeitlich zurückgenommen (toggle)
+  wurden, und einfacher zu testen. Verhalten entspricht der Spezifikation.
+- **T6.4 — Reihenfolge im Pipeline-Schritt:** `runEnrichment` liest die
+  *zuvor* gespeicherte Summary (falls vorhanden) als Kontext für den
+  aktuellen Lauf; `runFeedbackSummary` läuft danach und aktualisiert die
+  Summary für den *nächsten* Lauf — so bleibt es eine rollierende
+  Zusammenfassung statt eines "sieht sich selbst"-Zirkelschlusses.
+  `runFeedbackSummary`-Fehler werden in `runPipelinePhases` abgefangen und
+  loggen nur (Lauf bricht nicht ab), analog zum bestehenden
+  Job-Fehlerbehandlungsprinzip.
+- **T6.5 — Kein Fallback bei leerem Top-N:** Ist `/today` ohnehin leer
+  ("Heute nichts Wichtiges"), erscheint aktuell keine Dranbleiben-Karte —
+  die Spezifikation beschreibt sie explizit "unter den Top-N", daher
+  konservativ nur an den bestehenden Top-N-Fall gehängt statt als
+  eigenständiger Alternativpfad.
+- **T6.5 — Link-Ziel:** "Link zum Reel/zur Quelle" wird als externer
+  Quell-Link (`reel.url`, wie in `ReelCard`/`SavedList`) umgesetzt — es gibt
+  keine interne Reel-Detailseite im MVP.

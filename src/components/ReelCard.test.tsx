@@ -47,6 +47,17 @@ describe("ReelCard", () => {
     expect(html).toContain("R 82");
     expect(html).toContain("Q 74");
     expect(html).toContain('href="https://example.com/item"');
+    expect(html).toContain("🔖");
+    expect(html).toContain("👍");
+    expect(html).toContain("👎");
+    expect(html).toContain("🙈");
+  });
+
+  it("hydrates the action bar from the interactions prop (T6.2)", () => {
+    const html = renderToStaticMarkup(
+      <ReelCard reel={baseReel} interactions={{ save: true, up: false, down: false }} />,
+    );
+    expect(html).toContain('aria-pressed="true"');
   });
 
   it("renders a minimal reel (all nullable fields null) without crashing or showing empty sections", () => {

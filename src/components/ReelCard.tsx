@@ -1,6 +1,8 @@
 import type { FeedReel } from "@/lib/feed";
 import { isNew } from "@/lib/labels";
+import type { ReelActionFlags } from "@/lib/interactions";
 import { formatRelativeTime } from "@/lib/relativeTime";
+import { ReelCardShell } from "./ReelCardShell";
 import { CATEGORY_LABELS, EFFORT_LABELS, MATURITY_LABELS } from "./labels";
 
 function Badge({ children }: { children: React.ReactNode }) {
@@ -9,13 +11,22 @@ function Badge({ children }: { children: React.ReactNode }) {
   );
 }
 
+const NO_INTERACTIONS: ReelActionFlags = { save: false, up: false, down: false };
+
+export interface ReelCardProps {
+  reel: FeedReel;
+  /** Current save/up/down state, to hydrate the action bar (T6.2). Defaults
+   *  to "none active" when omitted. */
+  interactions?: ReelActionFlags;
+}
+
 /** One reel card, sized to fill the viewport (see .reel/.feed scroll-snap in page.tsx). */
-export function ReelCard({ reel }: { reel: FeedReel }) {
+export function ReelCard({ reel, interactions }: ReelCardProps) {
   const showNewBadge = isNew(reel);
 
   return (
-    <article className="reel min-h-dvh snap-start [scroll-snap-stop:always]">
-      <div className="mx-auto flex h-dvh max-w-xl flex-col overflow-y-auto px-6 pb-10 pt-28">
+    <ReelCardShell reelId={reel.id} initial={interactions ?? NO_INTERACTIONS}>
+      <div className="mx-auto flex h-dvh max-w-xl flex-col overflow-y-auto px-6 pb-20 pt-28">
         <header className="flex items-center gap-2 text-xs text-zinc-400">
           <span className="font-medium text-zinc-300">{reel.sourceName}</span>
           <span aria-hidden="true">·</span>
@@ -70,6 +81,6 @@ export function ReelCard({ reel }: { reel: FeedReel }) {
           </span>
         </footer>
       </div>
-    </article>
+    </ReelCardShell>
   );
 }

@@ -61,6 +61,41 @@ describe("prompt", () => {
     });
     expect(prompt).toMatchSnapshot();
   });
+
+  it("appends the rolling feedback summary as extra context when provided (T6.4)", () => {
+    const prompt = buildEnrichmentUserPrompt({
+      item: {
+        title: "New agent SDK",
+        url: "https://example.com/sdk",
+        rawContent: "The SDK now supports tools.",
+        publishedAt: new Date("2026-07-20T08:00:00Z"),
+      },
+      sourceName: "simon-willison",
+      profile: "# Profil\nTypeScript-Entwickler.",
+      feedbackSummary: "- mag: konkrete Beispiele\n- überspringt: reine Ankündigungen",
+    });
+
+    expect(prompt).toContain("## Observed behavior (rolling feedback summary)");
+    expect(prompt).toContain("mag: konkrete Beispiele");
+    // Comes right after the profile, before the raw item.
+    expect(prompt.indexOf("Observed behavior")).toBeGreaterThan(prompt.indexOf("Developer profile"));
+    expect(prompt.indexOf("Observed behavior")).toBeLessThan(prompt.indexOf("Raw item"));
+  });
+
+  it("omits the feedback-summary section entirely when none is available", () => {
+    const prompt = buildEnrichmentUserPrompt({
+      item: {
+        title: "New agent SDK",
+        url: "https://example.com/sdk",
+        rawContent: "The SDK now supports tools.",
+        publishedAt: new Date("2026-07-20T08:00:00Z"),
+      },
+      sourceName: "simon-willison",
+      profile: "# Profil\nTypeScript-Entwickler.",
+    });
+
+    expect(prompt).not.toContain("Observed behavior");
+  });
 });
 
 describe("loadProfile", () => {

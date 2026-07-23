@@ -4,6 +4,8 @@ import { afterAll, beforeEach, describe, expect, it, vi } from "vitest";
 import { sql } from "drizzle-orm";
 import { db, getPool } from "@/db/client";
 import { rawItems, reels, sources } from "@/db/schema";
+import { setAppState } from "@/lib/appState";
+import { FEEDBACK_SUMMARY_KEY, type FeedbackSummaryState } from "@/lib/feedback/run";
 import { runEnrichment, type StructuredCaller } from "./run";
 
 const validOutput = {
@@ -40,7 +42,7 @@ async function seedRawItem(externalId: string) {
 
 describe("runEnrichment (integration)", () => {
   beforeEach(async () => {
-    await db().execute(sql`TRUNCATE reels, raw_items, sources RESTART IDENTITY CASCADE`);
+    await db().execute(sql`TRUNCATE app_state, reels, raw_items, sources RESTART IDENTITY CASCADE`);
   });
 
   afterAll(async () => {
@@ -103,5 +105,32 @@ describe("runEnrichment (integration)", () => {
 
     const result = await runEnrichment(db(), caller, "profile");
     expect(result).toEqual({ processed: 1, succeeded: 1, failed: 0 });
+  });
+
+  it("picks up a stored rolling feedback summary as extra prompt context (T6.4)", async () => {
+    await seedRawItem("with-feedback");
+    const state: FeedbackSummaryState = {
+      summary: "- mag: konkrete Beispiele\n- überspringt: reine Ankündigungen",
+      generatedAt: "2026-07-23T00:00:00.000Z",
+      interactionCountAtGeneration: 42,
+    };
+    await setAppState(db(), FEEDBACK_SUMMARY_KEY, state);
+    const caller: StructuredCaller = vi.fn().mockResolvedValue(validOutput);
+
+    await runEnrichment(db(), caller, "profile");
+
+    const call = (caller as ReturnType<typeof vi.fn>).mock.calls[0][0];
+    expect(call.user).toContain("## Observed behavior (rolling feedback summary)");
+    expect(call.user).toContain("mag: konkrete Beispiele");
+  });
+
+  it("omits the feedback-summary section when app_state has none yet", async () => {
+    await seedRawItem("no-feedback");
+    const caller: StructuredCaller = vi.fn().mockResolvedValue(validOutput);
+
+    await runEnrichment(db(), caller, "profile");
+
+    const call = (caller as ReturnType<typeof vi.fn>).mock.calls[0][0];
+    expect(call.user).not.toContain("Observed behavior");
   });
 });
