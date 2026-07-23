@@ -51,7 +51,7 @@ SkillTagger, Actionable.
 - **Verifikation:** Integrationstest: Match taggt; Propose erzeugt pending-Node + Item
   bleibt null; zweiter Lauf idempotent.
 
-### ☐ T12.5 — Trigger verdrahten
+### ☒ T12.5 — Trigger verdrahten
 - **Reels:** `runSkillTagging` als Stufe im Daily-Job **nach** dem Enrichment.
 - **Manuelle Reports:** `tagSingle` direkt nach `createReport` (Epic 9 T9.5) — fire-and-forget
   oder kurz awaited, Formular blockiert nicht.

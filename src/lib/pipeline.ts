@@ -8,6 +8,7 @@ import { resolveExecutionConfig } from "@/lib/executor/config";
 import { getExecutor } from "@/lib/executor/executor";
 import { runFeedbackSummary, type FeedbackSummaryResult } from "@/lib/feedback/run";
 import { runIngestion, type IngestionResult } from "@/lib/ingestion/run";
+import { runSkillTagging, type SkillTaggingResult } from "@/lib/skilltagger/run";
 
 export type PipelineMode = "full" | "ingestion" | "enrichment";
 export type PipelineTrigger = "manual" | "cron";
@@ -15,6 +16,7 @@ export type PipelineTrigger = "manual" | "cron";
 export interface PipelineSummary {
   ingestion?: IngestionResult;
   enrichment?: EnrichmentResult;
+  skillTagging?: SkillTaggingResult;
   feedback?: FeedbackSummaryResult;
 }
 
@@ -44,9 +46,21 @@ export async function runPipelinePhases(
     // `claude-code` uses subscription quota via the local CLI — never both.
     const executor = getExecutor(resolveExecutionConfig(env()));
     summary.enrichment = await runEnrichment(db, executor);
-    // T6.4: rolling feedback summary, right after enrichment. Never aborts
-    // the run — a failure here is logged and simply skipped; the next run
-    // retries (the "new since last summary" count only grows in the meantime).
+    // Epic 12 (ADR 0009): SkillTagger runs right after enrichment, on the
+    // same executor — Match-or-Propose against the current active node
+    // list, sets reels.skill or proposes a pending node. Also the backstop
+    // for the on-save `tagSingle` path (src/app/experience/create/route.ts)
+    // and for items unblocked by a newly-confirmed proposal (T12.6). Its own
+    // runner never throws per-item, but guard the call anyway (same
+    // never-abort-the-run contract as the feedback summary below).
+    try {
+      summary.skillTagging = await runSkillTagging(db, executor);
+    } catch (error) {
+      console.error("[pipeline] skill tagging failed:", error);
+    }
+    // T6.4: rolling feedback summary, right after enrichment/tagging. Never
+    // aborts the run — a failure here is logged and simply skipped; the next
+    // run retries (the "new since last summary" count only grows meanwhile).
     try {
       summary.feedback = await runFeedbackSummary(db, executor);
     } catch (error) {
