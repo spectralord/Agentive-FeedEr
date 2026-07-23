@@ -37,6 +37,36 @@ Sofern der Benutzer nicht explizit etwas anderes anweist, gilt:
   Feature-Branch überlebt. Push am Task-/Epic-Ende; bei riskanten/langen Läufen ruhig
   zwischendurch pushen, damit auch ein Container-Recycling nichts kostet.
 
+## Design-Prozess (vom starken Modell gegrillt am 2026-07-23; siehe ADR 0014)
+
+> Entscheidungen des starken Modells laut Modell-Arbeitsteilung. Vom Benutzer jederzeit
+> kippbar. Ausführliche Herleitung: `docs/specs/2026-07-23-design-process.md`.
+
+Der Prozess läuft auf **drei Ebenen**, jede mit Auslöser / Owner / Artefakt:
+1. **Produkt-/Architektur-Design** — Auslöser: echte Weggabelung oder Datenmodell-Änderung.
+   Owner: starkes Modell (Grill/Selbst-Grill). Artefakt: ADR + Epic-Plan + Glossar.
+2. **UX-/Gamification-Design** — Auslöser: neues nutzerseitiges Epic *oder* periodischer
+   Ganzheits-Pass. Owner: **Design-Experten-Session** (Übergabe-Prompt:
+   `docs/specs/design-expert-handoff-prompt.md`). Artefakt: UX-Spec/Design-ADR + baubare UI-Tasks.
+3. **Inhalts-Qualität** — Auslöser: periodische Stichprobe generierter Reels. Owner:
+   Persona-Agent (Zukunftsmusik, `future-todos.md` T5). Artefakt: Bewertung → Enrichment-Prompt/
+   `QUALITY_THRESHOLD`.
+
+**Arbeitsregeln:**
+- **ADR-Schwelle:** ADR, wenn eine Entscheidung schwer reversibel ist / Struktur prägt, eine
+  plausible Alternative verwirft, oder später referenziert wird. Sonst Glossar oder Epic-Notiz.
+  Faustregel: *„Würde ein künftiges Ich/ein Subagent das ohne das Warum falsch wiederholen?"*
+- **Grillen vs. direkt bauen:** Grillen bei echter Weggabelung/Trade-off/unklarer Intention;
+  direkt delegieren, wenn die Epic-Tasks *eindeutig ohne Entscheidung* schreibbar sind.
+- **Exit-Kriterium „designed enough":** jeder Ast aufgelöst oder bewusst mit Notiz vertagt;
+  Epic-Tasks eindeutig mit Verifikationsschritten schreibbar; kein „TBD" im kritischen Pfad.
+- **Review-Mindest-Checkliste:** Build grün · Tests grün · Task-Verifikationen ausgeführt ·
+  keine ADR-Verletzung · keine neuen Libs · Diff auf das Epic begrenzt. Situativ tiefer bei
+  architektonisch bedeutsamen Änderungen.
+- **Parallelitätsgrad:** max. ~2–3 gleichzeitige Subagenten (so viel wie gut reviewbar), jeder
+  auf eigenem Branch; **Task-Board + README-Status-Tabelle** sind die einzige Wahrheitsquelle,
+  an jeder Epic-Grenze aktualisiert.
+
 ## Projekt-Dokumentation
 
 - Glossar: `CONTEXT.md` · ADRs: `docs/adr/` · Design: `docs/specs/` ·

@@ -92,7 +92,28 @@ Heute ist nur die erste Ebene ausgeprägt.
   starke Modell gut reviewen kann (~2–3), jeder auf eigenem Branch; **Task-Board + README-
   Status-Tabelle** als einzige Wahrheitsquelle, an jeder Epic-Grenze aktualisiert.
 
-## 6. Offene Grill-Fragen (Protokoll)
-- **F1 (offen):** Scope-Priorität — UX-Praxis (A) vs. Engineering-Workflow formalisieren (B)
-  vs. beides integriert (C)? Empfehlung des starken Modells: **A**, danach B nachziehen.
-_(weitere Fragen + Entscheidungen werden hier während des Grills protokolliert)_
+## 6. Grill-Protokoll (Selbst-Grill des starken Modells, 2026-07-23 — Benutzer-Override offen)
+
+> Da autonomes Weiterarbeiten gewünscht war und CLAUDE.md dem starken Modell die Design-Hoheit
+> gibt, wurden diese Fragen im **Selbst-Grill** entschieden (beide Seiten durchgespielt). Alles
+> in ADR 0014 + CLAUDE.md festgehalten. Der Benutzer kann jeden Punkt kippen.
+
+- **F1 — Scope → ENTSCHIEDEN: A, mit B „mitgenommen".** Die günstigen Engineering-Regeln
+  (L1/L2/L5/L6/L7) gelten sofort (kein Nachteil), Schwerpunkt der *aktiven* Arbeit ist die
+  **UX-Ebene (L3)**. Gegenprobe: B-zuerst wäre billiger, schließt aber die größte Produktlücke
+  nicht; „alles integriert" (C) zu langsam. → A sequenziert schlägt beide.
+- **L1 ADR-Schwelle → ENTSCHIEDEN** (siehe CLAUDE.md): schwer reversibel / Struktur / verworfene
+  Alternative / später referenziert ⇒ ADR; sonst Glossar/Epic-Notiz.
+- **L2 Grillen-vs-bauen → ENTSCHIEDEN:** Grillen bei echter Weggabelung; sonst direkt delegieren,
+  wenn Epic-Tasks eindeutig ohne Entscheidung schreibbar sind.
+- **L3 UX-Prozess → ENTSCHIEDEN:** eigener UX-/Gamification-Pass (vor nutzerseitigen Epics +
+  einmal jetzt ganzheitlich) via **Design-Experten-Session**; Übergabe-Prompt liegt unter
+  `docs/specs/design-expert-handoff-prompt.md`.
+- **L4 Persona-Loop → ENTSCHIEDEN:** geparkt (Zukunftsmusik), Andockpunkt dokumentiert.
+- **L5 Review-Tiefe → ENTSCHIEDEN:** feste Mindest-Checkliste + situativ tiefer.
+- **L6 „designed enough" → ENTSCHIEDEN:** jeder Ast aufgelöst/vertagt, Tasks eindeutig
+  schreibbar, kein „TBD" im kritischen Pfad.
+- **L7 Parallelität → ENTSCHIEDEN:** ~2–3 Subagenten, Task-Board + Status-Tabelle als Wahrheit.
+
+**Nächster konkreter Schritt (nutzt der Benutzer, wenn er mag):** die Design-Experten-Session
+mit dem Übergabe-Prompt starten → deren UX-Vorschläge kommen als Review zurück, bevor gebaut wird.
