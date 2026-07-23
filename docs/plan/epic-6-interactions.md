@@ -49,7 +49,7 @@ export const appState = pgTable("app_state", {          // generischer Key-Value
 - Navigation um „Gespeichert" erweitern.
 - **Verifikation:** Save im Feed ⇒ erscheint hier; Entfernen nimmt ihn wieder raus.
 
-### ☐ T6.4 — Rollierende Feedback-Zusammenfassung
+### ✅ T6.4 — Rollierende Feedback-Zusammenfassung
 - Im Daily-Job, nach dem Enrichment: falls ≥ 10 neue Interactions seit letzter
   Zusammenfassung, ein kleiner Claude-Call (Haiku): Input = letzte 100 Interactions
   (mit Reel-Titel/Kategorie/Skill), Output = 5–8 Bullet-Points
@@ -73,3 +73,18 @@ export const appState = pgTable("app_state", {          // generischer Key-Value
 
 ## Abweichungen/Fragen
 _(vom ausführenden Modell zu pflegen)_
+
+- **T6.4 — Threshold-Basis:** "≥ 10 neue Interactions seit der letzten
+  Zusammenfassung" wird über einen Zähler-Vergleich umgesetzt
+  (`interactionCountAtGeneration` in `app_state["feedback_summary"]` vs.
+  aktuelle Gesamtzahl in `interactions`), nicht über eine Timestamp-Grenze —
+  robuster gegen Interactions, die zwischenzeitlich zurückgenommen (toggle)
+  wurden, und einfacher zu testen. Verhalten entspricht der Spezifikation.
+- **T6.4 — Reihenfolge im Pipeline-Schritt:** `runEnrichment` liest die
+  *zuvor* gespeicherte Summary (falls vorhanden) als Kontext für den
+  aktuellen Lauf; `runFeedbackSummary` läuft danach und aktualisiert die
+  Summary für den *nächsten* Lauf — so bleibt es eine rollierende
+  Zusammenfassung statt eines "sieht sich selbst"-Zirkelschlusses.
+  `runFeedbackSummary`-Fehler werden in `runPipelinePhases` abgefangen und
+  loggen nur (Lauf bricht nicht ab), analog zum bestehenden
+  Job-Fehlerbehandlungsprinzip.

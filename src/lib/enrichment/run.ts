@@ -5,6 +5,7 @@ import type * as schema from "@/db/schema";
 import { rawItems, reels, sources, type RawItem } from "@/db/schema";
 import { callStructured } from "@/lib/claude";
 import { env } from "@/lib/env";
+import { loadFeedbackSummaryText } from "@/lib/feedback/run";
 import { loadProfile } from "./profile";
 import {
   buildEnrichmentUserPrompt,
@@ -40,12 +41,17 @@ export async function runEnrichment(
     .orderBy(asc(rawItems.publishedAt))
     .limit(env().MAX_ENRICH_PER_RUN);
 
+  // T6.4: the rolling feedback summary (if one has been generated yet) rides
+  // along as extra relevance context on every item this run — see
+  // src/lib/enrichment/prompt.ts and src/lib/feedback/run.ts.
+  const feedbackSummary = await loadFeedbackSummaryText(db);
+
   let succeeded = 0;
   let failed = 0;
 
   for (const { item, sourceName } of pending) {
     try {
-      const output = await enrichWithRetry(caller, item, sourceName, profile);
+      const output = await enrichWithRetry(caller, item, sourceName, profile, feedbackSummary);
       await db.transaction(async (tx) => {
         await tx.insert(reels).values({
           rawItemId: item.id,
@@ -82,10 +88,11 @@ async function enrichWithRetry(
   item: RawItem,
   sourceName: string,
   profile: string,
+  feedbackSummary?: string,
 ): Promise<ReelOutput> {
   const opts = {
     system: ENRICHMENT_SYSTEM_PROMPT,
-    user: buildEnrichmentUserPrompt({ item, sourceName, profile }),
+    user: buildEnrichmentUserPrompt({ item, sourceName, profile, feedbackSummary }),
     toolName: ENRICHMENT_TOOL_NAME,
     inputSchema: reelOutputJsonSchema as unknown as Record<string, unknown>,
   };
