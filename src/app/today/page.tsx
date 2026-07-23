@@ -1,6 +1,7 @@
 import Link from "next/link";
 import { ReelCard } from "@/components/ReelCard";
-import { getInteractionFlags } from "@/lib/interactions";
+import { ResurfaceCard } from "@/components/ResurfaceCard";
+import { getInteractionFlags, getResurfacingCandidates } from "@/lib/interactions";
 import { getTodayTopReels } from "@/lib/today";
 
 // The 24h/48h ingestion window and the ranking both depend on "now" — this
@@ -31,6 +32,7 @@ export default async function TodayPage() {
   }
 
   const interactionFlags = await getInteractionFlags(reels.map((r) => r.id));
+  const resurfacing = await getResurfacingCandidates(now);
 
   return (
     <>
@@ -51,6 +53,8 @@ export default async function TodayPage() {
         {reels.map((reel) => (
           <ReelCard key={reel.id} reel={reel} interactions={interactionFlags.get(reel.id)} />
         ))}
+
+        <ResurfaceCard reels={resurfacing} now={now} />
 
         <div className="reel flex min-h-dvh snap-start items-center justify-center [scroll-snap-stop:always]">
           <div className="mx-auto flex max-w-xl flex-col items-center gap-4 px-6 text-center">

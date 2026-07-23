@@ -58,7 +58,7 @@ export const appState = pgTable("app_state", {          // generischer Key-Value
   Zusatzkontext unter das Profil („Beobachtetes Verhalten: …").
 - **Verifikation:** Test mit gemocktem Call; Prompt-Snapshot enthält Summary.
 
-### ☐ T6.5 — Spaced Resurfacing auf `/today`
+### ✅ T6.5 — Spaced Resurfacing auf `/today`
 - Unter den Top-N eine Zusatzkarte „🔁 Dranbleiben": bis zu 2 gespeicherte Reels,
   deren Save 7–21 Tage her ist — Text: „Vor N Tagen gespeichert — nochmal ansehen?"
   mit Link zum Reel/zur Quelle. Kein „erledigt"-Häkchen: Items rotieren nach 21 Tagen
@@ -88,3 +88,11 @@ _(vom ausführenden Modell zu pflegen)_
   `runFeedbackSummary`-Fehler werden in `runPipelinePhases` abgefangen und
   loggen nur (Lauf bricht nicht ab), analog zum bestehenden
   Job-Fehlerbehandlungsprinzip.
+- **T6.5 — Kein Fallback bei leerem Top-N:** Ist `/today` ohnehin leer
+  ("Heute nichts Wichtiges"), erscheint aktuell keine Dranbleiben-Karte —
+  die Spezifikation beschreibt sie explizit "unter den Top-N", daher
+  konservativ nur an den bestehenden Top-N-Fall gehängt statt als
+  eigenständiger Alternativpfad.
+- **T6.5 — Link-Ziel:** "Link zum Reel/zur Quelle" wird als externer
+  Quell-Link (`reel.url`, wie in `ReelCard`/`SavedList`) umgesetzt — es gibt
+  keine interne Reel-Detailseite im MVP.

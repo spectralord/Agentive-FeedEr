@@ -107,7 +107,7 @@ Ein Epic ist fertig, wenn:
 | 3 — Reel-Feed-UI | `epic-3-feed-ui.md` | MVP | ✅ fertig (Verifikation via `curl` gegen `npm run start` statt manuell in Safari/iPad — siehe Abweichungen) |
 | 4 — Today's Top-N | `epic-4-top-n.md` | MVP | ✅ fertig (Verifikation via `curl` gegen `npm run start` statt manuell in Safari/iPad — siehe Abweichungen) |
 | 5 — Übersicht/SOTA | `epic-5-overview.md` | MVP-nah | ✅ fertig (Verifikation via `curl` gegen `npm run start` statt manuell in Safari/iPad — siehe Abweichungen) |
-| 6 — Saves/Feedback/Resurfacing | `epic-6-interactions.md` | Fast-Follow | ☐ offen (siehe Revidierte Annahmen unten) |
+| 6 — Saves/Feedback/Resurfacing | `epic-6-interactions.md` | Fast-Follow | ✅ fertig (siehe Abweichungen in `epic-6-interactions.md`) |
 | 7 — Skill-Map | `epic-7-skill-map.md` | Vision | ☐ offen (nach Epic 12; siehe Revidierte Annahmen) |
 | 8 — Agentisches Vertiefen | `epic-8-deep-dive.md` | Vision | ☐ offen |
 | 9 — Erfahrungs-Sektion | `epic-9-experience-reports.md` | Fast-Follow | ✅ fertig (kein echtes Markdown-Rendering ohne neue Dependency — siehe Abweichungen in `epic-9-experience-reports.md`) |
