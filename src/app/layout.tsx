@@ -26,6 +26,7 @@ const navItems = [
   { href: "/today", label: "Heute" },
   { href: "/", label: "Feed" },
   { href: "/overview", label: "Übersicht" },
+  { href: "/saved", label: "Gespeichert" },
   { href: "/experience", label: "Erfahrung" },
   { href: "/admin", label: "Admin" },
 ];

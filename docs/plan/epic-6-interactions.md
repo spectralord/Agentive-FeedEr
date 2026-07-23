@@ -42,7 +42,7 @@ export const appState = pgTable("app_state", {          // generischer Key-Value
 - `hide` wirkt sofort: Feed-Query schließt Reels mit aktiver hide-Interaction aus.
 - **Verifikation:** Toggle-Semantik per API-Test; Hide entfernt Karte aus Feed.
 
-### ☐ T6.3 — `/saved`-Seite
+### ✅ T6.3 — `/saved`-Seite
 - Liste aller Reels mit aktiver `save`-Interaction, neueste Speicherung zuerst,
   Kompaktdarstellung wie Overview-Verlauf; je Eintrag „Entfernen" (Save zurücknehmen).
   **Kein** „tried/erledigt"-Häkchen (siehe Revision).
