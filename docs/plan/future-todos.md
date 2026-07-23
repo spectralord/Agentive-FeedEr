@@ -70,6 +70,12 @@ Ausführungspfad als das deterministische, tool-use-strukturierte Enrichment (AD
   `APP_PROFILE=local|cloud` setzt sinnvolle Defaults (local→Claude Code + lokale DB;
   cloud→API + Railway), einzelne Achsen (v. a. Executor) sind per Env überschreibbar
   (⇒ auch Cloud+Claude-Code möglich). Nicht die volle 4er-Kombinatorik als Normalfall.
+- **F3 — Schema-Disziplin/Granularität → ENTSCHIEDEN: C (Agent-Batch + erzwungenes Tool-Use).**
+  Der Agent verarbeitet einen Batch in einem Turn, ruft aber **pro Item ein lokales Tool
+  `emit_reel(reel)`** auf, das **serverseitig zod-validiert + schreibt** — Schema-Zwang im Tool,
+  Per-Item-Validierung/-Isolation (ADR 0003 gewahrt) bei Batch-Effizienz. Bildet die heutige
+  „forced tool_choice"-Disziplin nach. Fallback bei Setup-Problemen: (A) Agent-Batch → Skript
+  validiert das Array.
 
 ### Erweiterung (Benutzer 2026-07-23): zwei **Umgebungs-Profile** lokal ↔ cloud
 Der Schalter ist eigentlich **zweidimensional** — Umgebung *und* Inferenz:
