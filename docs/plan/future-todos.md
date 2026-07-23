@@ -66,6 +66,11 @@ Ausführungspfad als das deterministische, tool-use-strukturierte Enrichment (AD
   gleiche Idempotenz/Validierung — kein Endpunkt-Zoo. Für ein Single-User-Tool der einfachste,
   robusteste Weg.
 
+- **F2 — Profil-Struktur → ENTSCHIEDEN: C (Profil mit Defaults + Override).** Ein
+  `APP_PROFILE=local|cloud` setzt sinnvolle Defaults (local→Claude Code + lokale DB;
+  cloud→API + Railway), einzelne Achsen (v. a. Executor) sind per Env überschreibbar
+  (⇒ auch Cloud+Claude-Code möglich). Nicht die volle 4er-Kombinatorik als Normalfall.
+
 ### Erweiterung (Benutzer 2026-07-23): zwei **Umgebungs-Profile** lokal ↔ cloud
 Der Schalter ist eigentlich **zweidimensional** — Umgebung *und* Inferenz:
 - **Umgebung:** **`local`** (eigener Rechner, **lokale DB**, Ausführung in Claude Code) vs.
