@@ -41,7 +41,7 @@ SkillTagger, Actionable.
 - **Verifikation:** Unit-Tests mit gemocktem Call: klarer Match → `match`; unbekanntes
   Thema → `propose`.
 
-### ☐ T12.4 — Runner (`src/lib/skilltagger/run.ts`) — ein Tagger, mehrere Trigger
+### ☒ T12.4 — Runner (`src/lib/skilltagger/run.ts`) — ein Tagger, mehrere Trigger
 - `runSkillTagging(db, caller?)`: verarbeitet alle Inhalte mit `skill IS NULL`
   (Reels **und** `experience_reports`), idempotent (Muster wie Enrichment):
   - `match` → `content.skill = slug` setzen.
