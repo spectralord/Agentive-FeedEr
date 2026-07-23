@@ -48,12 +48,51 @@ häufige Subagenten-Commits, Sprache (UI/Doku Deutsch, Code/Commits Englisch).
 - **L7 — Parallelitätsgrad:** Wie viele Epics/Subagenten gleichzeitig, und wie halten wir den
   Überblick (Task-Board, Status-Tabelle) aktuell?
 
-## 4. Grobe Zielrichtung (unverbindlich, wird im Grill geschärft)
-- Prozess in **drei Ebenen** denken: **Produkt-/Architektur-Design** (grill→ADR),
-  **UX-/Gamification-Design** (eigener Pass, evtl. Experten-Session), **Inhalts-Qualität**
-  (Persona-Feedback-Loop). Heute ist nur die erste Ebene ausgeprägt.
-- Jede Ebene braucht: einen *Auslöser* (wann), einen *Owner* (wer/welches Modell), ein
-  *Artefakt* (was bleibt zurück).
+## 4. Drei Ebenen des Design-Prozesses (Zielbild)
 
-## 5. Offene Grill-Fragen
-_(werden hier während des Grills als Entscheidungen protokolliert)_
+Jede Ebene braucht **Auslöser** (wann), **Owner** (wer), **Artefakt** (was bleibt):
+
+| Ebene | Auslöser | Owner | Artefakt |
+|---|---|---|---|
+| **Produkt-/Architektur-Design** | echte Weggabelung / Datenmodell-Änderung | starkes Modell (Opus), Grill | ADR + Epic-Plan + Glossar |
+| **UX-/Gamification-Design** | neues nutzerseitiges Epic *oder* periodischer Ganzheits-Pass | **Design-Experten-Session** (T4) | UX-Spec / Design-ADR + baubare UI-Tasks |
+| **Inhalts-Qualität** | periodisch, Stichprobe generierter Reels | **Persona-Agent** (T5, Zukunftsmusik) | Bewertung → speist Enrichment-Prompt/Threshold |
+
+Heute ist nur die erste Ebene ausgeprägt.
+
+## 5. Vorschlag des starken Modells je offener Frage (im Grill zu bestätigen/kippen)
+
+> Das sind **meine Empfehlungen**, keine getroffenen Entscheidungen — der Benutzer bestätigt
+> oder kippt sie im Grill. Erst dann wandern sie nach CLAUDE.md bzw. in einen ADR.
+
+- **L1 — ADR-Schwelle → Vorschlag:** ADR, wenn eine Entscheidung (a) schwer reversibel ist
+  oder Struktur/Datenmodell prägt, (b) eine plausible Alternative *verwirft*, die man sich
+  merken sollte, oder (c) von späterer Arbeit referenziert wird. Sonst reicht Glossar (neuer
+  Begriff) oder Epic-Notiz (lokales Detail). Faustregel: *„Würde ein künftiges Ich/ein
+  Subagent das ohne das Warum falsch wiederholen?"* → ADR.
+- **L2 — Grillen vs. direkt bauen → Vorschlag:** Grillen bei echter Weggabelung mit
+  Trade-offs, unklarer Intention oder querschnittlicher Wirkung. Direkt delegieren bei
+  mechanischen/klar spezifizierten Tasks. Lackmustest: *„Kann ich die Epic-Tasks eindeutig
+  schreiben, ohne eine Entscheidung zu treffen?"* ja → bauen, nein → grillen.
+- **L3 — UX-Design-Prozess → Vorschlag:** Eigener **UX-/Gamification-Pass** als distinkte
+  Phase, ausgelöst (a) *vor* dem Bau jedes nutzerseitigen Epics mit neuen Screens/Interaktionen
+  und (b) einmal jetzt als **Ganzheits-Review** (weil UX aktuell dürftig). Owner: die geparkte
+  **T4-Design-Experten-Session** (Opus/Design-Agent, umfassender Übergabe-Prompt, Mindset
+  Gamification + gute UX). Artefakt: UX-Spec/Design-ADR + konkrete, baubare UI-Tasks.
+- **L4 — Persona-Loop (T5) → Vorschlag:** Zukunftsmusik lassen, aber Andockpunkt definieren:
+  Persona-Agent zieht periodisch Stichproben generierter Reels, bewertet Entwickler-Mehrwert;
+  Ergebnis fließt in Enrichment-Prompt/`QUALITY_THRESHOLD`-Tuning. Nicht jetzt bauen.
+- **L5 — Review-Tiefe → Vorschlag:** Feste **Mindest-Checkliste** (Build grün, Tests grün,
+  Task-Verifikationen ausgeführt, keine ADR-Verletzung, keine neuen Libs, Diff auf das Epic
+  begrenzt) **plus** situativ tiefer bei architektonisch bedeutsamen Änderungen.
+- **L6 — „Designed enough" → Vorschlag:** Exit-Kriterium = jeder Ast des Entscheidungsbaums
+  ist *aufgelöst oder bewusst mit Notiz vertagt*; Epic-Tasks eindeutig mit Verifikationsschritten
+  schreibbar; kein „TBD" im kritischen Pfad.
+- **L7 — Parallelitätsgrad → Vorschlag:** Gleichzeitige Subagenten auf das begrenzen, was das
+  starke Modell gut reviewen kann (~2–3), jeder auf eigenem Branch; **Task-Board + README-
+  Status-Tabelle** als einzige Wahrheitsquelle, an jeder Epic-Grenze aktualisiert.
+
+## 6. Offene Grill-Fragen (Protokoll)
+- **F1 (offen):** Scope-Priorität — UX-Praxis (A) vs. Engineering-Workflow formalisieren (B)
+  vs. beides integriert (C)? Empfehlung des starken Modells: **A**, danach B nachziehen.
+_(weitere Fragen + Entscheidungen werden hier während des Grills protokolliert)_
