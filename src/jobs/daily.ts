@@ -2,16 +2,25 @@
 // Runs the same tracked pipeline the admin console triggers (ADR 0010): ingestion
 // (cheap, no AI) then enrichment (Claude). The run is recorded in pipeline_runs.
 import { db, getPool } from "@/db/client";
+import { env } from "@/lib/env";
+import { resolveExecutionConfig } from "@/lib/executor/config";
 import { executeTrackedRun, PipelineBusyError } from "@/lib/pipeline";
 import { pipelineRuns } from "@/db/schema";
 import { eq } from "drizzle-orm";
 
 async function main(): Promise<number> {
-  console.log(`[daily] starting at ${new Date().toISOString()}`);
+  // Epic 17 (ADR 0015): the execution config (profile/executor/trigger) is
+  // resolved from env; an illegal combination throws here before any work.
+  const exec = resolveExecutionConfig(env());
+  const triggerLabel = exec.trigger === "manual" ? "manual" : "cron";
+  console.log(
+    `[daily] starting at ${new Date().toISOString()} ` +
+      `(profile=${exec.profile}, executor=${exec.executor}, trigger=${exec.trigger})`,
+  );
 
   let runId: number;
   try {
-    runId = await executeTrackedRun(db(), { trigger: "cron", mode: "full" });
+    runId = await executeTrackedRun(db(), { trigger: triggerLabel, mode: "full" });
   } catch (error) {
     if (error instanceof PipelineBusyError) {
       console.log("[daily] skipped: a pipeline run is already in progress.");
