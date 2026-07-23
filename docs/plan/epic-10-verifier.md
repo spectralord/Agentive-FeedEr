@@ -52,7 +52,11 @@ Glossar: Verifier, caveat, confidence, Korroboration.
 
 ---
 
-## Stufe 2 — Cluster-Korroboration (später, braucht Clustering V1)
+## Stufe 2 — Cluster-Korroboration
+
+> **Verschoben:** Stufe 2 ist in **Epic 11 (Topic-Knowledge-Check)** aufgegangen (ADR 0012),
+> zusammen mit Freshness/Supersession, weil beide dieselbe Cluster-Maschinerie brauchen.
+> Voraussetzung: Epic 15 (Topic-Clustering). Die folgenden Tasks bleiben als Referenz.
 
 ### ☐ T10.5 — `confidence` aus dem eigenen Korpus (Skizze)
 - Sobald `topic_cluster` existiert: pro Cluster die Zahl **unabhängiger Quellen** zählen,
