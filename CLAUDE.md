@@ -18,6 +18,19 @@ Sofern der Benutzer nicht explizit etwas anderes anweist, gilt:
 - Epics mit hoher Verzahnung (Fundament) dürfen nach Ankündigung auch direkt vom
   starken Modell implementiert werden, wenn Delegation mehr kostet als spart.
 
+## Branch-Strategie (vereinbart am 2026-07-23)
+
+- **`main` ist Basis und Deploy-Branch** (Railway deployt `main`).
+- **Pro Epic ein eigener Feature-Branch, abgezweigt von aktuellem `main`** —
+  Namensschema `claude/epic-<N>-<kurz>` (z. B. `claude/epic-6-interactions`).
+  So kommen sich parallel laufende Subagenten nicht in dieselben Dateien.
+- Ein Subagent arbeitet **immer auf dem Feature-Branch seines Epics**, nie auf einem
+  fremden. Laufen mehrere Epics parallel, hat **jedes seinen eigenen Branch**.
+- Nach Review durch das starke Modell wird der Feature-Branch nach `main` gemergt;
+  der Merge löst den Railway-Deploy aus. `main` bleibt jederzeit deploybar.
+- Vor dem Abzweigen eines neuen Feature-Branches: `main` frisch ziehen
+  (`git fetch origin main`), damit die Basis aktuell ist.
+
 ## Projekt-Dokumentation
 
 - Glossar: `CONTEXT.md` · ADRs: `docs/adr/` · Design: `docs/specs/` ·
