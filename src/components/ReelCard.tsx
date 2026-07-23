@@ -38,8 +38,8 @@ export function ReelCard({ reel, interactions }: ReelCardProps) {
         <div className="mt-2 flex flex-wrap gap-1.5">
           <Badge>{CATEGORY_LABELS[reel.category]}</Badge>
           <Badge>{MATURITY_LABELS[reel.maturity]}</Badge>
-          {reel.experimental && <Badge>🧪 experimentell</Badge>}
-          {showNewBadge && <Badge>🆕 Neu</Badge>}
+          {reel.experimental && <Badge>🧪 experimental</Badge>}
+          {showNewBadge && <Badge>🆕 New</Badge>}
         </div>
 
         <h2 className="mt-3 text-lg font-semibold leading-snug text-zinc-50">{reel.title}</h2>
@@ -48,7 +48,7 @@ export function ReelCard({ reel, interactions }: ReelCardProps) {
         {reel.example && (
           <div className="mt-4">
             <p className="text-xs font-medium uppercase tracking-wide text-zinc-500">
-              Beispiel (aus der Quelle)
+              Example (from the source)
             </p>
             <pre className="mt-1 overflow-x-auto rounded-lg bg-zinc-900 p-3 font-mono text-xs whitespace-pre-wrap text-zinc-200">
               {reel.example}
@@ -58,7 +58,7 @@ export function ReelCard({ reel, interactions }: ReelCardProps) {
 
         {reel.action && (
           <div className="mt-4 rounded-lg border border-emerald-800/40 bg-emerald-950/30 p-3">
-            <p className="text-sm text-emerald-200">➜ Für dich: {reel.action}</p>
+            <p className="text-sm text-emerald-200">➜ For you: {reel.action}</p>
             {reel.effortTag && (
               <span className="mt-2 inline-block rounded-full bg-emerald-900/60 px-2 py-0.5 text-xs text-emerald-300">
                 {EFFORT_LABELS[reel.effortTag]}
@@ -74,7 +74,7 @@ export function ReelCard({ reel, interactions }: ReelCardProps) {
             rel="noreferrer"
             className="underline decoration-zinc-700 underline-offset-2 hover:text-zinc-300"
           >
-            Zur Quelle
+            View source
           </a>
           <span>
             R {reel.relevanceScore} · Q {reel.qualityScore}

@@ -53,15 +53,15 @@ describe("FilterBar", () => {
 
     expect(html).toContain("Tooling");
     expect(html).toContain("Technique");
-    expect(html).toContain("🆕 Neu");
-    expect(html).toContain("Schwaches Signal zeigen");
+    expect(html).toContain("🆕 New");
+    expect(html).toContain("Weak signal show");
     expect(html).toContain('href="/?new=1"'); // toggling active category off keeps other filters
     expect(html).toContain('href="/?category=tooling&amp;new=1&amp;weak=1"'); // enabling weak keeps category+new
   });
 
   it("every rendered chip href is a bookmarkable, self-consistent feed URL", () => {
     const html = renderToStaticMarkup(<FilterBar current={{ weak: "1" }} />);
-    expect(html).toContain("Schwaches Signal ausblenden");
+    expect(html).toContain("Weak signal hide");
     expect(html).toMatch(/href="\/\?/);
   });
 });

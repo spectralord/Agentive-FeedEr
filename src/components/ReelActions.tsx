@@ -34,7 +34,7 @@ function actionButtonClass(active: boolean): string {
 type ToggleType = "save" | "up" | "down";
 
 /**
- * Dezente Client-Aktionsleiste (T6.2): 🔖 save · 👍 up · 👎 down · 🙈 hide.
+ * Subtle client action bar (T6.2): 🔖 save · 👍 up · 👎 down · 🙈 hide.
  * Optimistic UI — button state flips immediately and reverts if the request
  * fails; no full page reload. Hide additionally tells the parent to remove
  * this card from view right away (the server-side exclusion from getReels is
@@ -64,12 +64,12 @@ export function ReelActions({ reelId, initial, onHidden }: ReelActionsProps) {
   }
 
   return (
-    <div className="flex items-center gap-1.5" aria-label="Aktionen">
+    <div className="flex items-center gap-1.5" aria-label="Actions">
       <button
         type="button"
         aria-pressed={flags.save}
-        aria-label="Speichern"
-        title="Speichern"
+        aria-label="Save"
+        title="Save"
         onClick={() => toggle("save")}
         className={actionButtonClass(flags.save)}
       >
@@ -78,8 +78,8 @@ export function ReelActions({ reelId, initial, onHidden }: ReelActionsProps) {
       <button
         type="button"
         aria-pressed={flags.up}
-        aria-label="Gefällt mir"
-        title="Gefällt mir"
+        aria-label="Like"
+        title="Like"
         onClick={() => toggle("up")}
         className={actionButtonClass(flags.up)}
       >
@@ -88,8 +88,8 @@ export function ReelActions({ reelId, initial, onHidden }: ReelActionsProps) {
       <button
         type="button"
         aria-pressed={flags.down}
-        aria-label="Gefällt mir nicht"
-        title="Gefällt mir nicht"
+        aria-label="Dislike"
+        title="Dislike"
         onClick={() => toggle("down")}
         className={actionButtonClass(flags.down)}
       >
@@ -98,8 +98,8 @@ export function ReelActions({ reelId, initial, onHidden }: ReelActionsProps) {
       <button
         type="button"
         disabled={hiding}
-        aria-label="Ausblenden"
-        title="Ausblenden"
+        aria-label="Hide"
+        title="Hide"
         onClick={handleHide}
         className={actionButtonClass(false)}
       >
