@@ -59,7 +59,7 @@ SkillTagger, Actionable.
 - **Verifikation:** Report anlegen → nach Lauf/Save getaggt oder pending; Daily-Sweep holt
   Fehlgeschlagenes nach.
 
-### ☐ T12.6 — Node-Vorschläge bestätigen (UI)
+### ☒ T12.6 — Node-Vorschläge bestätigen (UI)
 - Kleine Ansicht „Neue Skills (N)": pending-Nodes mit Aktionen **anlegen** (`status:active`),
   **mergen** (in bestehenden Node — Item-Referenzen umhängen) oder **verwerfen**.
 - Beim manuellen Report zusätzlich inline anbieten (bester Kontext-Moment), nicht blockierend.
