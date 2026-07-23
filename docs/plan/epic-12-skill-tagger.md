@@ -75,3 +75,31 @@ SkillTagger, Actionable.
 
 ## Abweichungen/Fragen
 _(vom ausführenden Modell zu pflegen)_
+
+- **T12.2 — Ablage des `skill_hint`:** Der Task nennt nicht, wo der rohe Enrichment-Hint
+  bis zum SkillTagger-Lauf zwischengespeichert wird. Konservativ gewählt: `reels.metadata`
+  (das dafür vorgesehene, migrationsfreie Erweiterungsfeld, siehe `CONTEXT.md` „Attribut").
+  `runSkillTagging`/`tagSingle` lesen `metadata.skillHint` als `hint` für `tagContent`.
+- **T12.3 — „Konfidenz-Schwelle":** Keine separate numerische Confidence im Tool-Output;
+  die Schwelle ist als verbindliche Verhaltensregel im System-Prompt kodiert (Analog zu den
+  Scoring-Rubriken in `enrichment/prompt.ts`): „match" nur bei echter Themen-Deckung, sonst
+  „propose". Kein weiterer Konsument hätte eine numerische Zahl gebraucht — hätte nur
+  ungenutzte Komplexität hinzugefügt.
+- **T12.3 — `THEMES`:** 8 Themen gewählt (`parallelization, agents, tooling, prompting,
+  evaluation, models, integration, industry`) — innerhalb der vorgegebenen 6–10, siehe
+  `src/lib/skills.ts` für die Kurzbegründung je Thema.
+- **T12.6 — „Verwerfen" = Hard-Delete:** Das in T12.1 fixierte Schema kennt nur
+  `status: active|pending`, kein „discarded"-Zustand (anders als der breitere
+  `lifecycle_state` aus ADR 0008 für die spätere Epic-7-Variante). Verwerfen löscht die
+  Zeile daher hart; taucht die Kompetenz erneut auf, schlägt der Tagger sie einfach neu vor.
+- **T12.6 — Inline-Angebot beim manuellen Report:** Die Aufgabe nennt zusätzlich ein
+  Inline-Angebot direkt auf der Report-Erstellungsseite („bester Kontext-Moment"). Umgesetzt
+  ist nur die eigenständige `/skills`-Übersicht (erfüllt die Verifikation vollständig: ein
+  frisch erzeugter Vorschlag erscheint dort sofort nach dem Speichern). Das Inline-Widget auf
+  `/experience/new` selbst wurde **nicht** gebaut (zusätzlicher UI-Scope ohne eigene
+  Verifikationsvorgabe) — als offener Polish-Punkt vertagt, nicht als Bug.
+- **T12.6 — „Anlegen" tagged nicht sofort erneut:** Bestätigen setzt nur `status:active`;
+  das erneute Zuordnen wartender Items passiert bewusst erst im nächsten
+  `runSkillTagging`-Lauf (Daily-Job-Backstop), exakt wie der Task-Text es formuliert
+  („Nach Bestätigung ordnet der nächste Lauf..."), nicht synchron im selben Request (spart
+  einen LLM-Call in der Confirm-Aktion selbst).
