@@ -31,7 +31,7 @@ SkillTagger, Actionable.
 - **Verifikation:** Enrichment-Tests angepasst; `skill_hint` im Output, `reels.skill` nach
   Enrichment noch `null`.
 
-### ☐ T12.3 — Match-or-Propose-Kern (`src/lib/skilltagger/tagger.ts`)
+### ☒ T12.3 — Match-or-Propose-Kern (`src/lib/skilltagger/tagger.ts`)
 - `tagContent({ hint, title, text }, existingNodes): Promise<{ match: slug } | { propose: { slug, title, theme, description } }>`
   via **einem** strukturierten LLM-Call: bekommt Item-Infos + **komplette aktuelle
   `active`-Node-Liste** (Slug + Kurzbeschreibung), wählt Treffer über Konfidenz-Schwelle
