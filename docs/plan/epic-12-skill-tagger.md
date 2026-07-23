@@ -23,7 +23,7 @@ SkillTagger, Actionable.
   referenziert es dann.)
 - **Verifikation:** Migration grün.
 
-### ☐ T12.2 — Enrichment liefert nur noch rohe Kompetenz-Vermutung
+### ☒ T12.2 — Enrichment liefert nur noch rohe Kompetenz-Vermutung
 - In Epic 2 (`enrichment/schema.ts` + Prompt): `skill` wird zu `skill_hint` (Freitext,
   englisch, „welche Kompetenz behandelt das") — **keine** kanonische Zuordnung mehr im
   Single-Pass (ADR 0009 / revidiert ADR 0003). `reels.skill` bleibt, wird aber nicht mehr

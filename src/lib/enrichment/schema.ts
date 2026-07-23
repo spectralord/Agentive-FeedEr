@@ -23,10 +23,13 @@ export const reelOutputSchema = z
     example: z.string().min(1).nullable(),
     action: z.string().min(1).nullable(),
     effort_tag: z.enum(EFFORT_TAGS).nullable(),
-    skill: z
-      .string()
-      .regex(/^[a-z0-9]+(-[a-z0-9]+)*$/, "skill must be a kebab-case slug")
-      .nullable(),
+    // ADR 0009 (revised ADR 0003): the single-pass enrichment no longer
+    // decides the canonical skill node — it only sees one item, not the
+    // global node list needed to match/dedupe. It emits a raw free-text
+    // competency guess instead; the SkillTagger (Epic 12) reconciles this
+    // against the controlled vocabulary in a separate step and sets
+    // `reels.skill`.
+    skill_hint: z.string().min(1).nullable(),
   })
   .refine((o) => o.action !== null || o.effort_tag === null, {
     message: "effort_tag requires action",
@@ -49,7 +52,7 @@ export const reelOutputJsonSchema = {
     "example",
     "action",
     "effort_tag",
-    "skill",
+    "skill_hint",
   ],
   properties: {
     summary: {
@@ -80,10 +83,10 @@ export const reelOutputJsonSchema = {
       enum: [...EFFORT_TAGS, null],
       description: "Effort estimate for the action; must be null when action is null.",
     },
-    skill: {
+    skill_hint: {
       type: ["string", "null"],
       description:
-        "Short English kebab-case competency slug (e.g. agentic-tool-use, prompt-caching, mcp-servers) or null.",
+        "Short free-text English guess at the competency this item is about (e.g. 'agentic tool use', 'prompt caching', 'MCP servers'), or null if unclear. Not a canonical slug — a later step reconciles this against the controlled skill list.",
     },
   },
 } as const;

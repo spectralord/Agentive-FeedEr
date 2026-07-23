@@ -13,7 +13,7 @@ const validOutput = {
   example: "claude --agent sonnet 'run tests'",
   action: "Probier Subagenten für parallele Test-Läufe aus.",
   effort_tag: "5-min-test",
-  skill: "agentic-tool-use",
+  skill_hint: "agentic tool use",
 };
 
 describe("reelOutputSchema", () => {
@@ -22,7 +22,13 @@ describe("reelOutputSchema", () => {
   });
 
   it("accepts nullables as null (sourced-only fallback)", () => {
-    const minimal = { ...validOutput, example: null, action: null, effort_tag: null, skill: null };
+    const minimal = {
+      ...validOutput,
+      example: null,
+      action: null,
+      effort_tag: null,
+      skill_hint: null,
+    };
     expect(reelOutputSchema.parse(minimal).action).toBeNull();
   });
 
@@ -36,8 +42,8 @@ describe("reelOutputSchema", () => {
     ).toThrow(/effort_tag/);
   });
 
-  it("rejects non-kebab-case skill slugs", () => {
-    expect(() => reelOutputSchema.parse({ ...validOutput, skill: "Agentic Tool Use" })).toThrow();
+  it("rejects an empty skill_hint string", () => {
+    expect(() => reelOutputSchema.parse({ ...validOutput, skill_hint: "" })).toThrow();
   });
 });
 

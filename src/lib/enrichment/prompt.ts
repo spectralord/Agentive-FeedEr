@@ -9,7 +9,7 @@ Binding rules:
 - "summary": German, 2-4 sentences, factual and concrete. No hype language, no marketing phrasing.
 - "action": German, exactly one concrete sentence the developer can act on (e.g. "Probier X mit ...", "Ersetz Y durch Z ..."), only if supported by the source.
 - "effort_tag": only when "action" is set, else null. Meaning: "5-min-test" = immediately tryable; "afternoon" = needs a focused block of time; "know-only" = knowledge, nothing to do.
-- "skill": short English kebab-case competency slug the item belongs to (e.g. "agentic-tool-use", "prompt-caching", "mcp-servers"), or null if there is no clear competency.
+- "skill_hint": short free-text English guess at the competency the item is about (e.g. "agentic tool use", "prompt caching", "MCP servers"), or null if there is no clear competency. This is NOT a canonical tag — just your best guess in plain words; a later step reconciles it against the controlled skill list.
 - "experimental": true when the content is an impulse, experiment or "just tried this out" piece rather than something production-ready — independent of maturity.
 
 Scoring rubrics (apply strictly):
