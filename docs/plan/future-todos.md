@@ -76,6 +76,13 @@ Ausführungspfad als das deterministische, tool-use-strukturierte Enrichment (AD
   Per-Item-Validierung/-Isolation (ADR 0003 gewahrt) bei Batch-Effizienz. Bildet die heutige
   „forced tool_choice"-Disziplin nach. Fallback bei Setup-Problemen: (A) Agent-Batch → Skript
   validiert das Array.
+- **F4 — Scope → ENTSCHIEDEN: B (uniformer Executor, inkrementell gebaut).** Ein einmal
+  gewählter Executor wird an **allen** `StructuredCaller`-Stellen injiziert (Enrichment,
+  SkillTagger, Clustering, Knowledge-Check, Feedback-Summary) → einheitlicher Lauf, kein
+  Mischmasch. Baureihenfolge enrichment-first als erste Scheibe. **Harte Leitplanke:** Im
+  Claude-Code-/local-Modus laufen **null** API-Calls und es gibt **keinen stillen API-Fallback**
+  (sonst entstünden Kosten). Fehlt/misslingt der CC-Weg, wird **abgebrochen/geskippt**, nie über
+  die API nachgeholt. `ANTHROPIC_API_KEY` darf im local-Modus ungesetzt sein.
 
 ### Erweiterung (Benutzer 2026-07-23): zwei **Umgebungs-Profile** lokal ↔ cloud
 Der Schalter ist eigentlich **zweidimensional** — Umgebung *und* Inferenz:
