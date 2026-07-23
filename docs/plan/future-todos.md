@@ -26,8 +26,36 @@ Design/UX ist aktuell dürftig. Ziel: Claude baut einen **umfassenden Prompt**, 
 Benutzer einer **weiteren Session** gibt; diese agiert als **Design-Experte**, schaut sich
 das Projekt an und erarbeitet mit **Gamifying- + Good-UX-Mindset** konkrete, umsetzbare
 Design-Vorschläge. (Deliverable: der Übergabe-Prompt.)
+> **Update 2026-07-23:** Übergabe-Prompt **geliefert** →
+> `docs/specs/design-expert-handoff-prompt.md` (Leitmotiv: Look-and-Feel + Gamification
+> gleichrangig). Offen ist nur noch, dass der Benutzer die Design-Session damit startet.
 
 ## T5 — Persona-Agent „Entwickler-Sicht auf den Mehrwert" (Zukunftsmusik)
 Später eine Session, die die **generierten Inhalte aus Entwickler-Perspektive** bewertet:
 Wie viel echten Mehrwert/Erfahrung gewinnt ein Entwickler daraus? Gut über einen
 **Persona-Agenten** abbildbar. Bewusst Zukunftsmusik.
+
+## T6 — Zweiter Ausführungsmodus: Pipeline über Claude-Code-Kontingent statt API-Key
+**Motiv:** Der Daily-Task ruft die LLM-Arbeit (Enrichment/Summaries etc.) heute über die
+**Anthropic-API** (`ANTHROPIC_API_KEY`) → verbraucht **API-Tokens (Geld)**. Wenn noch
+**Claude-Code-Kontingent** (Subscription) übrig ist, soll dieselbe Arbeit stattdessen darüber
+laufen — und man soll **umschalten** können, *wie* der Lauf ausgeführt wird.
+
+**Kern-Idee:** Zwei Ausführungs-Modi hinter einem Schalter (z. B. `PIPELINE_EXECUTOR=api|claude-code`):
+- **`api` (heute):** Railway-Cron ruft die App, die per SDK die API mit dem Key aufruft.
+- **`claude-code` (neu):** Eine **Claude-Code-Scheduled-Task/Routine** feuert eine Session, die
+  den Pipeline-Lauf anstößt.
+
+**Wichtiger technischer Haken (für den Grill):** Damit wirklich **Kontingent statt API-Tokens**
+verbraucht wird, muss die **Inferenz im Claude-Code-Agent-Turn** passieren (der Agent liest die
+Raw-Items und erzeugt die strukturierten Summaries selbst, schreibt sie in die DB) — eine bloße
+Routine, die die App triggert, die *dann* die API ruft, spart **nichts**. Das ist ein anderer
+Ausführungspfad als das deterministische, tool-use-strukturierte Enrichment (ADR 0003).
+- **Naht/Seam:** Das bestehende **`StructuredCaller`-Interface** (Enrichment/SkillTagger/…) ist
+  der Ansatzpunkt — eine zweite Implementierung „Agent-getrieben" dahinter.
+- **Trade-offs zu grillen:** Konsistenz/Qualität (Agent-Freitext vs. erzwungenes JSON-Schema +
+  zod-Validierung), Idempotenz/Fehlertoleranz pro Item, Kadenz/Scheduling (Railway-Cron vs.
+  Claude-Code-Routine), wie „null statt Halluzination" (ADR 0003) im Agent-Modus garantiert wird,
+  und ob nur *Teile* (z. B. Enrichment) oder die ganze Pipeline umgeschaltet werden.
+- **Ergebnis vermutlich:** eigener ADR (Ausführungs-Modell) + Env-Schalter + zweite
+  `StructuredCaller`-Implementierung. **Vor Bau grillen** (echte architektonische Weggabelung).
