@@ -16,7 +16,7 @@ Spaced Resurfacing gespeicherter Reels.
 
 ## Tasks
 
-### ☐ T6.1 — Schema: `interactions` + `app_state`
+### ✅ T6.1 — Schema: `interactions` + `app_state`
 ```ts
 export const interactions = pgTable("interactions", {
   id: serial("id").primaryKey(),

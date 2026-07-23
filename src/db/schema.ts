@@ -101,6 +101,29 @@ export const pipelineRuns = pgTable("pipeline_runs", {
   error: text("error"),
 });
 
+// Epic 6: user reactions to a reel (save/hide/up/down). Toggle semantics —
+// the same type on the same reel a second time deletes the row again (see
+// src/lib/interactions.ts). Deliberately no "tried"/done checkbox (revised
+// scope, see docs/plan/epic-6-interactions.md).
+export const interactions = pgTable("interactions", {
+  id: serial("id").primaryKey(),
+  reelId: integer("reel_id")
+    .notNull()
+    .references(() => reels.id),
+  type: text("type", { enum: ["save", "hide", "up", "down"] }).notNull(),
+  note: text("note"), // optional (e.g. "why saved")
+  createdAt: timestamp("created_at", { withTimezone: true }).notNull().defaultNow(),
+});
+
+// Epic 6: generic key-value store for small derived app state that doesn't
+// warrant its own table — currently only the rolling feedback summary
+// (app_state["feedback_summary"], see src/lib/feedback/run.ts).
+export const appState = pgTable("app_state", {
+  key: text("key").primaryKey(),
+  value: jsonb("value").notNull(),
+  updatedAt: timestamp("updated_at", { withTimezone: true }).notNull().defaultNow(),
+});
+
 export type Source = typeof sources.$inferSelect;
 export type RawItem = typeof rawItems.$inferSelect;
 export type NewRawItem = typeof rawItems.$inferInsert;
@@ -110,3 +133,7 @@ export type ExperienceReport = typeof experienceReports.$inferSelect;
 export type NewExperienceReport = typeof experienceReports.$inferInsert;
 export type PipelineRun = typeof pipelineRuns.$inferSelect;
 export type NewPipelineRun = typeof pipelineRuns.$inferInsert;
+export type Interaction = typeof interactions.$inferSelect;
+export type NewInteraction = typeof interactions.$inferInsert;
+export type AppStateRow = typeof appState.$inferSelect;
+export type NewAppStateRow = typeof appState.$inferInsert;
