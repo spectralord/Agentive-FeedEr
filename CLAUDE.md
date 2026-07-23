@@ -30,6 +30,12 @@ Sofern der Benutzer nicht explizit etwas anderes anweist, gilt:
   der Merge löst den Railway-Deploy aus. `main` bleibt jederzeit deploybar.
 - Vor dem Abzweigen eines neuen Feature-Branches: `main` frisch ziehen
   (`git fetch origin main`), damit die Basis aktuell ist.
+- **Subagenten committen häufig** auf ihrem Feature-Branch — mindestens **pro Task
+  ein Commit**, bei längeren Tasks auch für sinnvolle Zwischenstände. Grund: Wird eine
+  Session angehalten/resumed, geht ein Subagenten-Prozess mitsamt **nicht committeter**
+  Arbeit verloren (bereits verbrauchte Tokens sind dann weg). Committete Arbeit auf dem
+  Feature-Branch überlebt. Push am Task-/Epic-Ende; bei riskanten/langen Läufen ruhig
+  zwischendurch pushen, damit auch ein Container-Recycling nichts kostet.
 
 ## Projekt-Dokumentation
 
