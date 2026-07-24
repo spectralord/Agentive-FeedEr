@@ -30,7 +30,8 @@
 
 ## 2. Konventionen
 
-- **Sprache:** UI-Texte Deutsch. Code, Kommentare, Bezeichner, Commits Englisch.
+- **Sprache:** **Englisch überall** — UI-Texte, generierter Content, Code, Kommentare, Bezeichner,
+  Commits, neue Doku (umgestellt 2026-07-24, T3; Domain-Glossar `CONTEXT.en.md`).
 - **Stack (fix):** Next.js (App Router, TypeScript, `src/`-Layout, Tailwind CSS),
   Drizzle ORM + `pg` (node-postgres), Postgres, Anthropic SDK (`@anthropic-ai/sdk`),
   `rss-parser`, `zod`, `tsx` (Job-Runner), `vitest` (Tests). Package-Manager: **npm**.
