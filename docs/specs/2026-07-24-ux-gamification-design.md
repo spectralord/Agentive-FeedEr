@@ -468,3 +468,141 @@ Don't build 4 before 3 and expect it to feel finished.
 - Epic 10 (`caveat`) is "buildable" per ADR 0011 but not yet built — §2.2's Context tab is
   designed to degrade gracefully without it (caveat is additive, not required for the tab to make
   sense), so this design doesn't block on Epic 10 landing.
+
+---
+
+## 10. Phase 2 — app shell, navigation, and the surfaces §1–§9 skipped
+
+> Added 2026-07-24 after a second audit pass. §1–§9 designed the Reel card and the Skills layer;
+> this section covers everything **around** them — the shell they live in, and the screens that
+> were never designed at all. Companion ADRs: **0021** (retire SOTA), **0022** (navigation IA).
+>
+> Several items here are **functional breakage, not polish** — §10.1 and §10.2 in particular.
+
+### 10.1 Navigation has outgrown its design → ADR 0022
+
+`layout.tsx` renders 7 links plus the brand in one flex row inside `max-w-xl` (576px): Today,
+Feed, Overview, Saved, Experience, Skills, Admin. No wrap, no scroll, no responsive treatment —
+**this overflows a 375px phone today**, and §9's Knowledge Base makes it 8. They are also
+presented as peers when they are four different kinds of thing.
+
+**Four destinations, two of them hubs** (prototype: `prototypes/nav-ia.html`):
+
+| Destination | Contains |
+|---|---|
+| **Today** | the daily ritual — Top-N, then a real ending (§10.4) |
+| **Feed** | browse everything, filters |
+| **Skills** | Map · Knowledge Base · Adoption Log |
+| **Library** | Saved · Archive · Experience |
+| ⚙ (not a tab) | Admin — an ops surface in a single-user app |
+
+**Bottom bar on mobile**, not top: this is a one-handed phone product and the top bar is the
+wrong ergonomics. **The binding rule that keeps this from recurring: new surfaces go into a hub,
+never onto the tab bar.** That rule is the actual content of ADR 0022 — without it, this problem
+returns every epic.
+
+**The real tension, to design rather than gloss:** a persistent bottom bar eats ~56px of every
+full-screen snap card and collides with the floating `ReelActions` bar. Resolve with
+**auto-hide on scroll-down / reveal on scroll-up**, action bar riding above it when shown.
+
+**Open, worth deciding separately:** `/` is currently the Feed, but the daily ritual is Today.
+Making Today the landing route matches actual use — Today already links onward to the full feed.
+
+### 10.2 No loading, error, or not-found boundaries anywhere
+
+Verified across all 12 pages: no `loading.tsx`, no `error.tsx`, no `not-found.tsx`. Every page is
+`force-dynamic`, so **every navigation is a DB round-trip with zero feedback**, and any failure
+falls through to Next's default error screen. On mobile this reads as a dead app.
+
+Needed: route-level `loading.tsx` skeletons matching each surface's shape (card outlines for the
+feed, row outlines for lists), an `error.tsx` with a retry affordance, and a `not-found.tsx` —
+`/clusters/[id]` and `/skills/[slug]` both already call `notFound()` with nothing designed behind
+it. No decisions required here; it is straightforwardly missing.
+
+### 10.3 No freshness signal in any user-facing surface
+
+`lastPolledAt`/`pipeline_runs.finishedAt` appear **only** under `/admin`. If the pipeline fails
+for three days the feed just looks quiet — indistinguishable from a slow news week. For a
+daily-rhythm product that is a trust gap.
+
+Fix: a subtle "updated 3h ago" in the app bar on Today and Feed, escalating to a visible warning
+state past a threshold (e.g. >36h). Cheap, and it makes the difference between "nothing happened"
+and "something is broken" legible.
+
+### 10.4 Today's completion moment — the one gamification beat that already works
+
+`/today` already ends with "That's it for today ✅" — a genuine completion ritual, currently
+plain text. This is the highest-leverage small design in the app.
+
+**Show the constellation lighting up.** A miniature of the §9.5 sky with the nodes touched today
+lit, captioned "Your map today", plus a small honest tally (skills touched, to-trys done, days
+running). This puts the connection between *"I read news"* and *"my knowledge grew"* directly at
+the moment the ritual completes — which is the entire product thesis, currently unexpressed
+anywhere in the UI.
+
+No streak-shaming: "6d running" is a rhythm signal, not a counter that punishes a missed day.
+Consistent with §9.7's decay rule — nothing is ever taken away.
+
+### 10.5 `/overview` → Archive, and the SOTA section retires → ADR 0021
+
+`isSota()` is `maturity === "established" && relevance >= 70 && quality >= 70` — a per-reel
+threshold with **no notion of a topic and no comparison to anything.** State of the art is
+inherently comparative and topical; this computes "well-scored established item" and labels it
+SOTA. Two symptoms prove the gap: it is age-independent by design (so Epic 11 had to bolt on
+freshness/supersession to stop stale items wearing a ⭐), and the UI groups by `category` to fake
+a topical dimension the label itself lacks.
+
+Skill Guides (ADR 0018) are topical and comparative by construction. **Retire the SOTA section
+once Guides ship — not before**; it is the only thing doing this job today.
+
+The History half is **not** superseded — that is retrieval, which Guides do not do. It becomes
+**Archive** inside Library, and it is where the missing **search** belongs (there is currently no
+search anywhere in the app, which starts to bite as history accumulates). Keep the existing
+filters (period, category, maturity, relevance, has-actionable); `isBestPractice` remains
+perfectly honest *as a filter*, it is SOTA-as-a-section that is the problem.
+
+### 10.6 Orphan pages and inconsistent back navigation
+
+`/clusters/[id]` is reachable only from a supersession notice, with no back link and no nav
+entry — land there and you are stranded. `/skills/[slug]` has a back link, `/experience/[id]/edit`
+does not. Needs one consistent rule: any page not reachable from the tab bar carries a back
+affordance to its parent.
+
+### 10.7 Empty states are inconsistent, and one is developer-facing
+
+The feed's no-content state currently reads *"The pipeline runs from Epic 1/2 — collect sources
+with `npm run job:daily`"* — epic numbers and a shell command in a user surface. `/today`'s
+("enjoy the quiet") and `/saved`'s ("Nothing saved yet — tap 🔖 on a Reel") are both good and
+should be the model: say what is true, and where useful say what would change it. One shared
+empty-state component, no build instructions.
+
+Related minor hierarchy bug: `/saved` and `/experience` use `text-sm` page titles above 18px card
+titles — inverted, and symptomatic of surfaces never having been looked at.
+
+### 10.8 Every mutation is a full-page POST
+
+Progress changes, lifecycle actions, and cluster deprecation all post a form and reload, losing
+scroll position. That is a real cost on the skill node page, where marking progress is *the* core
+action of the entire Skills vision — the page you are trying to make feel rewarding jumps to the
+top every time you use it. Optimistic client updates (the pattern `ReelActions` already
+demonstrates) should extend to progress and lifecycle mutations.
+
+### 10.9 Header coupling by magic number
+
+`pt-12` (layout) ↔ `top-12` (FilterBar) ↔ `-mt-12` (feed): three files coordinating header height
+through hardcoded 12s. Any nav change — including §10.1's — breaks all three silently. Extract to
+a token before touching the shell.
+
+### 10.10 Phase 2 task list
+
+| # | Size | Task | Notes |
+|---|---|---|---|
+| 1 | S | `loading.tsx` / `error.tsx` / `not-found.tsx` (§10.2) | No decisions needed; do first |
+| 2 | S | Header-height token (§10.9) | Prerequisite for #3 |
+| 3 | M | Bottom tab bar + hub sub-navs, 7 links → 4 (§10.1, ADR 0022) | Includes auto-hide on the feed |
+| 4 | S | Freshness indicator in the app bar (§10.3) | Data already exists |
+| 5 | M | Today completion moment with mini-constellation (§10.4) | Needs §9.5's sky component |
+| 6 | S | Shared empty-state component; drop the dev copy (§10.7) | |
+| 7 | S | Back-affordance rule for non-tab pages (§10.6) | |
+| 8 | M | Archive: search + restyled filters (§10.5) | Retire SOTA only once Guides ship |
+| 9 | M | Optimistic mutations for progress/lifecycle (§10.8) | Pattern exists in `ReelActions` |

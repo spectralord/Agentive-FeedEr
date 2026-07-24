@@ -2,8 +2,8 @@
 
 - Date: 2026-07-24
 - Belongs to: `docs/specs/2026-07-24-ux-gamification-design.md`
-- Status: **accepted design references** — the two prototypes the product owner signed off on,
-  out of ~15 iterations. The rejected/superseded ones are deliberately not kept.
+- Status: **accepted design references** — the three prototypes the product owner signed off on,
+  out of ~16 iterations. The rejected/superseded ones are deliberately not kept.
 
 ## What these are
 
@@ -16,11 +16,13 @@ these files win, because they are what was actually reviewed and accepted.
 |---|---|---|
 | `reel-card-and-detail.html` | Reel card (Compact) + push-navigation Detail view with its tabs | §1–§3, §5.2 |
 | `skill-constellation.html` | Skill constellation map + Knowledge Base view + node panel | §5.1, §9 |
+| `nav-ia.html` | Navigation IA: 7 links → 4 destinations, hubs, Today's completion moment | §10.1, §10.4 |
 
-Both are interactive — click things. `reel-card-and-detail.html` has three stacked Reels you can
+All three are interactive — click things. `reel-card-and-detail.html` has three stacked Reels you can
 scroll between; tap a card to push into Detail, tap the skill badge to jump straight to the Skill
 tab. `skill-constellation.html` has 28 nodes across the 8 real themes; click any node, toggle
-**Knowledge decay**, and switch to the **Knowledge Base** view.
+**Knowledge decay**, and switch to the **Knowledge Base** view. `nav-ia.html` shows the proposed
+bottom tab bar — tap through all four destinations; Skills and Library have segmented sub-navs.
 
 ## What is binding vs. illustrative
 
@@ -60,6 +62,11 @@ tab. `skill-constellation.html` has 28 nodes across the 8 real themes; click any
 - **The Write-up tab's real content shape.** The Detail prototype predates ADR 0017; its Write-up
   text is invented, and the real `reels.writeup` field does not exist yet.
 - **Light theme.** The product is dark-first by decision; no light variant was designed.
+- **Desktop navigation.** `nav-ia.html` shows the mobile bottom bar only. The four-destination
+  structure holds on wide viewports, but the rendering (side rail? top bar?) is an open question
+  in ADR 0022 — do not assume "the mobile bar, wider".
+- **Auto-hide on scroll** for the feed's tab bar (ADR 0022) is described, not implemented in the
+  prototype.
 
 ## Provenance
 
