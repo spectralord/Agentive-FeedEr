@@ -135,7 +135,7 @@ today. The existing `author_type` enum already encodes the two ends:
   system is the point where that stops being sufficient.
 - **`relevance_score`:** reserved in the schema as "curated only; MVP always null" — a trust
   model would give it an actual meaning and a source of truth.
-- **`confidence` weighting (ADR 0016, Epic 11 T11.7):** the MVP rule counts every distinct
+- **`confidence` weighting (ADR 0021, Epic 11 T11.7):** the MVP rule counts every distinct
   author as exactly **one** independent voice, deliberately unweighted, because
   `confidence` is a coarse `few/some/strong` scale (ADR 0013 point 4). A trust model is
   precisely the thing that would reopen that: a trusted curator's first-hand report
@@ -145,6 +145,6 @@ today. The existing `author_type` enum already encodes the two ends:
 - **Reel curation by colleagues:** a posting path for Reels that does not go through
   ingestion/enrichment at all, which brushes against ADR 0005 (sourced-only) and needs an
   explicit decision — is a trusted colleague's word a "source"?
-- **The deferred `curated` echo judgment (ADR 0016):** once web-harvested reports can
+- **The deferred `curated` echo judgment (ADR 0021):** once web-harvested reports can
   actually be created, they need the Reel-style `is_primary` echo check that own/colleague
   reports do not. Same grill.

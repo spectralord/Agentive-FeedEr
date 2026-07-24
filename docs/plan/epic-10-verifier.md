@@ -55,6 +55,36 @@ Glossar: Verifier, caveat, confidence, Korroboration.
   zeigen — Transparenz). `caveat` fließt **nicht** in `quality_score` (ADR 0004).
 - **Verifikation:** curl — Reel mit caveat zeigt ⚠️; Toggle blendet aus/ein; Scores unverändert.
 
+### ☐ T10.8 — Overclaim flag for Experience Reports (grilled 2026-07-24 → **ADR 0021**)
+
+> **Moved here from Epic 11 T11.7 and from the stale T10.6 placeholder.** ADR 0021 decision 5:
+> the overclaim flag is a *Verifier* concern, and it needs **no clustering at all** — hence
+> Stage 1, not Stage 2. Read ADR 0021 before building.
+
+- **Schema:** add `caveat` (text, nullable) + `caveatCheckedAt` (timestamptz, nullable) to
+  `experienceReports`, mirroring the reel columns exactly (same reason for the second column:
+  `caveat` is null both before the check and after a clean result).
+- **Critic pass:** reuse `src/lib/verifier/` with a **report-specific prompt running rule (B)
+  Skepticism only**. Rule (A) Fidelity must be dropped — a report has no source to be faithful
+  to (ADR 0007 / ADR 0005 exemption), so there is nothing to compare against. Injectable
+  `StructuredCaller`, same `{ caveat: string | null }` output shape.
+- **BINDING prompt constraint (ADR 0021 decision 5):** flag **only** absolute/universal claims
+  ("replaces X completely", "nobody should use Y anymore"). **Never** flag subjectivity itself —
+  "I found X annoying", "I prefer Y", "this works for my setup" are the content type's entire
+  purpose. Flagging those breaks ADR 0007's premise. Unit-test both directions explicitly.
+- **Sweep:** `caveat_checked_at IS NULL`, all reports, no window bound needed — unlike T11.7c's
+  matching sweep this converges on its own, because the result does not depend on other data
+  appearing later. Own step in `runPipelinePhases` (try/catch-guarded), own `PipelineSummary`
+  key — **and add it to `runSummary()` in `src/app/admin/page.tsx`**, which has repeatedly been
+  missed when new phases land.
+- **Display:** ⚠️ notice on the report, mirroring the reel treatment (subtle, non-alarmist,
+  separate from any score). ADR 0016 reserves `--caution` for exactly `caveat` + supersession,
+  so use that language and no other. **No filter toggle** — reports are few and hand-written,
+  unlike the reel feed; revisit only if volume grows.
+- **Verification:** unit tests with a mocked caller (absolute claim → caveat; ordinary
+  subjective statement → `null`); integration test (rerun processes 0); curl — report with a
+  caveat shows ⚠️.
+
 ---
 
 ## Stufe 2 — Cluster-Korroboration
@@ -69,9 +99,16 @@ Glossar: Verifier, caveat, confidence, Korroboration.
   Wissens-/Cluster-Ebene anzeigen (nicht an einzelnen Reels).
 - Design-Details (Was zählt als „unabhängig/stützend"?) im eigenen Grill vor Bau.
 
-### ☐ T10.6 — Erfahrungsberichte (später)
-- Stufe-2-Korroboration + **enger Überclaim-Flag** (nur Absolutaussagen), nie Subjektivität
-  an sich (ADR 0007). Kommt mit dem Clustering.
+### ✅ T10.6 — Erfahrungsberichte (später) → **aufgelöst durch ADR 0021, gesplittet**
+- ~~Stufe-2-Korroboration + **enger Überclaim-Flag** (nur Absolutaussagen), nie Subjektivität
+  an sich (ADR 0007). Kommt mit dem Clustering.~~
+- **Gegrillt 2026-07-24 (ADR 0021).** Dieser Platzhalter bündelte zwei Anliegen, die getrennt
+  gehören — und die Annahme „kommt mit dem Clustering" stimmte nur für die Hälfte:
+  - **Korroboration** (Report zählt in `confidence`) braucht Clustering → **Epic 11 T11.7**
+    (a–e), match-only, primary by construction, ein Autor = eine Stimme.
+  - **Überclaim-Flag** braucht **kein** Clustering — reiner Kritiker-Pass pro Report →
+    **T10.8 oben (Stufe 1)**.
+- Nichts mehr hier zu bauen; die Arbeit liegt in T10.8 und T11.7.
 
 ### ☐ T10.7 — Externe Web-Korroboration (noch später, eigener Entscheid)
 - Aktive Web-Suche nach stützenden Quellen; gefundene Quellen erweitern den Korpus.

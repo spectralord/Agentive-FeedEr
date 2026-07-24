@@ -93,12 +93,60 @@ Glossar: Topic-Knowledge-Check, confidence, freshness, Korroboration, Topic-Clus
 - **Verifikation:** Integrationstest: nach Lauf `confidence` gesetzt; zweiter Lauf ohne neue
   Mitglieder macht keinen erneuten LLM-Freshness-Call.
 
-### ☐ T11.7 — Erfahrungsberichte: Korroboration + enger Überclaim-Flag
-- Erfahrungsberichte, die (später via SkillTagger/Cluster-Bezug) einem Thema zuhängen, fließen
-  als **eigenständige** Belege in `confidence` ein. Zusätzlich ein **enger** Überclaim-Flag nur
-  bei **Absolutaussagen** („ersetzt X komplett"), nie gegen Subjektivität an sich (ADR 0007).
-- **Verifikation:** Test: Erfahrungsbericht erhöht `independentCount`; Absolutaussage → Flag;
-  normale subjektive Aussage → kein Flag.
+### ☐ T11.7 — Experience Reports as corroboration (grilled 2026-07-24 → **ADR 0021**)
+
+> **Design resolved.** The original one-liner assumed a report→cluster linkage that never
+> existed. ADR 0021 settles it: **match-only** (a report joins an existing cluster, never
+> creates one), bounded triggers, primary by construction, one distinct author = one voice.
+> **The overclaim flag moved out of this task** to Epic 10 **T10.8** — it is a Verifier
+> concern, not a Knowledge-Check concern (ADR 0021 decision 5). Read ADR 0021 before building.
+
+#### ☐ T11.7a — Schema: `experience_reports.topic_cluster_id`
+- Add `topicClusterId: integer("topic_cluster_id").references(() => topicClusters.id)`
+  (nullable) to `experienceReports` in `src/db/schema.ts`. **No `is_primary` column** — reports
+  are primary by construction (ADR 0021 decision 3). Migration via `drizzle-kit`.
+- **Verification:** migration green; column defaults `null`; FK present.
+
+#### ☐ T11.7b — Report→cluster matching (`src/lib/clustering/reports.ts`)
+- **Match-or-null, never propose.** Do *not* reuse `clusterOutputSchema` unchanged — it requires
+  the propose branch. Write a sibling schema/prompt: output `{ match_cluster_id: number | null }`,
+  zod-validated, defensively rejecting ids outside the supplied candidate list (same guard as
+  `runFreshnessCheck`).
+- Injectable `StructuredCaller` (ADR 0015 executor seam — never call `callStructured` directly).
+  Candidates: the same active-window cluster list `loadActiveClusters` already builds.
+- Prompt: a report is a **subjective first-hand account**; match only if it is genuinely about
+  the same narrow, specific topic as a candidate cluster. When in doubt → `null` (ADR 0003).
+  State explicitly that most reports will legitimately match nothing.
+- **Verification:** unit tests with a mocked caller — report clearly about an existing cluster's
+  topic → matched; unrelated/practice-level report → `null`, no cluster created; model returning
+  an id outside the candidate list → ignored.
+
+#### ☐ T11.7c — Triggers: on-save + bounded daily backstop
+- **On save:** fire-and-forget in `src/app/experience/create/route.ts`, exactly alongside the
+  existing `tagSingle` call (same executor resolution, never blocks the form, never throws).
+- **Daily sweep:** own step in `runPipelinePhases` after clustering, try/catch-guarded like
+  every other step. **Candidate set is bounded** (ADR 0021 decision 2):
+  `topic_cluster_id IS NULL AND created_at >= now() - CLUSTER_WINDOW_DAYS`. Without that bound
+  the sweep never converges — unmatched reports would re-burn an LLM call every run forever.
+- **Verification:** integration test — a fresh report inside the window is processed; a report
+  older than `CLUSTER_WINDOW_DAYS` is **not** picked up; a matched report is not re-processed.
+
+#### ☐ T11.7d — Corroboration: count reports in `confidence`
+- Extend `computeConfidenceForActiveClusters` (`src/lib/knowledge-check/confidence.ts`) from a
+  reels-only query to the **union of distinct reel `sources.name` and distinct report
+  `author_label`** among a cluster's members (reels still filtered on `is_primary = true`;
+  reports need no such filter). Unweighted — one distinct author, one voice.
+- No eager recompute: `runKnowledgeCheck` already recomputes every active cluster each run.
+- **Verification:** integration tests — 5 own reports (same `author_label`) on one cluster add
+  exactly **1** to `independentCount`, not 5; a second distinct author adds a second voice;
+  a cluster with 1 reel source + 1 report author scores `independentCount = 2`.
+
+#### ☐ T11.7e — Show report members on the cluster page
+- `getClusterWithMembers` (`src/lib/clusters.ts`) and `/clusters/[id]` currently list reel
+  members only. Include linked reports, visibly labelled as experience reports (not sources),
+  so the corroboration count is explainable to the reader.
+- **Verification:** curl — a cluster with one reel and one report shows both, report clearly
+  marked as such.
 
 ### ☐ T11.8 — Externe Web-Korroboration (noch später, eigener Entscheid)
 - Aktive Web-Suche nach stützenden Quellen; gefundene Quellen erweitern den Korpus. Rührt an
@@ -138,6 +186,15 @@ T11.7 und T11.8 bewusst nicht gebaut (siehe unten) — Checkboxen bleiben offen.
   Bevor T11.7 gebaut wird, braucht es einen eigenen Grill: wie/wann bekommt ein
   Erfahrungsbericht einen `topic_cluster_id`-Bezug (SkillTagger-Zeitpunkt? eigener
   Match-or-Propose-Pass? nur lose über `skill`?).
+  > **✅ AUFGELÖST (Grill 2026-07-24 → ADR 0021).** Antwort: **eigener Pass, aber
+  > match-only** — ein Report darf einem bestehenden Cluster *beitreten*, nie einen
+  > anlegen (sonst erzeugt subjektiver Inhalt Cluster ohne belegte Mitglieder und
+  > bekommt `confidence` — Bruch der ADR-0005/0007-Grenze auf Cluster-Ebene). „Nur lose
+  > über `skill`" verworfen: Skills sind breit, ein Skill spannt mehrere enge Cluster
+  > (ADR 0013 Punkt 3), also keine Basis für die Auswahl. Trigger: on-save + Daily-Sweep,
+  > **begrenzt auf `CLUSTER_WINDOW_DAYS`** (ohne Bound konvergiert der Sweep nie).
+  > Der Überclaim-Flag ist **raus aus T11.7** → Epic 10 **T10.8** (Verifier-Anliegen,
+  > braucht kein Clustering). Aufgabenschnitt jetzt T11.7a–e oben.
 - **T11.8 (externe Web-Korroboration)** — wie im Epic-File selbst als „Platzhalter"
   markiert: braucht eigenen ADR/Grill (rührt an ADR 0001, kuratierte Quellen). Nicht gebaut.
 
