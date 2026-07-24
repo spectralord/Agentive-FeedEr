@@ -85,7 +85,7 @@ Glossar: Topic-Knowledge-Check, confidence, freshness, Korroboration, Topic-Clus
 - **Verifikation:** curl — Cluster zeigt confidence-Badge; abgelöstes Item zeigt Hinweis +
   Bestätigen; Scores unverändert.
 
-### ☐ T11.6 — In Pipeline/Cron einhängen (Kadenz)
+### ☑ T11.6 — In Pipeline/Cron einhängen (Kadenz)
 - Eigener Schritt **nach dem Clustering** in `src/lib/pipeline.ts` (Cron + Admin-Button).
   `confidence` bei jedem Lauf neu berechnen (billig, geerdet); Freshness-Vergleich gated
   (nur Cluster mit neuen Mitgliedern seit letztem `knowledge_checked_at`). Fehler brechen den
@@ -122,3 +122,70 @@ Glossar: Topic-Knowledge-Check, confidence, freshness, Korroboration, Topic-Clus
 
 ## Abweichungen/Fragen
 _(vom ausführenden Modell zu pflegen)_
+
+**Status: T11.1–T11.6 gebaut & getestet (`npm run build` + `npm test` grün, 260 Tests).
+T11.7 und T11.8 bewusst nicht gebaut (siehe unten) — Checkboxen bleiben offen.**
+
+- **T11.7 (Erfahrungsberichte-Korroboration) — bewusst zurückgestellt.** Vor dem Bau
+  geprüft: `experience_reports` hat keine `topic_cluster_id`-Spalte oder sonstige
+  Cluster-Verknüpfung, und Epic 15s Clustering-Pass clustert ausschließlich `reels`, nie
+  `experience_reports`. T11.7s eigener Text hedged das bereits mit „(später via
+  SkillTagger/Cluster-Bezug)" — die Verknüpfung selbst ist unentworfen. Sie zu bauen hätte
+  bedeutet, dieses Verknüpfungsdesign zu erfinden (README §1 Regel 3: kein erfundener
+  Scope; Regel 4: bei Unklarheit nicht raten). Also: `computeConfidenceForActiveClusters`
+  in `src/lib/knowledge-check/confidence.ts` zählt ausschließlich `reels`-Mitglieder;
+  `experience_reports` bleibt unangetastet (keine neue Spalte, keine Korroborationslogik).
+  Bevor T11.7 gebaut wird, braucht es einen eigenen Grill: wie/wann bekommt ein
+  Erfahrungsbericht einen `topic_cluster_id`-Bezug (SkillTagger-Zeitpunkt? eigener
+  Match-or-Propose-Pass? nur lose über `skill`?).
+- **T11.8 (externe Web-Korroboration)** — wie im Epic-File selbst als „Platzhalter"
+  markiert: braucht eigenen ADR/Grill (rührt an ADR 0001, kuratierte Quellen). Nicht gebaut.
+
+**Judgment calls bei T11.1–T11.6 (konservativste Interpretation gewählt):**
+
+- **T11.2 Schwellenwert-Mapping:** Der Epic-Text sagt wörtlich „1 = few,
+  CONF_SOME_MIN..CONF_STRONG_MIN-1 = some, >= CONF_STRONG_MIN = strong". Das hardcodet
+  „1" für „few", was bei einer Env-Konfiguration mit `CONF_SOME_MIN=1` inkonsistent würde
+  (und deckt den theoretischen `independentCount=0`-Fall gar nicht ab — kann aktuell nicht
+  vorkommen, weil das erste Mitglied eines neuen Clusters per ADR 0013 Punkt 4 immer
+  `is_primary=true` ist, aber die Funktion soll dafür trotzdem nicht falsch/undefiniert
+  sein). Generalisiert in `confidenceForCount` (`src/lib/knowledge-check/confidence.ts`)
+  zu: `< CONF_SOME_MIN ⇒ few`, `CONF_SOME_MIN..CONF_STRONG_MIN-1 ⇒ some`,
+  `>= CONF_STRONG_MIN ⇒ strong`. Mit den Defaults (2/4) identisch zum Epic-Text; nur bei
+  abweichender Env-Konfiguration verhält es sich konsistenter.
+- **T11.3 Kandidaten-Paarung — Vergleichseinheit ist die Skill-Gruppe, nicht das Paar:**
+  Der Epic-Text sagt „Cluster, die sich eine Skill-Node teilen, sind Vergleichspartner"
+  und das Output-Schema ist singulär (`{ supersededClusterId, supersededByClusterId,
+  reason }`, kein Array). Interpretiert als: ein LLM-Call pro Skill-Gruppe (alle Cluster,
+  die über ihre Mitglieder-Reels denselben `reels.skill`-Wert teilen), nicht ein Call pro
+  Cluster-*Paar* — sonst würde bei 3 Clustern zur selben Skill-Node dieselbe Information
+  3× (bzw. bei n Clustern n·(n-1)/2×) redundant vorgelegt. Das Modell sieht alle Cluster
+  der Gruppe gleichzeitig und liefert höchstens eine Supersession-Aussage pro Call.
+  Model-erfundene Ids außerhalb der vorgelegten Kandidatengruppe werden defensiv verworfen
+  (gleiches Prinzip wie Clusterings `match_cluster_id`-Guard, ADR 0003).
+- **T11.3 Link-Ziel für „Neueres verfügbar" (T11.5):** Der Epic-Text verlangt „Link zum
+  ablösenden Cluster", ohne eine bestehende Cluster-Detailseite vorauszusetzen. Da der
+  Deprecate-Route-Pfad selbst schon `src/app/clusters/[id]/deprecate/route.ts` vorgibt,
+  wurde eine minimale `src/app/clusters/[id]/page.tsx` (Mitgliederliste + Confidence-Badge
+  + ggf. eigene Supersession-Anzeige) ergänzt statt nur auf die externe Quelle zu verlinken
+  — das ist die naheliegendste, in sich geschlossene Interpretation von „Link zu den Items
+  des ablösenden Clusters" ohne zusätzlichen Scope zu erfinden (keine neue Navigation/kein
+  neuer Menüpunkt, nur die für den Link nötige Zielseite).
+- **T11.6 Gating-Granularität:** „Cluster mit neuen Mitgliedern seit `knowledge_checked_at`"
+  wird pro Cluster über `EXISTS (reels.created_at > topic_clusters.knowledge_checked_at)`
+  geprüft (`loadDirtyClusterIds` in `src/lib/knowledge-check/run.ts`). Ein "dirty" Cluster
+  zieht bei der Freshness-Vergleichsgruppe auch seine (ggf. nicht-dirty) Geschwister-Cluster
+  derselben Skill-Node mit hinein (volle Vergleichsgruppe nötig, damit das Modell den
+  vollen Kontext hat) — aber ein Lauf ohne jegliche dirty Cluster macht global keinen
+  einzigen LLM-Call (verifiziert im Integrationstest). `confidence` wird davon unabhängig
+  bei jedem Lauf für alle aktiven Cluster neu berechnet (billig, kein Gating nötig, wie im
+  Epic-Text explizit verlangt).
+- **`KNOWLEDGE_CHECK_MODEL`-Fallback:** Es gibt in `env.ts` kein bestehendes Muster für
+  „optional, fällt automatisch auf einen anderen Env-Wert zurück" auf Schema-Ebene (
+  `DEEPEN_MODEL` hat einen eigenen hartkodierten Default, keinen Bezug zu
+  `ANTHROPIC_MODEL`). Deshalb: `KNOWLEDGE_CHECK_MODEL` ist optional/undefined im Schema
+  (gleiches „leerer String = unset"-Preprocess wie `ANTHROPIC_API_KEY`/`ADMIN_TOKEN`), der
+  Fallback auf `ANTHROPIC_MODEL` passiert am Call-Ort in
+  `src/lib/knowledge-check/freshness.ts` (`knowledgeCheckModel()`), analog zu
+  `callStructured`s eigenem `opts.model ?? env().ANTHROPIC_MODEL`-Muster in
+  `src/lib/claude.ts`.

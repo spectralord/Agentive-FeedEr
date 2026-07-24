@@ -9,6 +9,7 @@ import { resolveExecutionConfig } from "@/lib/executor/config";
 import { getExecutor } from "@/lib/executor/executor";
 import { runFeedbackSummary, type FeedbackSummaryResult } from "@/lib/feedback/run";
 import { runIngestion, type IngestionResult } from "@/lib/ingestion/run";
+import { runKnowledgeCheck, type KnowledgeCheckResult } from "@/lib/knowledge-check/run";
 import { runSkillTagging, type SkillTaggingResult } from "@/lib/skilltagger/run";
 
 export type PipelineMode = "full" | "ingestion" | "enrichment";
@@ -19,6 +20,7 @@ export interface PipelineSummary {
   enrichment?: EnrichmentResult;
   skillTagging?: SkillTaggingResult;
   clustering?: ClusteringResult;
+  knowledgeCheck?: KnowledgeCheckResult;
   feedback?: FeedbackSummaryResult;
 }
 
@@ -69,6 +71,17 @@ export async function runPipelinePhases(
       summary.clustering = await runClustering(db, executor);
     } catch (error) {
       console.error("[pipeline] clustering failed:", error);
+    }
+    // Epic 11 (ADR 0012): Topic-Knowledge-Check runs right after clustering,
+    // on the same executor — recomputes confidence for every active cluster
+    // (cheap, grounded, no gating) and runs the gated freshness/supersession
+    // LLM pass only for clusters with new members since their last check.
+    // Its own runner never throws per-item, but guard the call anyway (same
+    // never-abort-the-run contract as the other steps here).
+    try {
+      summary.knowledgeCheck = await runKnowledgeCheck(db, executor);
+    } catch (error) {
+      console.error("[pipeline] knowledge check failed:", error);
     }
     // T6.4: rolling feedback summary, right after enrichment/tagging. Never
     // aborts the run — a failure here is logged and simply skipped; the next
