@@ -35,6 +35,7 @@
 | **user_progress** | The state of a Skill Node for the user: `seen → tried → mastered`. The transition is **self-confirmed** (honor-based), optionally with a note. |
 | **Adoption Log** | The collection of self-confirmations and notes ("this is how I used it") produced when applying skills. |
 | **Deep-Dive** | Vision feature: an on-demand, agentic follow-up research pass on a Reel/topic that further enriches the same Reel object. |
+| **Write-up** | A longer-form, multi-paragraph elaboration of a Reel (`reels.writeup`, nullable), produced by its own batch enrichment pass working from the already-stored `raw_content` — not the same as Deep-Dive: no new fetching, not on-demand, still subject to Sourced-only. Shown in the Reel Detail view's Write-up tab. See ADR 0017 (proposed). |
 | **Experience Report** | A subjective, not necessarily validated experience/practice report (e.g. "how long I keep a session open"). Its own content type, separate from Reels — **not** subject to the Sourced-only rule (ADR 0005). Carries an author instead of a source. |
 | **author_type** | Origin kind of an Experience Report: `own` (written by self/company) · `curated` (fished by the AI from a source like Reddit/comment threads) · later `colleague`. Stands in for real user authentication (which does not exist) in the MVP. |
 | **author_label** | Display name of a report's origin: for `own` a configured name, for `curated` the source handle (e.g. "r/ClaudeAI / u/xyz"). Becomes a `user_id` under a future real multi-user setup. |

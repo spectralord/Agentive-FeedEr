@@ -92,24 +92,33 @@ The **freshness/supersession notice** (today's amber box, "🕓 Newer available"
 token system — small source-initial avatars instead of a plain bullet list, consistent with the
 Context tab's source list (2.2).
 
-### 2.2 Detail — two tabs, not three (see section 8 for why "Write-up" is dropped)
+### 2.2 Detail — three tabs
+
+**Revised 2026-07-24, after review:** §8.1 originally recommended dropping the Write-up tab
+because no field backs it today. Product decision: keep it, and add the field instead — see ADR
+0017 (`reels.writeup`, a second enrichment pass). This section now assumes that field exists;
+§8.1 below is kept as a record of the reasoning and the decision, not as a live recommendation.
 
 Entered by tapping the card, or swiping — direction and gesture risk are the product owner's
 explicit, informed choice (see 2.3). Push-transition (Detail slides in from the right, Compact
 slides slightly out from under it), **not** a swipeable filmstrip — confirmed across two
 iterations, this is the one that held up.
 
+- **Write-up tab:** a lightweight single-source reference (source name + trust context) above the
+  full `reels.writeup` text (ADR 0017), then `example` if present. This is genuinely longer-form
+  than Compact's `summary` — that's the whole point of the new field — so this tab, unlike
+  Context/Skill, is expected to need its own scroll on a real phone screen.
 - **Context tab:** related/similar sources (Epic 15 cluster members beyond the primary — normally
   empty, most Reels are single-sourced; render the empty state explicitly rather than hiding the
   tab, so "no related coverage" reads as information, not a bug) + `caveat` (once Epic 10 ships).
 - **Skill tab:** see section 5.2 — this is genuinely new content, not a restyle of anything that
   exists today.
 
-A tab with nothing in it (no related sources, no caveat, and — before Epic 10 ships — no caveat
-field to even check) should not force a swipe to discover emptiness. Rule: **hide a tab entirely
-if it would render only its empty state**; if both Context's sub-parts are empty, drop the whole
-tab, leaving a single-tab Detail (just Skill) or, if the skill link is also absent, no Detail
-affordance at all — Compact is the whole story for that Reel.
+Write-up is never hidden (once `reels.writeup` is non-null, which should be the common case — see
+ADR 0017's generation-scope question). A tab with nothing in it otherwise (Context with no related
+sources, no caveat, and — before Epic 10 ships — no caveat field to even check) should not force a
+swipe to discover emptiness. Rule: **hide a tab entirely if it would render only its empty
+state** — this applies to Context and Skill, not to Write-up.
 
 ### 2.3 Gesture model (mobile)
 
@@ -210,7 +219,8 @@ of this — CSS scroll-snap + a handful of transforms, same as today's stack.
 | 7 | M | Skill ring component + apply to `/skills` grid and node detail (§5.1) | Resolves the literal TODO already in the code |
 | 8 | M | Skill tab in Reel Detail, wired to shared `setProgress` (§5.2) | New surface, needs the ring component from #7 first |
 | 9 | S | Restyle `ReelActions`, `ResurfaceCard` (§3, §4) | Lower-risk polish once the token system exists |
-| 10 | — | **Product decision required before further Reel Card work** (§8) | Blocks nothing above, but should be resolved before anyone assumes richer content than exists today |
+| 10 | L | **Write-up enrichment pass** (ADR 0017 — `reels.writeup` + second pipeline pass) | Blocks the Write-up tab (§2.2) specifically; everything else in this list is independent of it |
+| 11 | — | **Remaining product decision** (§8.3/8.4) | Trust-tag's staying power, Skill-tab/node-page duplication guardrail — don't block on these, just don't forget them |
 
 ---
 
@@ -219,7 +229,7 @@ of this — CSS scroll-snap + a handful of transforms, same as today's stack.
 The product owner asked explicitly for this, after approving the surface direction: challenge the
 design conceptually, not just visually. Two of these are real, not manufactured.
 
-### 8.1 The "Write-up" tab was designed against content that doesn't exist
+### 8.1 The "Write-up" tab was designed against content that doesn't exist — resolved, see ADR 0017
 
 Across the interactive prototypes, Compact and a "Write-up" detail tab were filled with 200–400
 word, multi-paragraph long-form text to genuinely test the scroll and tab interactions. That
@@ -233,15 +243,16 @@ single Compact screen — which is exactly what the current `ReelCardBody` does,
 and no Detail view needed. A separate "Write-up" tab holding the *same* summary text a second
 time adds a navigation step for zero new information, most of the time.
 
-**Recommendation:** drop the Write-up tab (§2.2 above already reflects this — Detail is Context +
-Skill only). Compact shows `summary` in full; if the product later chooses to lengthen
-`summary` via enrichment-prompt changes (a real, deliberate product decision, not a UI one — this
-touches the enrichment prompt, which is Product/Architecture territory per ADR 0014, not this
-document's lane), Compact's existing scroll-if-needed behavior already handles a longer summary
-gracefully, no separate tab required. **Don't build a UI for content assumed to exist — build for
-what's produced today, and let it grow into more space if the content ever does.** This is worth
-its own line in ADR 0016 (see companion doc): design for the shortest realistic content first,
-treat length as something the UI tolerates, never something it requires.
+**Original recommendation (superseded):** drop the tab, keep Compact's `summary` as the only prose
+field, let the UI tolerate length rather than require it.
+
+**Decision (2026-07-24):** the product owner chose the other fork — keep the Write-up tab, and
+build the enrichment pass that backs it. See **ADR 0017** for the new `reels.writeup` field, the
+second pipeline pass that produces it, and the open question of which Reels get one. §2.2 above
+now reflects this. The underlying principle from ADR 0016 (design for the shortest realistic
+content first) still holds as general guidance — it just means "confirm the field exists or is
+being built," not "never build for length." Here, the field is being built, deliberately, so the
+tab is no longer speculative.
 
 ### 8.2 The multi-step checklist (from an earlier prototype round) has no backing data model
 
