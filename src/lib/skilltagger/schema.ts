@@ -72,7 +72,7 @@ export const tagOutputJsonSchema = {
     propose_title: {
       type: ["string", "null"],
       description:
-        "Short German title for the new node (e.g. 'Prompt-Caching einsetzen'). Required iff decision=propose, else null.",
+        "Short English title for the new node (e.g. 'Use prompt caching'). Required iff decision=propose, else null.",
     },
     propose_theme: {
       type: ["string", "null"],
@@ -82,7 +82,7 @@ export const tagOutputJsonSchema = {
     propose_description: {
       type: ["string", "null"],
       description:
-        "One short German sentence describing the competency. Required iff decision=propose, else null.",
+        "One short English sentence describing the competency. Required iff decision=propose, else null.",
     },
   },
 } as const;
