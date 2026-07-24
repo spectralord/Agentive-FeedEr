@@ -38,6 +38,7 @@ function runSummary(run: PipelineRun): string {
   const s = (run.summary ?? {}) as {
     ingestion?: { totalInserted: number; perSource: { name: string; error?: string }[] };
     enrichment?: { processed: number; succeeded: number; failed: number };
+    verifier?: { processed: number; flagged: number; failed: number };
     skillTagging?: { processed: number; matched: number; proposed: number; failed: number };
     clustering?: { processed: number; matched: number; proposed: number; failed: number };
     knowledgeCheck?: {
@@ -52,6 +53,9 @@ function runSummary(run: PipelineRun): string {
     parts.push(`+${s.ingestion.totalInserted} items${failed.length ? ` · source errors: ${failed.join(", ")}` : ""}`);
   }
   if (s.enrichment) parts.push(`Enrich ${s.enrichment.succeeded}✓/${s.enrichment.failed}✗`);
+  if (s.verifier) {
+    parts.push(`Verifier ${s.verifier.flagged} flagged${s.verifier.failed ? `/${s.verifier.failed}✗` : ""}`);
+  }
   if (s.skillTagging) {
     parts.push(
       `Skills ${s.skillTagging.matched} match/${s.skillTagging.proposed} proposed${s.skillTagging.failed ? `/${s.skillTagging.failed}✗` : ""}`,
