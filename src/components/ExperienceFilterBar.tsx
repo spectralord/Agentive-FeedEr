@@ -13,9 +13,9 @@ export interface ExperienceFilterState {
 }
 
 const AUTHOR_TYPE_FILTERS: Array<{ value: string | undefined; label: string }> = [
-  { value: undefined, label: "Alle" },
-  { value: "own", label: "Eigen" },
-  { value: "curated", label: "Kuratiert" },
+  { value: undefined, label: "All" },
+  { value: "own", label: "Own" },
+  { value: "curated", label: "Curated" },
 ];
 
 /**
@@ -49,7 +49,7 @@ export function ExperienceFilterBar({ current }: { current: ExperienceFilterStat
 
   return (
     <nav
-      aria-label="Erfahrung-Filter"
+      aria-label="Experience filter"
       className="border-b border-zinc-800/60 bg-zinc-950/70 backdrop-blur"
     >
       <div className="mx-auto flex max-w-xl items-center gap-1.5 overflow-x-auto px-4 py-1.5 text-sm">
@@ -73,7 +73,7 @@ export function ExperienceFilterBar({ current }: { current: ExperienceFilterStat
               : "bg-zinc-800 text-zinc-300 hover:bg-zinc-700"
           }`}
         >
-          ⚠️ veraltete {showDeprecated ? "ausblenden" : "zeigen"}
+          ⚠️ deprecated {showDeprecated ? "hide" : "show"}
         </Link>
         <Link
           href={buildExperienceHref(current, { archived: showArchived ? undefined : "1" })}
@@ -83,7 +83,7 @@ export function ExperienceFilterBar({ current }: { current: ExperienceFilterStat
               : "bg-zinc-800 text-zinc-300 hover:bg-zinc-700"
           }`}
         >
-          🗄️ archivierte {showArchived ? "ausblenden" : "zeigen"}
+          🗄️ archived {showArchived ? "hide" : "show"}
         </Link>
       </div>
     </nav>

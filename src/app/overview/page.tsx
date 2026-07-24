@@ -62,7 +62,7 @@ export default async function OverviewPage({ searchParams }: OverviewPageProps) 
       <SotaSection groups={sotaGroups} />
 
       <div className="mx-auto mt-8 max-w-xl border-t border-zinc-800/60 px-4 pt-4">
-        <h2 className="text-sm font-semibold text-zinc-100">🕓 Verlauf</h2>
+        <h2 className="text-sm font-semibold text-zinc-100">🕓 History</h2>
       </div>
       <OverviewFilterBar current={params} />
       <HistoryList reels={historyReels} />

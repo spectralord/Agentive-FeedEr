@@ -48,11 +48,11 @@ export function SotaSection({ groups }: { groups: SotaGroup[] }) {
   return (
     <section aria-labelledby="sota-heading" className="mx-auto max-w-xl px-4 pt-6">
       <h2 id="sota-heading" className="text-sm font-semibold text-zinc-100">
-        ⭐ Aktueller State of the Art
+        ⭐ Current State of the Art
       </h2>
 
       {groups.length === 0 ? (
-        <p className="mt-2 text-sm text-zinc-400">Noch keine SOTA-Reels.</p>
+        <p className="mt-2 text-sm text-zinc-400">No SOTA Reels yet.</p>
       ) : (
         groups.map((group) => (
           <div key={group.category} className="mt-4">
