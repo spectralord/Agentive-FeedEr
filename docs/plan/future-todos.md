@@ -109,3 +109,42 @@ Der Schalter ist eigentlich **zweidimensional** — Umgebung *und* Inferenz:
   (DB-Ziel + Executor + Scheduling gebündelt), z. B. `APP_PROFILE=local|cloud` mit sinnvollen
   Defaults (`local`→`claude-code`+lokale DB; `cloud`→heute `api`+Railway, optional `claude-code`).
   Lokaler Start-Pfad ohne Railway (eigenes `npm`-Kommando / Claude-Code-Routine gegen lokale DB).
+
+## T7 — Curator / user system with trust-weighted evaluation
+> Parked by the user on 2026-07-24, during the T11.7 grill (reports ↔ topic clusters).
+> Needs its own grill before any build. New docs are English per README §2.
+
+**Motive:** colleagues should be able to act as **curators** — curating Reels and posting
+Experience Reports — and content from a known, trusted curator should carry a **markedly
+higher evaluation** than content the system fished off the web by itself.
+
+**The distinction that drives this:** a "report from the web" and a "report added by a known
+person" are fundamentally different trust objects, even though both are Experience Reports
+today. The existing `author_type` enum already encodes the two ends:
+- `curated` — **AI-fished** from a public source (Reddit/comment threads). Low trust; the
+  author is a handle, not a person we know. *(Beware the naming trap: `curated` here means
+  machine-harvested, NOT "a human curator curated it" — the opposite trust level. If this
+  feature lands, seriously consider renaming the enum value to something like `web` /
+  `harvested` to kill the ambiguity, rather than overloading `curated` with both meanings.)*
+- `colleague` — a real, known person. High trust. Currently an unused enum value with no
+  creation path; this is the value a curator system would actually populate.
+
+**What it would touch:**
+- **Real user/auth:** ADR 0007 already names the seam — `author_label` → `user_id`. Today
+  `author_type`/`author_label` stand in for authentication that does not exist. A curator
+  system is the point where that stops being sufficient.
+- **`relevance_score`:** reserved in the schema as "curated only; MVP always null" — a trust
+  model would give it an actual meaning and a source of truth.
+- **`confidence` weighting (ADR 0016, Epic 11 T11.7):** the MVP rule counts every distinct
+  author as exactly **one** independent voice, deliberately unweighted, because
+  `confidence` is a coarse `few/some/strong` scale (ADR 0013 point 4). A trust model is
+  precisely the thing that would reopen that: a trusted curator's first-hand report
+  arguably outweighs an anonymous web handle. Note the MVP rule **scales gracefully** into
+  this — each curator is a distinct `author_label` and so already counts as a distinct
+  voice; only the *weighting* would be new.
+- **Reel curation by colleagues:** a posting path for Reels that does not go through
+  ingestion/enrichment at all, which brushes against ADR 0005 (sourced-only) and needs an
+  explicit decision — is a trusted colleague's word a "source"?
+- **The deferred `curated` echo judgment (ADR 0016):** once web-harvested reports can
+  actually be created, they need the Reel-style `is_primary` echo check that own/colleague
+  reports do not. Same grill.
