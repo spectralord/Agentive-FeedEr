@@ -89,6 +89,8 @@
 | `APP_PROFILE` | nein | `cloud` | Ausführungs-Profil (Epic 17/ADR 0015): `cloud` (railway-cron+api) oder `local` (manual+claude-code, nie Railway/API). |
 | `PIPELINE_EXECUTOR` | nein | profil-abh. | Override: `api` \| `claude-code` (Kontingent via lokales CLI). |
 | `PIPELINE_TRIGGER` | nein | profil-abh. | Override: `railway-cron` \| `claude-code-cron` \| `manual`. Illegale Kombi wirft. |
+| `CLUSTER_WINDOW_DAYS` | nein | `30` | Epic 15: „aktives Fenster" für Cluster-Match-Kandidaten (`last_matched_at` darin). |
+| `MAX_CLUSTER_CANDIDATES` | nein | `40` | Epic 15: Kosten-/Kontext-Guard, max. Kandidaten-Cluster pro Reel-Prompt. |
 
 `.env.example` führt alle Variablen; `src/lib/env.ts` validiert sie mit zod
 (Defaults dort zentral, nirgendwo sonst hartkodiert).

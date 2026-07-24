@@ -76,7 +76,7 @@ export const topicClusters = pgTable("topic_clusters", {
 - Migration via `drizzle-kit`. **Verifikation:** Migration grün; neue Felder default `null`
   bzw. `lastMatchedAt` default now; FK vorhanden.
 
-### ☐ T15.2 — Cluster-Zuordnung (`src/lib/clustering/run.ts`): Match-or-Propose
+### ✅ T15.2 — Cluster-Zuordnung (`src/lib/clustering/run.ts`): Match-or-Propose
 - Eigenes Modul mit **injizierbarem `StructuredCaller`** (Muster wie Enrichment/SkillTagger),
   Modell konfigurierbar (Default Haiku, `ANTHROPIC_MODEL`).
 - **Kandidaten:** aktive Cluster mit `lastMatchedAt` innerhalb `CLUSTER_WINDOW_DAYS`,

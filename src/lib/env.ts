@@ -39,6 +39,13 @@ const envSchema = z.object({
     (v) => (v === "" ? undefined : v),
     z.enum(["railway-cron", "claude-code-cron", "manual"]).optional(),
   ),
+  // Epic 15 (ADR 0013): Match-or-Propose topic clustering config. Only
+  // clusters matched within CLUSTER_WINDOW_DAYS are match candidates for a
+  // new reel ("active window"); MAX_CLUSTER_CANDIDATES caps how many of
+  // those ride along in the prompt per reel (cost/context guard, same idea
+  // as MAX_ENRICH_PER_RUN).
+  CLUSTER_WINDOW_DAYS: z.coerce.number().int().positive().default(30),
+  MAX_CLUSTER_CANDIDATES: z.coerce.number().int().positive().default(40),
 });
 
 export type Env = z.infer<typeof envSchema>;
