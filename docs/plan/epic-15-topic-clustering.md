@@ -100,7 +100,7 @@ export const topicClusters = pgTable("topic_clusters", {
 - **Verifikation:** Unit-Tests mit gemocktem Caller: (a) Reel passt zu bestehendem Cluster
   → zugeordnet; (b) neues Thema → neuer Cluster; (c) Reblog eines Mitglieds → `isPrimary=false`.
 
-### ☐ T15.3 — In die Pipeline einhängen
+### ✅ T15.3 — In die Pipeline einhängen
 - Als **eigener Schritt nach dem Enrichment** (und nach dem SkillTagger, sobald Epic 12 steht)
   in `src/lib/pipeline.ts` (`runPipelinePhases`), sodass Cron **und** Admin-Button ihn
   mitlaufen lassen. Clustering-Fehler brechen den Lauf **nicht** ab (try/catch pro Reel,

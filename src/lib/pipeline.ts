@@ -2,6 +2,7 @@ import { and, desc, eq, gte } from "drizzle-orm";
 import type { NodePgDatabase } from "drizzle-orm/node-postgres";
 import type * as schema from "@/db/schema";
 import { pipelineRuns } from "@/db/schema";
+import { runClustering, type ClusteringResult } from "@/lib/clustering/run";
 import { runEnrichment, type EnrichmentResult } from "@/lib/enrichment/run";
 import { env } from "@/lib/env";
 import { resolveExecutionConfig } from "@/lib/executor/config";
@@ -17,6 +18,7 @@ export interface PipelineSummary {
   ingestion?: IngestionResult;
   enrichment?: EnrichmentResult;
   skillTagging?: SkillTaggingResult;
+  clustering?: ClusteringResult;
   feedback?: FeedbackSummaryResult;
 }
 
@@ -57,6 +59,16 @@ export async function runPipelinePhases(
       summary.skillTagging = await runSkillTagging(db, executor);
     } catch (error) {
       console.error("[pipeline] skill tagging failed:", error);
+    }
+    // Epic 15 (ADR 0013): topic clustering runs right after SkillTagger, on
+    // the same executor — Match-or-Propose against the currently-active
+    // cluster window, sets reels.topic_cluster_id + is_primary. Its own
+    // runner never throws per-item, but guard the call anyway (same
+    // never-abort-the-run contract as skill tagging/feedback below).
+    try {
+      summary.clustering = await runClustering(db, executor);
+    } catch (error) {
+      console.error("[pipeline] clustering failed:", error);
     }
     // T6.4: rolling feedback summary, right after enrichment/tagging. Never
     // aborts the run — a failure here is logged and simply skipped; the next
