@@ -23,7 +23,7 @@ const baseReel: FeedReel = {
 };
 
 describe("HistoryList", () => {
-  it("renders derived badges (Neu/SOTA/Best Practice) using the shared labels.ts functions", () => {
+  it("renders derived badges (New/SOTA/Best Practice) using the shared labels.ts functions", () => {
     const reel: FeedReel = {
       ...baseReel,
       publishedAt: new Date(Date.now() - 1 * 86_400_000), // within NEW_DAYS
@@ -32,7 +32,7 @@ describe("HistoryList", () => {
     const html = renderToStaticMarkup(<HistoryList reels={[reel]} />);
 
     expect(html).toContain("Ein Verlaufs-Item");
-    expect(html).toContain("🆕 Neu");
+    expect(html).toContain("🆕 New");
     expect(html).toContain("⭐ SOTA"); // established + R90/Q90
     expect(html).toContain("🛠️ Best Practice"); // not experimental + action set + Q90
     expect(html).toContain("R 90");
@@ -51,7 +51,7 @@ describe("HistoryList", () => {
 
     const html = renderToStaticMarkup(<HistoryList reels={[reel]} />);
 
-    expect(html).not.toContain("🆕 Neu");
+    expect(html).not.toContain("🆕 New");
     expect(html).not.toContain("⭐ SOTA");
     expect(html).not.toContain("🛠️ Best Practice");
   });
@@ -59,11 +59,11 @@ describe("HistoryList", () => {
   it("shows the stored experimental flag badge independently of maturity", () => {
     const reel: FeedReel = { ...baseReel, experimental: true };
     const html = renderToStaticMarkup(<HistoryList reels={[reel]} />);
-    expect(html).toContain("🧪 experimentell");
+    expect(html).toContain("🧪 experimental");
   });
 
   it("renders an empty-state message for no reels", () => {
     const html = renderToStaticMarkup(<HistoryList reels={[]} />);
-    expect(html).toContain("Keine Reels für diese Filterkombination.");
+    expect(html).toContain("No Reels for this filter combination.");
   });
 });

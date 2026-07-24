@@ -3,9 +3,9 @@ import { CATEGORIES, MATURITIES } from "@/lib/enrichment/schema";
 import { CATEGORY_LABELS, MATURITY_LABELS } from "./labels";
 
 /**
- * Verlauf filter state carried entirely in the URL (T5.3, same pattern as
+ * History filter state carried entirely in the URL (T5.3, same pattern as
  * FilterBar/T3.4 — no client-state library). Absent fields mean the widest
- * setting: period=alles, no category/maturity filter, minRelevance=0,
+ * setting: period=all, no category/maturity filter, minRelevance=0,
  * bestPractice off, experimental included (shown).
  */
 export interface OverviewFilterState {
@@ -18,16 +18,16 @@ export interface OverviewFilterState {
 }
 
 const PERIODS: Array<{ value: string | undefined; label: string }> = [
-  { value: "7", label: "7 Tage" },
-  { value: "30", label: "30 Tage" },
-  { value: "90", label: "90 Tage" },
-  { value: undefined, label: "Alles" },
+  { value: "7", label: "7 days" },
+  { value: "30", label: "30 days" },
+  { value: "90", label: "90 days" },
+  { value: undefined, label: "All" },
 ];
 
 const RELEVANCE_STEPS: Array<{ value: string | undefined; label: string }> = [
-  { value: undefined, label: "Relevanz: alle" },
-  { value: "50", label: "Relevanz ≥ 50" },
-  { value: "70", label: "Relevanz ≥ 70" },
+  { value: undefined, label: "Relevance: all" },
+  { value: "50", label: "Relevance ≥ 50" },
+  { value: "70", label: "Relevance ≥ 70" },
 ];
 
 /**
@@ -72,7 +72,7 @@ export function OverviewFilterBar({ current }: { current: OverviewFilterState })
 
   return (
     <nav
-      aria-label="Verlauf-Filter"
+      aria-label="History filter"
       className="border-b border-zinc-800/60 bg-zinc-950/70 backdrop-blur"
     >
       <div className="mx-auto max-w-xl">
@@ -136,7 +136,7 @@ export function OverviewFilterBar({ current }: { current: OverviewFilterState })
             href={buildOverviewHref(current, { bestPractice: bestPractice ? undefined : "1" })}
             className={chipClass(bestPractice)}
           >
-            🛠️ Nur Best Practice
+            🛠️ Best Practice only
           </Link>
           <Link
             href={buildOverviewHref(current, { experimental: hideExperimental ? undefined : "0" })}
@@ -146,7 +146,7 @@ export function OverviewFilterBar({ current }: { current: OverviewFilterState })
                 : "bg-zinc-800 text-zinc-300 hover:bg-zinc-700"
             }`}
           >
-            🧪 experimentell {hideExperimental ? "zeigen" : "ausblenden"}
+            🧪 experimental {hideExperimental ? "show" : "hide"}
           </Link>
         </ChipRow>
       </div>
