@@ -1,0 +1,81 @@
+# ADR 0017 — Write-up: a second enrichment pass for long-form Reel content
+
+- Status: proposed (needs strong-model grill before implementation — see Open questions)
+- Date: 2026-07-24
+- Related: `docs/specs/2026-07-24-ux-gamification-design.md` §2.2/§8.1 (the Detail view's
+  Write-up tab this backs), ADR 0002 (decoupled ingestion/enrichment), ADR 0003 (structured
+  single-pass enrichment), ADR 0005 (sourced-only), ADR 0015 (executor seam, binding)
+
+## Context / Problem
+
+The UX design for the Reel Detail view includes a "Write-up" tab: a genuinely longer, more
+discursive piece of writing than the Compact card's one-paragraph `summary` — closer to "what does
+this actually mean, what's the context, what would I compare it to" than a news-brief. No field in
+`reels` holds this today; `summary` is short by convention (one paragraph), `example` is a short
+sourced snippet, `action` is one sentence. Building the Write-up tab's UI without this field would
+mean either duplicating `summary` (adds a navigation step for zero new information) or leaving the
+tab empty for most Reels.
+
+The product owner explicitly wants the tab kept and is open to a data-model change to support it —
+this ADR is that change, proposed for grill/review rather than assumed.
+
+## Decision (proposed)
+
+1. **New field: `reels.writeup` (text, nullable).** Longer-form prose — a few paragraphs, no hard
+   cap, written by a second LLM pass. Nullable because not every Reel need get one immediately (or
+   ever — see the generation-scope question below); Compact and the rest of Detail work correctly
+   with it absent (the Write-up tab simply isn't shown, per the design doc's tab-hiding rule).
+
+2. **A second, decoupled pass, not a change to the core enrichment call.** Consistent with the
+   existing pattern (SkillTagger, Clustering, Topic-Knowledge-Check all run as their own passes
+   after the initial Reel-creating enrichment) — this keeps ADR 0003's single-pass *core*
+   enrichment contract intact and lets Write-up generation be retried/re-run independently without
+   touching the fields the core pass owns.
+
+3. **Sourced-only still applies (ADR 0005).** The write-up elaborates using the *already-stored*
+   `raw_items.raw_content` (no new fetching) — it can draw on more of that content than the short
+   `summary` does, but it may not introduce claims the source doesn't support. This is explicitly
+   **not** the same feature as the Deep-Dive vision (Epic 8): Deep-Dive is on-demand, agentic,
+   fetches *new* external pages beyond the original source. Write-up is a batch pipeline step
+   working from what's already been ingested. Keeping these conceptually separate matters — reusing
+   "Deep-Dive" language for this would collide with an already-reserved term (see CONTEXT.en.md).
+
+4. **Goes through the Executor seam.** Per ADR 0015 (binding): an injected `Executor`, wired
+   through `pipeline.ts`, zod-validated output, unit test with a mocked caller — no direct API
+   access, no `claude-code`-path fallback. Same requirement as every other LLM step added since
+   that ADR.
+
+## Alternatives
+
+- **Lengthen `summary` itself instead of adding a field:** simpler schema, but conflates two
+  different jobs — a fast-scan compact summary and a genuinely longer piece — forcing Compact to
+  either show all of it (defeats the "compact" card's purpose, reintroduces the over-long-card
+  problem earlier iterations moved away from) or truncate awkwardly. Rejected in favor of a
+  separate field with a separate purpose.
+- **Generate on-demand when a user opens the Write-up tab (lazy):** cheapest in aggregate token
+  spend, but adds latency to a tap that should feel instant, and starts to resemble Deep-Dive's
+  on-demand shape closely enough to blur the distinction point 3 above is trying to keep clean.
+  Not rejected outright — worth the strong model's judgment call, see Open questions.
+
+## Consequences
+
+- Migration: add `writeup text` (nullable) to `reels`.
+- New pipeline step + prompt, new executor-backed module (naming to follow existing convention,
+  e.g. `src/lib/writeup/`), triggered after core enrichment in the daily job and available as a
+  manual admin action (consistent with how other passes are exposed today).
+- `CONTEXT.en.md` gets a glossary entry for **Write-up** (added alongside this ADR).
+- UX design doc's Detail view now depends on this ADR landing before the Write-up tab can ship
+  with real content — tracked as task #10 in that doc's priority list, explicitly independent of
+  tasks #1–9.
+
+## Open questions (for the strong model / next grill)
+
+- **Generation scope:** every enriched Reel, or gated (e.g. only above `QUALITY_THRESHOLD`, or only
+  Top-N/day)? Ungated is simplest and keeps Detail predictable; gated saves cost on Reels nobody
+  will open. No strong recommendation here — this is a cost/predictability trade-off, not a UX
+  call.
+- **Model choice:** default enrichment uses Haiku for cost; a longer, more discursive write-up
+  might warrant a stronger model given it's user-facing prose someone actually reads end to end,
+  not just scored. Worth deciding deliberately rather than defaulting silently.
+- **Lazy vs. batch generation** (Alternatives above) — leaning batch for the latency reason, but
+  flagged as a real open call, not a settled one.
