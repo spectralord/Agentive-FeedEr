@@ -5,20 +5,36 @@
 - Author: Design-Expert session (per `docs/specs/design-expert-handoff-prompt.md`, ADR 0014 tier 2)
 - Scope: `ReelCard`/`ReelCardBody`, `ReelStackCard`, `ReelActions`, `ResurfaceCard`, `SkillMap`,
   `SkillNodeDetail`, the shared visual system underneath all of them.
-- Companion: `docs/adr/0016-ux-design-conventions.md` (binding conventions extracted below)
+- Companion ADRs: `0016` (UX conventions), `0017` (Write-up), `0018`–`0020` (Skills)
+- **Visual reference: `docs/specs/prototypes/`** — two accepted interactive HTML prototypes;
+  see §0 and that folder's README before implementing anything.
 
 ## 0. How to use this document
 
 This is written against the **actual current code**, not a fresh rebuild — every section names
 the real component and describes the concrete diff. Section 8 is not optional reading: it
-surfaces two places where the design as first prototyped assumed content the pipeline doesn't
-actually produce, and recommends a simpler shape instead. Read section 8 before starting
-implementation of section 2.
+surfaces places where the design as first prototyped assumed content the pipeline doesn't
+actually produce. Read section 8 before starting implementation of section 2.
+
+> ### ► Open the prototypes first
+>
+> **`docs/specs/prototypes/`** holds the two accepted, interactive HTML prototypes — open them in
+> a browser before writing any code. They are the **visual source of truth**: where prose and
+> prototype disagree about how something should *look*, the prototype wins, because it is what was
+> reviewed and accepted.
+>
+> - `reel-card-and-detail.html` — Reel Compact + Detail view (§1–§3, §5.2)
+> - `skill-constellation.html` — Skill map + Knowledge Base (§5.1, §9)
+>
+> **Read `docs/specs/prototypes/README.md` first** — it draws the line between what is binding
+> (colour semantics, ring language, transitions, spacing) and what is illustrative (all sample
+> content is invented; the constellation's node placement is the *fallback tier only* and is
+> superseded by ADR 0020).
 
 Process behind this doc: ~15 rounds of interactive HTML prototypes with the product owner,
 iterating on structure, content density, and gesture model before any of this was written down.
-The prototypes are not preserved anywhere durable (Artifacts, not committed) — this document is
-the durable record of what they converged on and why.
+The two that survived review are committed under `prototypes/`; the rejected iterations are not,
+but the reasoning behind the significant rejections is recorded in §8 and ADRs 0017–0020.
 
 ---
 
@@ -57,6 +73,9 @@ on the feed itself; scroll-snap already gives it a good rhythm.
 ---
 
 ## 2. Reel Card — read section 8 first
+
+> **Prototype:** `docs/specs/prototypes/reel-card-and-detail.html` — three stacked Reels; tap a
+> card to push into Detail, tap the skill badge to jump to the Skill tab.
 
 ### 2.1 Compact (`ReelCardBody`)
 
@@ -353,6 +372,9 @@ throwing the distinction away (`status: ProgressStatus | null`, or an added `dec
 and it restores meaning to the bottom rung of the ring.
 
 ### 9.5 Constellation view — the sprawling map
+
+> **Prototype:** `docs/specs/prototypes/skill-constellation.html` — this is the look to hit.
+> Its node *placement* is the ADR 0020 fallback tier only, not the target algorithm.
 
 The 8 themes in `src/lib/skills.ts` are **permanent hand-placed regions**; skill nodes are stars
 scattered *inside* their own region. The skeleton is designed and fixed, only the leaves are

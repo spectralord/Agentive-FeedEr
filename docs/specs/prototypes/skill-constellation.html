@@ -1,0 +1,601 @@
+<title>Agentive-FeedEr — Skill Constellation</title>
+<style>
+  :root {
+    --ground: #070a0d;
+    --ground-2: #0b1015;
+    --surface: #12171b;
+    --surface-raised: #171d22;
+    --hairline: #232b31;
+    --hairline-strong: #2e373e;
+    --ink: #eef1f2;
+    --ink-muted: #9aa7ac;
+    --ink-faint: #5e6a6f;
+
+    --accent: #45b8ab;
+    --gold: #d1a13c;
+    --action: #3fb673;
+    --caution: #c98a3a;
+
+    --mono: ui-monospace, "SF Mono", "Cascadia Mono", Consolas, monospace;
+    --sans: -apple-system, "SF Pro Text", "Segoe UI", system-ui, sans-serif;
+    accent-color: var(--accent);
+  }
+  * { box-sizing: border-box; -webkit-tap-highlight-color: transparent; }
+  html, body { margin: 0; padding: 0; }
+  body { background: var(--ground); color: var(--ink); font-family: var(--sans); overflow-x: hidden; }
+  button { font-family: inherit; }
+  @media (prefers-reduced-motion: reduce) { * { animation: none !important; transition-duration: .001ms !important; } }
+
+  .page { max-width: 1240px; margin: 0 auto; padding: 44px 22px 110px; }
+  .eyebrow { font-family: var(--mono); font-size: 12px; letter-spacing: .09em; text-transform: uppercase; color: var(--accent); }
+  h1 { font-size: clamp(24px, 3.2vw, 34px); font-weight: 650; letter-spacing: -.015em; line-height: 1.16; margin: 10px 0 0; text-wrap: balance; }
+  .lede { max-width: 76ch; color: var(--ink-muted); font-size: 15px; line-height: 1.62; margin: 14px 0 0; }
+  .lede b { color: var(--ink); }
+
+  /* ---------- View switch ---------- */
+  .viewbar { display: flex; align-items: center; gap: 10px; margin-top: 26px; flex-wrap: wrap; }
+  .seg { display: inline-flex; border: 1px solid var(--hairline); border-radius: 999px; overflow: hidden; }
+  .seg button { background: var(--surface); color: var(--ink-muted); border: none; padding: 8px 16px; font-size: 12.5px; cursor: pointer; transition: background .15s, color .15s; }
+  .seg button.active { background: var(--accent); color: var(--ground); font-weight: 600; }
+  .toggle-chip { display: inline-flex; align-items: center; gap: 7px; border: 1px solid var(--hairline); background: var(--surface); color: var(--ink-muted); border-radius: 999px; padding: 7px 13px; font-size: 12px; cursor: pointer; }
+  .toggle-chip.on { border-color: var(--caution); color: var(--caution); }
+  .toggle-chip .led { width: 6px; height: 6px; border-radius: 50%; background: var(--hairline-strong); }
+  .toggle-chip.on .led { background: var(--caution); }
+
+  /* ---------- Map ---------- */
+  .map-wrap { position: relative; margin-top: 18px; border: 1px solid var(--hairline); border-radius: 18px; overflow: hidden; background:
+      radial-gradient(circle at 22% 18%, rgba(69,184,171,.05), transparent 42%),
+      radial-gradient(circle at 78% 74%, rgba(209,161,60,.045), transparent 46%),
+      linear-gradient(180deg, var(--ground-2), var(--ground)); }
+  svg.map { display: block; width: 100%; height: auto; touch-action: manipulation; }
+
+  .nebula { opacity: .5; }
+  .theme-label { font-family: var(--mono); font-size: 9.5px; letter-spacing: .14em; text-transform: uppercase; fill: var(--ink-faint); pointer-events: none; user-select: none; }
+  .theme-ring { fill: none; stroke: var(--hairline); stroke-dasharray: 2 6; opacity: .55; }
+
+  .link { stroke: var(--hairline-strong); stroke-width: 1; fill: none; opacity: .35; transition: opacity .2s, stroke .2s; }
+  .link.hot { stroke: var(--accent); opacity: .75; }
+
+  .node { cursor: pointer; }
+  .node .halo { opacity: 0; transition: opacity .25s; }
+  .node .core { transition: fill .25s, stroke .25s, r .2s; }
+  .node .cap { font-family: var(--sans); font-size: 8.5px; fill: var(--ink-muted); pointer-events: none; user-select: none; opacity: 0; transition: opacity .2s; }
+  .node.lit .cap, .node.sel .cap, .node:hover .cap { opacity: 1; }
+  .node.sel .core { stroke-width: 2.5; }
+
+  .node.untouched .core { fill: rgba(94,106,111,.14); stroke: var(--hairline-strong); stroke-width: 1; }
+  .node.seen .core { fill: rgba(154,167,172,.3); stroke: var(--ink-muted); stroke-width: 1.2; }
+  .node.tried .core { fill: rgba(69,184,171,.42); stroke: var(--accent); stroke-width: 1.6; }
+  .node.tried .halo { opacity: .5; fill: var(--accent); }
+  .node.mastered .core { fill: rgba(209,161,60,.5); stroke: var(--gold); stroke-width: 2; }
+  .node.mastered .halo { opacity: .62; fill: var(--gold); }
+  .node .star { fill: var(--gold); pointer-events: none; opacity: 0; }
+  .node.mastered .star { opacity: 1; }
+
+  @keyframes breathe { 0%,100% { opacity: .42; } 50% { opacity: .72; } }
+  .node.tried .halo, .node.mastered .halo { animation: breathe 4.5s ease-in-out infinite; }
+
+  .map-legend { display: flex; flex-wrap: wrap; gap: 16px; padding: 12px 16px; border-top: 1px solid var(--hairline); background: rgba(7,10,13,.55); }
+  .lg { display: flex; align-items: center; gap: 7px; font-size: 11.5px; color: var(--ink-muted); }
+  .lg .swatch { width: 11px; height: 11px; border-radius: 50%; }
+  .lg .swatch.untouched { background: rgba(94,106,111,.14); border: 1px solid var(--hairline-strong); }
+  .lg .swatch.seen { background: rgba(154,167,172,.3); border: 1px solid var(--ink-muted); }
+  .lg .swatch.tried { background: rgba(69,184,171,.42); border: 1.5px solid var(--accent); }
+  .lg .swatch.mastered { background: rgba(209,161,60,.5); border: 2px solid var(--gold); }
+
+  /* ---------- Detail panel ---------- */
+  .panel { position: fixed; inset: auto 0 0 0; background: var(--surface); border-top: 1px solid var(--hairline-strong); border-radius: 20px 20px 0 0; padding: 20px 20px 26px; max-height: 76vh; overflow-y: auto; transform: translateY(102%); transition: transform .3s cubic-bezier(.22,.8,.36,1); z-index: 40; box-shadow: 0 -20px 50px -20px rgba(0,0,0,.8); }
+  .panel.open { transform: translateY(0); }
+  @media (min-width: 860px) { .panel { inset: 0 0 0 auto; width: 400px; border-radius: 0; border-top: none; border-left: 1px solid var(--hairline-strong); max-height: none; transform: translateX(102%); padding-top: 26px; } .panel.open { transform: translateX(0); } }
+
+  .panel-close { position: absolute; top: 16px; right: 16px; width: 30px; height: 30px; border-radius: 50%; background: var(--surface-raised); border: 1px solid var(--hairline); color: var(--ink-muted); cursor: pointer; font-size: 14px; }
+  .panel-close:hover { color: var(--ink); }
+
+  .p-head { display: flex; align-items: center; gap: 14px; padding-right: 34px; }
+  .p-ring { position: relative; width: 54px; height: 54px; flex-shrink: 0; }
+  .p-ring svg { transform: rotate(-90deg); }
+  .p-ring .glyph { position: absolute; inset: 0; display: grid; place-items: center; font-size: 15px; }
+  .p-title { font-size: 17px; font-weight: 650; line-height: 1.25; }
+  .p-theme { margin-top: 3px; font-family: var(--mono); font-size: 10px; text-transform: uppercase; letter-spacing: .08em; color: var(--ink-faint); }
+  .p-status { margin-top: 3px; font-family: var(--mono); font-size: 10.5px; text-transform: uppercase; letter-spacing: .05em; }
+  .p-status.untouched { color: var(--ink-faint); }
+  .p-status.seen { color: var(--ink-muted); }
+  .p-status.tried { color: var(--accent); }
+  .p-status.mastered { color: var(--gold); }
+
+  .p-desc { margin-top: 15px; font-size: 13px; line-height: 1.6; color: var(--ink-muted); }
+
+  .p-sec { margin-top: 20px; }
+  .p-sec-label { font-family: var(--mono); font-size: 9.5px; text-transform: uppercase; letter-spacing: .08em; color: var(--ink-faint); display: flex; justify-content: space-between; align-items: baseline; }
+
+  .guide-card { margin-top: 9px; border: 1px solid var(--hairline); border-radius: 12px; background: var(--ground-2); padding: 12px 13px; }
+  .guide-meta { display: flex; align-items: center; gap: 8px; font-size: 11px; color: var(--ink-faint); }
+  .guide-excerpt { margin-top: 8px; font-size: 12.5px; line-height: 1.6; color: var(--ink); }
+  .guide-cite { margin-top: 8px; font-size: 10.5px; color: var(--ink-faint); }
+  .guide-actions { margin-top: 11px; display: flex; gap: 8px; flex-wrap: wrap; }
+
+  .btn { font-size: 11.5px; font-weight: 600; border-radius: 999px; padding: 7px 14px; cursor: pointer; border: none; }
+  .btn.primary { background: var(--accent); color: var(--ground); }
+  .btn.ghost { background: none; border: 1px solid var(--hairline-strong); color: var(--ink-muted); }
+  .btn.ghost:hover { border-color: var(--accent); color: var(--accent); }
+  .btn.action { background: var(--action); color: var(--ground); }
+  .btn:focus-visible { outline: 2px solid var(--accent); outline-offset: 2px; }
+
+  .todo { display: flex; gap: 10px; padding: 10px 0; border-top: 1px solid var(--hairline); cursor: pointer; }
+  .todo:first-of-type { border-top: none; }
+  .todo .box { width: 19px; height: 19px; border-radius: 6px; border: 1.5px solid var(--hairline-strong); flex-shrink: 0; margin-top: 1px; display: grid; place-items: center; }
+  .todo.done .box { background: var(--action); border-color: var(--action); }
+  .todo.done .box::after { content: "✓"; font-size: 11px; color: var(--ground); font-weight: 700; }
+  .todo-text { font-size: 12.5px; line-height: 1.5; color: var(--ink); }
+  .todo.done .todo-text { color: var(--ink-faint); text-decoration: line-through; text-decoration-color: var(--hairline-strong); }
+  .todo-src { margin-top: 3px; font-size: 10.5px; color: var(--ink-faint); }
+  .effort { display: inline-block; margin-left: 6px; font-family: var(--mono); font-size: 9.5px; padding: 1px 6px; border-radius: 999px; border: 1px solid color-mix(in srgb, var(--action) 35%, var(--hairline)); color: var(--action); }
+
+  .evidence { margin-top: 10px; display: flex; flex-wrap: wrap; gap: 7px; }
+  .ev { display: inline-flex; align-items: center; gap: 5px; font-size: 11px; padding: 4px 9px; border-radius: 999px; border: 1px solid var(--hairline); color: var(--ink-faint); }
+  .ev.on { border-color: color-mix(in srgb, var(--action) 45%, var(--hairline)); color: var(--action); }
+
+  .decay-note { margin-top: 10px; font-size: 11.5px; color: var(--caution); line-height: 1.5; }
+
+  /* ---------- Knowledge base ---------- */
+  .kb { margin-top: 18px; display: none; }
+  .kb.show { display: block; }
+  .map-wrap.hide { display: none; }
+  .kb-theme { margin-top: 26px; }
+  .kb-theme-head { display: flex; align-items: baseline; gap: 10px; border-bottom: 1px solid var(--hairline); padding-bottom: 9px; }
+  .kb-theme-name { font-family: var(--mono); font-size: 11px; text-transform: uppercase; letter-spacing: .1em; color: var(--ink); }
+  .kb-theme-prog { margin-left: auto; font-family: var(--mono); font-size: 11px; color: var(--ink-faint); font-variant-numeric: tabular-nums; }
+  .kb-bar { margin-top: 8px; height: 3px; border-radius: 2px; background: var(--hairline); overflow: hidden; }
+  .kb-bar span { display: block; height: 100%; background: linear-gradient(90deg, var(--accent), var(--gold)); }
+  .kb-grid { margin-top: 14px; display: grid; grid-template-columns: repeat(auto-fill, minmax(255px, 1fr)); gap: 12px; }
+  .kb-card { border: 1px solid var(--hairline); border-radius: 12px; background: var(--surface); padding: 13px 14px; cursor: pointer; transition: border-color .15s, transform .15s; }
+  .kb-card:hover { border-color: var(--hairline-strong); transform: translateY(-1px); }
+  .kb-card-head { display: flex; align-items: flex-start; justify-content: space-between; gap: 9px; }
+  .kb-card-title { font-size: 13.5px; font-weight: 600; line-height: 1.35; }
+  .kb-dot { width: 9px; height: 9px; border-radius: 50%; flex-shrink: 0; margin-top: 4px; }
+  .kb-dot.untouched { background: rgba(94,106,111,.2); border: 1px solid var(--hairline-strong); }
+  .kb-dot.seen { background: var(--ink-muted); }
+  .kb-dot.tried { background: var(--accent); }
+  .kb-dot.mastered { background: var(--gold); }
+  .kb-card-meta { margin-top: 9px; display: flex; flex-wrap: wrap; gap: 6px; font-size: 10.5px; color: var(--ink-faint); }
+  .kb-tag { padding: 2px 7px; border-radius: 999px; border: 1px solid var(--hairline); }
+  .kb-tag.guide-ready { border-color: color-mix(in srgb, var(--accent) 40%, var(--hairline)); color: var(--accent); }
+  .kb-tag.todo-open { border-color: color-mix(in srgb, var(--action) 40%, var(--hairline)); color: var(--action); }
+  .kb-tag.stale { border-color: color-mix(in srgb, var(--caution) 45%, var(--hairline)); color: var(--caution); }
+
+  .notes { margin-top: 40px; border: 1px solid var(--hairline); border-radius: 14px; background: var(--surface); padding: 18px 20px; }
+  .notes h3 { margin: 0 0 10px; font-size: 13px; font-weight: 650; }
+  .notes p { margin: 0 0 9px; font-size: 13px; line-height: 1.62; color: var(--ink-muted); }
+  .notes p:last-child { margin-bottom: 0; }
+  .notes b { color: var(--ink); }
+
+  footer.page-foot { margin-top: 60px; padding-top: 18px; border-top: 1px solid var(--hairline); font-size: 12px; color: var(--ink-faint); display: flex; justify-content: space-between; gap: 18px; flex-wrap: wrap; }
+</style>
+
+<div class="page">
+  <div class="eyebrow">Prototype · Skill Constellation + Knowledge Base</div>
+  <h1>Fixed constellations, emergent stars</h1>
+  <p class="lede">
+    The 8 themes from <code>src/lib/skills.ts</code> are permanent regions, placed once. Skill nodes
+    scatter <b>deterministically inside their own region</b> (position derived from the slug), so a new
+    node from tonight's SkillTagger run appears as a new star without re-flowing anything you'd already
+    learned to find. Click any node. Toggle <b>knowledge decay</b> to see the spaced-repetition idea.
+  </p>
+
+  <div class="viewbar">
+    <div class="seg" id="viewseg">
+      <button data-view="map" class="active">Constellation</button>
+      <button data-view="kb">Knowledge Base</button>
+    </div>
+    <button class="toggle-chip" id="decayToggle" type="button"><span class="led"></span>Knowledge decay</button>
+  </div>
+
+  <div class="map-wrap" id="mapWrap">
+    <svg class="map" id="map" viewBox="0 0 1000 640" role="img" aria-label="Skill constellation"></svg>
+    <div class="map-legend">
+      <span class="lg"><span class="swatch untouched"></span>Untouched — tagged, never opened</span>
+      <span class="lg"><span class="swatch seen"></span>Seen — guide read</span>
+      <span class="lg"><span class="swatch tried"></span>Tried — at least one To-Try done</span>
+      <span class="lg"><span class="swatch mastered"></span>Mastered — self-declared</span>
+      <span class="lg" style="color:var(--ink-faint)">Size = content volume · lines = skills that co-occur in the same Reels</span>
+    </div>
+  </div>
+
+  <div class="kb" id="kb"></div>
+
+  <div class="notes">
+    <h3>Why this layout survives dynamic data</h3>
+    <p><b>Nothing is force-directed.</b> Theme centres are hand-placed constants. A node's position is <code>hash(slug) → angle + radius</code> inside its theme circle, with a few deterministic relaxation passes to stop overlaps. Same slug, same pixel, forever — so spatial memory works, and adding a node never moves an existing one.</p>
+    <p><b>Progress is luminosity, not points.</b> The map literally gets brighter as you learn. No confetti, no score counter — the reward is that your own sky fills in. Mastered nodes are the only gold on the page, which is what keeps gold meaningful.</p>
+    <p><b>Decay dims, never demotes.</b> With decay on, nodes fade by time-since-touched. You never lose a declared status — the star just wants re-lighting. "This could use a refresher" instead of "you lost progress."</p>
+  </div>
+
+  <footer class="page-foot">
+    <span>Discussion draft — not production code.</span>
+    <span>Next.js · Tailwind · SVG, no new dependencies</span>
+  </footer>
+</div>
+
+<div class="panel" id="panel"></div>
+
+<script>
+(function () {
+  "use strict";
+
+  const THEMES = [
+    { id: "agents",          label: "Agents",          cx: 300, cy: 200, r: 118 },
+    { id: "prompting",       label: "Prompting",       cx: 560, cy: 130, r: 100 },
+    { id: "tooling",         label: "Tooling",         cx: 795, cy: 215, r: 108 },
+    { id: "parallelization", label: "Parallelization", cx: 140, cy: 420, r: 92  },
+    { id: "integration",     label: "Integration",     cx: 405, cy: 445, r: 100 },
+    { id: "models",          label: "Models",          cx: 645, cy: 400, r: 95  },
+    { id: "evaluation",      label: "Evaluation",      cx: 855, cy: 480, r: 88  },
+    { id: "industry",        label: "Industry",        cx: 235, cy: 585, r: 74  }
+  ];
+
+  const NODES = [
+    { slug: "agent-skills", title: "Agent Skills", theme: "agents", status: "tried", count: 14, days: 2,
+      desc: "Writing and scoping reusable Skills for Claude Code — when one earns its place, how narrow to keep it, how to avoid overlapping triggers.",
+      guide: { words: 640, sources: 6, updated: "2 days ago", read: true,
+        excerpt: "A Skill is conditionally loaded context: unlike CLAUDE.md, which sits in every turn whether relevant or not, a Skill enters context only when its description matches the task. That inversion is the whole value — it lets the content be long and specific without taxing unrelated work." },
+      todos: [ { t: "Write a SKILL.md for your review checklist and see if it loads unprompted", src: "Anthropic Blog", effort: "5-min-test", done: true },
+               { t: "Deliberately give two Skills overlapping descriptions, observe which wins", src: "GitHub Discussions", effort: "afternoon", done: false } ] },
+    { slug: "multi-step-planning", title: "Multi-step Planning", theme: "agents", status: "seen", count: 8, days: 19,
+      desc: "How agents decompose a goal into steps, and where plans reliably go wrong in practice.",
+      guide: { words: 520, sources: 4, updated: "3 weeks ago", read: true,
+        excerpt: "Plans fail less from bad decomposition than from missing a verification step between actions — the agent proceeds confidently from an assumption it never checked." },
+      todos: [ { t: "Add an explicit verify step between two actions in an existing workflow", src: "Latent Space", effort: "afternoon", done: false } ] },
+    { slug: "tool-use-loops", title: "Tool-use Loops", theme: "agents", status: "untouched", count: 5, days: 40,
+      desc: "The call-observe-decide cycle: loop termination, retries, and error surfaces.",
+      guide: null, todos: [ { t: "Log one full tool loop and count redundant calls", src: "Simon Willison", effort: "5-min-test", done: false } ] },
+    { slug: "autonomy-boundaries", title: "Autonomy Boundaries", theme: "agents", status: "untouched", count: 3, days: 55, desc: "Where to place confirmation gates without destroying the point of delegating.", guide: null, todos: [] },
+
+    { slug: "prompt-caching", title: "Prompt Caching", theme: "prompting", status: "mastered", count: 11, days: 5,
+      desc: "Applying Anthropic's caching discount in real agent setups — what qualifies, and what silently breaks it.",
+      guide: { words: 700, sources: 7, updated: "5 days ago", read: true,
+        excerpt: "Caching keys on an exact byte-identical prefix. Every practical failure traces back to that one sentence: a dynamically built tool list, a timestamp in the system prompt, a per-request user id — each quietly forfeits the discount while looking correct." },
+      todos: [ { t: "Check console usage for cache-read share on tool-heavy calls", src: "Changelog", effort: "5-min-test", done: true },
+               { t: "Audit the system prompt for per-request variance", src: "Discord", effort: "5-min-test", done: true } ] },
+    { slug: "context-engineering", title: "Context Engineering", theme: "prompting", status: "tried", count: 9, days: 8,
+      desc: "Deciding what belongs in context at all — and what belongs in a tool, a file, or nowhere.",
+      guide: { words: 580, sources: 5, updated: "1 week ago", read: true,
+        excerpt: "The instinct to add context is usually wrong. Most 'the model didn't know X' failures are retrieval problems wearing a context-window costume." },
+      todos: [ { t: "Take your longest prompt and cut 30% — measure whether output degrades", src: "Simon Willison", effort: "afternoon", done: true } ] },
+    { slug: "extended-thinking", title: "Extended Thinking", theme: "prompting", status: "seen", count: 6, days: 26,
+      desc: "When a thinking budget pays for itself, and when it just spends tokens.",
+      guide: { words: 430, sources: 3, updated: "4 weeks ago", read: true,
+        excerpt: "Thinking helps most where the failure mode is a wrong plan, not a wrong fact — reasoning can't retrieve what was never in context." },
+      todos: [] },
+
+    { slug: "claude-code-cli", title: "Claude Code CLI", theme: "tooling", status: "tried", count: 17, days: 1,
+      desc: "Day-to-day CLI use: sessions, hooks, slash commands, settings.",
+      guide: { words: 810, sources: 9, updated: "yesterday", read: false,
+        excerpt: "Most workflow friction people attribute to the model is actually configuration: a hook that should exist, a permission prompt that should have been allowlisted, a skill that should have been written months ago." },
+      todos: [ { t: "Allowlist your three most-repeated permission prompts", src: "Docs", effort: "5-min-test", done: true },
+               { t: "Write one Stop hook for your build", src: "GitHub", effort: "afternoon", done: false } ] },
+    { slug: "mcp-debugging", title: "MCP Debugging", theme: "tooling", status: "mastered", count: 12, days: 12,
+      desc: "Diagnosing MCP connectivity across local, Docker and CI environments.",
+      guide: { words: 690, sources: 8, updated: "2 weeks ago", read: true,
+        excerpt: "Nearly every 'MCP is broken' report resolves to one of three things: a loopback bind address, a transport mismatch, or a server that crashed silently and left the client waiting." },
+      todos: [ { t: "Reproduce the 0.0.0.0 bind fix in a Compose setup", src: "GitHub #482", effort: "5-min-test", done: true } ] },
+    { slug: "hooks-and-commands", title: "Hooks & Slash Commands", theme: "tooling", status: "seen", count: 7, days: 30,
+      desc: "Automating repetitive session behaviour instead of re-typing it.",
+      guide: { words: 470, sources: 4, updated: "1 month ago", read: true, excerpt: "A hook is the right tool exactly when you catch yourself giving the same instruction twice in one week." },
+      todos: [ { t: "Turn your most-repeated instruction into a slash command", src: "Docs", effort: "5-min-test", done: false } ] },
+    { slug: "sdk-migration", title: "SDK Migration", theme: "tooling", status: "untouched", count: 4, days: 48, desc: "Version bumps, breaking changes, and migration paths across SDK releases.", guide: null, todos: [] },
+
+    { slug: "sub-agent-orchestration", title: "Sub-agent Orchestration", theme: "parallelization", status: "tried", count: 10, days: 6,
+      desc: "Delegating to sub-agents: when it saves time and when coordination costs eat the gain.",
+      guide: { words: 610, sources: 5, updated: "6 days ago", read: true,
+        excerpt: "Delegation pays when the subtask is genuinely separable and its result is cheap to verify. Both halves matter — a separable task with an expensive verification step is worse than doing it yourself." },
+      todos: [ { t: "Split one task across two agents on separate branches", src: "Docs", effort: "afternoon", done: true } ] },
+    { slug: "parallel-tool-calls", title: "Parallel Tool Calls", theme: "parallelization", status: "seen", count: 6, days: 22,
+      desc: "Batching independent calls in a single turn instead of serialising them.",
+      guide: { words: 390, sources: 3, updated: "3 weeks ago", read: true, excerpt: "The rule is dependency, not count: anything whose input doesn't come from another call's output can go in the same turn." },
+      todos: [] },
+    { slug: "worktree-isolation", title: "Worktree Isolation", theme: "parallelization", status: "untouched", count: 3, days: 60, desc: "Keeping concurrent agents out of each other's working files.", guide: null, todos: [] },
+
+    { slug: "mcp-server-design", title: "MCP Server Design", theme: "integration", status: "tried", count: 13, days: 4,
+      desc: "Designing MCP servers whose tools an agent can actually use well.",
+      guide: { words: 750, sources: 7, updated: "4 days ago", read: true,
+        excerpt: "Tool descriptions are prompts. The most common design failure isn't a missing capability but two tools whose descriptions overlap enough that the model can't tell which one you meant." },
+      todos: [ { t: "Rewrite your vaguest tool description and re-test selection", src: "Docs", effort: "afternoon", done: true },
+               { t: "Collapse two near-duplicate tools into one", src: "arXiv", effort: "afternoon", done: false } ] },
+    { slug: "tool-schema-design", title: "Tool Schema Design", theme: "integration", status: "seen", count: 8, days: 16,
+      desc: "Parameter shapes, enums and defaults that reduce malformed calls.",
+      guide: { words: 500, sources: 4, updated: "2 weeks ago", read: true, excerpt: "Every optional parameter is a decision you've handed to the model. Fewer, sharper parameters beat flexible ones." },
+      todos: [ { t: "Replace a free-text param with an enum somewhere", src: "GitHub", effort: "5-min-test", done: false } ] },
+    { slug: "api-streaming", title: "API Streaming", theme: "integration", status: "untouched", count: 4, days: 44, desc: "Streaming responses, partial tool calls, and cancellation.", guide: null, todos: [] },
+
+    { slug: "model-selection", title: "Model Selection", theme: "models", status: "seen", count: 9, days: 14,
+      desc: "Choosing between model tiers per task rather than defaulting to the largest.",
+      guide: { words: 560, sources: 6, updated: "2 weeks ago", read: true,
+        excerpt: "Schema clarity moves tool-call accuracy more than model size does — which means the cheap fix is usually editing your tools, not upgrading your model." },
+      todos: [ { t: "Run one workflow on a smaller model and diff the outputs", src: "arXiv", effort: "afternoon", done: false } ] },
+    { slug: "context-limits", title: "Context Window Limits", theme: "models", status: "untouched", count: 5, days: 35, desc: "Practical behaviour as context fills, and what degrades first.", guide: null, todos: [] },
+    { slug: "model-capabilities", title: "Model Capabilities", theme: "models", status: "untouched", count: 7, days: 28, desc: "Release-to-release capability changes worth tracking.", guide: null, todos: [] },
+
+    { slug: "llm-as-judge", title: "LLM-as-Judge", theme: "evaluation", status: "seen", count: 6, days: 21,
+      desc: "Using a model to grade output — and where that quietly fails.",
+      guide: { words: 540, sources: 4, updated: "3 weeks ago", read: true, excerpt: "A judge shares the generator's blind spots. It catches format and coherence failures reliably; it does not catch confident factual errors." },
+      todos: [ { t: "Grade 10 outputs by hand, compare against your judge prompt", src: "Latent Space", effort: "afternoon", done: false } ] },
+    { slug: "eval-harness", title: "Eval Harness Design", theme: "evaluation", status: "untouched", count: 4, days: 50, desc: "Building a repeatable eval loop small enough to actually run.", guide: null, todos: [] },
+    { slug: "prompt-regression", title: "Prompt Regression Testing", theme: "evaluation", status: "untouched", count: 3, days: 58, desc: "Catching quality drops when a prompt changes.", guide: null, todos: [] },
+
+    { slug: "adoption-patterns", title: "Adoption Patterns", theme: "industry", status: "untouched", count: 6, days: 33, desc: "How teams actually roll agentic tooling out, and where it stalls.", guide: null, todos: [] },
+    { slug: "cost-management", title: "Cost Management", theme: "industry", status: "seen", count: 5, days: 24,
+      desc: "Keeping spend predictable as agent usage scales.",
+      guide: { words: 410, sources: 3, updated: "3 weeks ago", read: true, excerpt: "Cost surprises are almost always loop-shaped: a retry without a cap, or an agent re-reading the same file every turn." },
+      todos: [] }
+  ];
+
+  const LINKS = [
+    ["agent-skills","claude-code-cli"], ["agent-skills","context-engineering"], ["agent-skills","hooks-and-commands"],
+    ["prompt-caching","context-engineering"], ["prompt-caching","cost-management"], ["prompt-caching","tool-schema-design"],
+    ["mcp-debugging","mcp-server-design"], ["mcp-server-design","tool-schema-design"], ["mcp-server-design","model-selection"],
+    ["sub-agent-orchestration","parallel-tool-calls"], ["sub-agent-orchestration","worktree-isolation"], ["sub-agent-orchestration","multi-step-planning"],
+    ["multi-step-planning","tool-use-loops"], ["tool-use-loops","autonomy-boundaries"],
+    ["model-selection","llm-as-judge"], ["llm-as-judge","eval-harness"], ["eval-harness","prompt-regression"],
+    ["extended-thinking","multi-step-planning"], ["context-limits","context-engineering"],
+    ["claude-code-cli","sdk-migration"], ["api-streaming","mcp-server-design"], ["model-capabilities","model-selection"],
+    ["adoption-patterns","cost-management"], ["hooks-and-commands","claude-code-cli"]
+  ];
+
+  const STATE = { decay: false, selected: null, view: "map" };
+  const esc = (s) => String(s == null ? "" : s).replace(/&/g, "&amp;").replace(/</g, "&lt;").replace(/>/g, "&gt;");
+  const themeById = Object.fromEntries(THEMES.map((t) => [t.id, t]));
+
+  // FNV-1a — deterministic, so a slug always lands in the same place.
+  function hash(str) {
+    let h = 2166136261;
+    for (let i = 0; i < str.length; i++) { h ^= str.charCodeAt(i); h = Math.imul(h, 16777619); }
+    return h >>> 0;
+  }
+
+  function layout() {
+    const placed = {};
+    for (const th of THEMES) {
+      const mine = NODES.filter((n) => n.theme === th.id);
+      mine.forEach((n, i) => {
+        const h = hash(n.slug);
+        // Golden-angle spread keyed by index, jittered deterministically by hash.
+        const angle = (i * 2.39996 + (h % 628) / 100) % (Math.PI * 2);
+        const radius = th.r * (0.30 + ((h >>> 9) % 100) / 100 * 0.62);
+        placed[n.slug] = { x: th.cx + Math.cos(angle) * radius, y: th.cy + Math.sin(angle) * radius, n, th };
+      });
+    }
+    // Deterministic relaxation so nodes never sit on top of each other.
+    const list = Object.values(placed);
+    for (let pass = 0; pass < 60; pass++) {
+      for (let i = 0; i < list.length; i++) {
+        for (let j = i + 1; j < list.length; j++) {
+          const a = list[i], b = list[j];
+          const dx = b.x - a.x, dy = b.y - a.y;
+          const d = Math.hypot(dx, dy) || 0.01;
+          const min = radiusOf(a.n) + radiusOf(b.n) + 26;
+          if (d < min) {
+            const push = (min - d) / 2, ux = dx / d, uy = dy / d;
+            a.x -= ux * push; a.y -= uy * push; b.x += ux * push; b.y += uy * push;
+          }
+        }
+      }
+      // Pull each node back toward its own theme so regions stay legible.
+      for (const p of list) {
+        const dx = p.x - p.th.cx, dy = p.y - p.th.cy;
+        const d = Math.hypot(dx, dy) || 0.01;
+        const max = p.th.r * 0.94;
+        if (d > max) { p.x = p.th.cx + (dx / d) * max; p.y = p.th.cy + (dy / d) * max; }
+      }
+    }
+    return placed;
+  }
+
+  function radiusOf(n) { return 7 + Math.min(14, n.count * 0.62); }
+  function decayFactor(n) {
+    if (!STATE.decay) return 1;
+    return Math.max(0.16, 1 - n.days / 62);
+  }
+
+  const POS = layout();
+
+  function renderMap() {
+    const svg = document.getElementById("map");
+    let s = "";
+
+    for (const th of THEMES) {
+      s += `<circle class="theme-ring" cx="${th.cx}" cy="${th.cy}" r="${th.r}"/>`;
+      s += `<text class="theme-label" x="${th.cx}" y="${th.cy - th.r - 11}" text-anchor="middle">${esc(th.label)}</text>`;
+    }
+
+    const sel = STATE.selected;
+    for (const [a, b] of LINKS) {
+      const pa = POS[a], pb = POS[b];
+      if (!pa || !pb) continue;
+      const hot = sel && (sel === a || sel === b);
+      const mx = (pa.x + pb.x) / 2, my = (pa.y + pb.y) / 2 - 18;
+      s += `<path class="link${hot ? " hot" : ""}" d="M${pa.x.toFixed(1)} ${pa.y.toFixed(1)} Q${mx.toFixed(1)} ${my.toFixed(1)} ${pb.x.toFixed(1)} ${pb.y.toFixed(1)}"/>`;
+    }
+
+    for (const n of NODES) {
+      const p = POS[n.slug];
+      const r = radiusOf(n);
+      const f = decayFactor(n);
+      const lit = n.status === "tried" || n.status === "mastered";
+      s += `<g class="node ${n.status}${lit ? " lit" : ""}${sel === n.slug ? " sel" : ""}" data-slug="${n.slug}" opacity="${f.toFixed(2)}" role="button" tabindex="0" aria-label="${esc(n.title)}">
+        <circle class="halo" cx="${p.x.toFixed(1)}" cy="${p.y.toFixed(1)}" r="${(r + 9).toFixed(1)}" filter="url(#soft)"/>
+        <circle class="core" cx="${p.x.toFixed(1)}" cy="${p.y.toFixed(1)}" r="${r.toFixed(1)}"/>
+        ${n.status === "mastered" ? `<text class="star" x="${p.x.toFixed(1)}" y="${(p.y + 3.4).toFixed(1)}" text-anchor="middle" font-size="10">★</text>` : ""}
+        <text class="cap" x="${p.x.toFixed(1)}" y="${(p.y + r + 12).toFixed(1)}" text-anchor="middle">${esc(n.title)}</text>
+      </g>`;
+    }
+
+    svg.innerHTML = `<defs><filter id="soft" x="-60%" y="-60%" width="220%" height="220%">
+      <feGaussianBlur stdDeviation="7"/></filter></defs>` + s;
+  }
+
+  function ringSvg(status) {
+    const dash = 2 * Math.PI * 22;
+    const cfg = { untouched: [0, "var(--hairline-strong)", ""], seen: [0.33, "var(--ink-muted)", ""], tried: [0.66, "var(--accent)", ""], mastered: [1, "var(--gold)", "★"] }[status];
+    return `<div class="p-ring"><svg width="54" height="54" viewBox="0 0 54 54">
+      <circle cx="27" cy="27" r="22" fill="none" stroke="var(--hairline)" stroke-width="4"/>
+      ${cfg[0] > 0 ? `<circle cx="27" cy="27" r="22" fill="none" stroke="${cfg[1]}" stroke-width="4" stroke-linecap="round" stroke-dasharray="${dash.toFixed(1)}" stroke-dashoffset="${(dash * (1 - cfg[0])).toFixed(1)}"/>` : ""}
+    </svg><span class="glyph">${cfg[2]}</span></div>`;
+  }
+
+  function renderPanel(slug) {
+    const n = NODES.find((x) => x.slug === slug);
+    const panel = document.getElementById("panel");
+    if (!n) { panel.classList.remove("open"); return; }
+
+    const doneCount = n.todos.filter((t) => t.done).length;
+    let h = `<button class="panel-close" type="button" data-close aria-label="Close">✕</button>`;
+    h += `<div class="p-head">${ringSvg(n.status)}<div>
+      <div class="p-title">${esc(n.title)}</div>
+      <div class="p-theme">${esc(themeById[n.theme].label)}</div>
+      <div class="p-status ${n.status}">${n.status}</div>
+    </div></div>`;
+    h += `<p class="p-desc">${esc(n.desc)}</p>`;
+
+    h += `<div class="evidence">
+      <span class="ev ${n.guide && n.guide.read ? "on" : ""}">${n.guide && n.guide.read ? "✓" : "○"} guide read</span>
+      <span class="ev ${doneCount > 0 ? "on" : ""}">${doneCount}/${n.todos.length} to-try done</span>
+      <span class="ev">${n.count} items tagged</span>
+    </div>`;
+
+    if (STATE.decay && n.days > 21) {
+      h += `<p class="decay-note">Last touched ${n.days} days ago — dimming. A refresher would re-light it; your declared status is untouched by this.</p>`;
+    }
+
+    h += `<div class="p-sec"><div class="p-sec-label"><span>Guide</span>${n.guide ? `<span>${n.guide.words} words · ${n.guide.sources} sources · ${esc(n.guide.updated)}</span>` : ""}</div>`;
+    if (n.guide) {
+      h += `<div class="guide-card">
+        <div class="guide-excerpt">${esc(n.guide.excerpt)}</div>
+        <div class="guide-cite">Synthesised from ${n.guide.sources} tagged Reels — every claim links back to its source.</div>
+        <div class="guide-actions">
+          <button class="btn primary" type="button">${n.guide.read ? "Re-read guide" : "Read guide"}</button>
+          <button class="btn ghost" type="button" data-explain>Explain it back</button>
+        </div>
+      </div>`;
+    } else {
+      h += `<div class="guide-card"><div class="guide-meta">No guide yet — ${n.count} items tagged, not enough signal to synthesise.</div></div>`;
+    }
+    h += `</div>`;
+
+    h += `<div class="p-sec"><div class="p-sec-label"><span>To-Try</span><span>${doneCount}/${n.todos.length}</span></div>`;
+    if (n.todos.length === 0) {
+      h += `<div class="guide-card"><div class="guide-meta">Nothing actionable sourced yet — these are derived from Reels, never invented.</div></div>`;
+    } else {
+      h += n.todos.map((t, i) => `<div class="todo ${t.done ? "done" : ""}" data-todo="${i}">
+        <div class="box"></div>
+        <div><div class="todo-text">${esc(t.t)}<span class="effort">${esc(t.effort)}</span></div>
+        <div class="todo-src">from ${esc(t.src)}</div></div>
+      </div>`).join("");
+    }
+    h += `</div>`;
+
+    h += `<div class="p-sec"><div class="p-sec-label"><span>Declare</span></div>
+      <div class="guide-actions" style="margin-top:9px">
+        ${["seen","tried","mastered"].filter((s) => s !== n.status).map((s) => `<button class="btn ghost" type="button" data-status="${s}">Mark ${s}</button>`).join("")}
+      </div></div>`;
+
+    panel.innerHTML = h;
+    panel.classList.add("open");
+  }
+
+  function renderKb() {
+    const kb = document.getElementById("kb");
+    let h = "";
+    for (const th of THEMES) {
+      const mine = NODES.filter((n) => n.theme === th.id);
+      if (!mine.length) continue;
+      const prog = mine.filter((n) => n.status === "tried" || n.status === "mastered").length;
+      h += `<section class="kb-theme">
+        <div class="kb-theme-head"><span class="kb-theme-name">${esc(th.label)}</span>
+        <span class="kb-theme-prog">${prog} / ${mine.length} practised</span></div>
+        <div class="kb-bar"><span style="width:${Math.round((prog / mine.length) * 100)}%"></span></div>
+        <div class="kb-grid">`;
+      for (const n of mine) {
+        const open = n.todos.filter((t) => !t.done).length;
+        const stale = n.days > 28;
+        h += `<div class="kb-card" data-slug="${n.slug}">
+          <div class="kb-card-head"><span class="kb-card-title">${esc(n.title)}</span><span class="kb-dot ${n.status}"></span></div>
+          <div class="kb-card-meta">
+            ${n.guide ? `<span class="kb-tag guide-ready">Guide · ${n.guide.words}w</span>` : `<span class="kb-tag">No guide yet</span>`}
+            ${open ? `<span class="kb-tag todo-open">${open} to-try</span>` : ""}
+            ${stale ? `<span class="kb-tag stale">${n.days}d stale</span>` : ""}
+            <span class="kb-tag">${n.count} items</span>
+          </div></div>`;
+      }
+      h += `</div></section>`;
+    }
+    kb.innerHTML = h;
+  }
+
+  function refresh() { renderMap(); renderKb(); if (STATE.selected) renderPanel(STATE.selected); }
+
+  document.getElementById("map").addEventListener("click", (e) => {
+    const g = e.target.closest(".node");
+    if (!g) return;
+    STATE.selected = g.dataset.slug;
+    renderMap(); renderPanel(STATE.selected);
+  });
+  document.getElementById("map").addEventListener("keydown", (e) => {
+    if (e.key !== "Enter" && e.key !== " ") return;
+    const g = e.target.closest(".node");
+    if (!g) return;
+    e.preventDefault();
+    STATE.selected = g.dataset.slug;
+    renderMap(); renderPanel(STATE.selected);
+  });
+
+  document.getElementById("kb").addEventListener("click", (e) => {
+    const c = e.target.closest(".kb-card");
+    if (!c) return;
+    STATE.selected = c.dataset.slug;
+    renderPanel(STATE.selected);
+  });
+
+  document.getElementById("panel").addEventListener("click", (e) => {
+    if (e.target.closest("[data-close]")) {
+      document.getElementById("panel").classList.remove("open");
+      STATE.selected = null; renderMap(); return;
+    }
+    const todo = e.target.closest("[data-todo]");
+    if (todo) {
+      const n = NODES.find((x) => x.slug === STATE.selected);
+      const t = n.todos[Number(todo.dataset.todo)];
+      t.done = !t.done;
+      if (t.done && n.status === "untouched") n.status = "tried";
+      else if (t.done && n.status === "seen") n.status = "tried";
+      n.days = 0;
+      refresh(); return;
+    }
+    const st = e.target.closest("[data-status]");
+    if (st) {
+      const n = NODES.find((x) => x.slug === STATE.selected);
+      n.status = st.dataset.status; n.days = 0;
+      refresh(); return;
+    }
+    if (e.target.closest("[data-explain]")) {
+      alert("Explain-it-back: you'd write 3–4 sentences in your own words, and the guide's own content is used to point out what you left out.\n\nBetter than multiple choice — it tests judgment, and your explanation becomes a durable artifact (a candidate Experience Report).");
+    }
+  });
+
+  document.getElementById("decayToggle").addEventListener("click", function () {
+    STATE.decay = !STATE.decay;
+    this.classList.toggle("on", STATE.decay);
+    refresh();
+  });
+
+  document.getElementById("viewseg").addEventListener("click", (e) => {
+    const b = e.target.closest("button[data-view]");
+    if (!b) return;
+    STATE.view = b.dataset.view;
+    document.querySelectorAll("#viewseg button").forEach((x) => x.classList.toggle("active", x === b));
+    document.getElementById("mapWrap").classList.toggle("hide", STATE.view !== "map");
+    document.getElementById("kb").classList.toggle("show", STATE.view === "kb");
+  });
+
+  refresh();
+})();
+</script>

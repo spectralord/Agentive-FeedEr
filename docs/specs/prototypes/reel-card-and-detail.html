@@ -1,0 +1,483 @@
+<title>Agentive-FeedEr — Reel + Detail Prototype v4</title>
+<style>
+  :root {
+    --ground: #0a0d10;
+    --surface: #12171b;
+    --surface-raised: #171d22;
+    --hairline: #232b31;
+    --hairline-strong: #2e373e;
+    --ink: #eef1f2;
+    --ink-muted: #9aa7ac;
+    --ink-faint: #5e6a6f;
+
+    --accent: #45b8ab;
+    --accent-soft: rgba(69, 184, 171, 0.13);
+    --action: #3fb673;
+    --action-soft: rgba(63, 182, 115, 0.14);
+    --caution: #c98a3a;
+    --gold: #d1a13c;
+    --gold-soft: rgba(209, 161, 60, 0.14);
+
+    --trust-official: #5b8fd6;
+    --trust-official-soft: rgba(91, 143, 214, 0.15);
+    --trust-independent: #a884d9;
+    --trust-independent-soft: rgba(168, 132, 217, 0.15);
+    --trust-community: #7c8790;
+    --trust-community-soft: rgba(124, 135, 144, 0.15);
+
+    --mono: ui-monospace, "SF Mono", "Cascadia Mono", Consolas, monospace;
+    --sans: -apple-system, "SF Pro Text", "Segoe UI", system-ui, sans-serif;
+    accent-color: var(--accent);
+  }
+  * { box-sizing: border-box; -webkit-tap-highlight-color: transparent; }
+  html, body { margin: 0; padding: 0; }
+  body { background: var(--ground); color: var(--ink); font-family: var(--sans); overflow-x: hidden; }
+  @media (prefers-reduced-motion: reduce) { * { transition-duration: .001ms !important; } }
+  button { font-family: inherit; }
+
+  .page { max-width: 1200px; margin: 0 auto; padding: 48px 24px 120px; }
+  .eyebrow { font-family: var(--mono); font-size: 12px; letter-spacing: .09em; text-transform: uppercase; color: var(--accent); }
+  h1 { font-size: clamp(24px, 3.2vw, 34px); font-weight: 650; letter-spacing: -.015em; line-height: 1.16; margin: 10px 0 0; text-wrap: balance; }
+  .lede { max-width: 74ch; color: var(--ink-muted); font-size: 15px; line-height: 1.6; margin: 14px 0 0; }
+  .lede b { color: var(--ink); }
+
+  .layout { display: grid; grid-template-columns: 260px 1fr; gap: 30px; align-items: start; margin-top: 40px; }
+  @media (max-width: 880px) { .layout { grid-template-columns: 1fr; } }
+
+  .controls { position: sticky; top: 20px; border: 1px solid var(--hairline); background: var(--surface); border-radius: 16px; padding: 18px; display: flex; flex-direction: column; gap: 14px; }
+  .settled { font-size: 11.5px; line-height: 1.65; color: var(--ink-faint); }
+  .settled b { color: var(--ink-muted); }
+  .settled ul { margin: 6px 0 0; padding-left: 16px; }
+  .settled li { margin-top: 5px; }
+
+  .phone-outer { display: flex; justify-content: center; }
+  .phone { width: 100%; max-width: 380px; border: 1px solid var(--hairline); border-radius: 34px; padding: 10px; background: linear-gradient(180deg, #0d1114, #0a0d10); box-shadow: 0 30px 70px -30px rgba(0,0,0,.75); }
+  .phone-screen { position: relative; background: var(--ground); border-radius: 26px; height: 680px; overflow-y: auto; overflow-x: hidden; scroll-snap-type: y mandatory; scrollbar-width: none; }
+  .phone-screen::-webkit-scrollbar { display: none; }
+
+  .reel-slot { height: 680px; scroll-snap-align: start; scroll-snap-stop: always; position: relative; overflow: hidden; }
+
+  /* ---------- Compact / Detail push navigation ---------- */
+  .view-compact, .view-detail {
+    position: absolute; inset: 0;
+    transition: transform .34s cubic-bezier(.22,.8,.36,1);
+  }
+  .view-compact { overflow-y: auto; padding: 22px 18px 20px; touch-action: pan-y; scrollbar-width: none; }
+  .view-compact::-webkit-scrollbar { display: none; }
+  .view-compact.pushed { transform: translateX(-28%); }
+
+  .view-detail {
+    transform: translateX(100%);
+    display: flex; flex-direction: column;
+    background: var(--ground);
+    border-left: 1px solid var(--hairline);
+  }
+  .view-detail.open { transform: translateX(0); }
+
+  .open-hint { position: absolute; right: 10px; top: 50%; transform: translateY(-50%); width: 26px; height: 26px; border-radius: 50%; background: var(--surface-raised); border: 1px solid var(--hairline-strong); color: var(--ink-faint); display: grid; place-items: center; font-size: 12px; cursor: pointer; }
+  .open-hint:hover { color: var(--accent); border-color: var(--accent); }
+
+  /* ---------- Compact content ---------- */
+  .meta-row { display: flex; align-items: flex-start; justify-content: space-between; gap: 10px; padding-right: 34px; }
+  .meta-left { display: flex; align-items: center; gap: 8px; flex-wrap: wrap; }
+  .trust-tag { display: inline-flex; align-items: center; gap: 5px; font-family: var(--mono); font-size: 10px; letter-spacing: .02em; padding: 3px 8px 3px 7px; border-radius: 999px; cursor: pointer; border: 1px solid transparent; }
+  .trust-tag .dot { width: 5px; height: 5px; border-radius: 50%; }
+  .trust-tag.official { background: var(--trust-official-soft); color: var(--trust-official); border-color: color-mix(in srgb, var(--trust-official) 35%, transparent); }
+  .trust-tag.official .dot { background: var(--trust-official); }
+  .trust-tag.independent { background: var(--trust-independent-soft); color: var(--trust-independent); border-color: color-mix(in srgb, var(--trust-independent) 35%, transparent); }
+  .trust-tag.independent .dot { background: var(--trust-independent); }
+  .trust-tag.community { background: var(--trust-community-soft); color: var(--trust-community); border-color: color-mix(in srgb, var(--trust-community) 35%, transparent); }
+  .trust-tag.community .dot { background: var(--trust-community); }
+  .time-label { font-size: 11.5px; color: var(--ink-faint); }
+
+  .score-mini { display: flex; flex-direction: column; gap: 4px; flex-shrink: 0; align-items: flex-end; }
+  .score-mini-item { display: flex; align-items: center; gap: 5px; }
+  .score-mini-label { font-family: var(--mono); font-size: 9px; color: var(--ink-faint); width: 8px; text-align: right; }
+  .score-bar { width: 34px; height: 3px; border-radius: 2px; background: var(--hairline); overflow: hidden; }
+  .score-bar span { display: block; height: 100%; background: var(--accent); }
+  .score-bar.q span { background: var(--ink-muted); }
+
+  .badges { display: flex; flex-wrap: wrap; gap: 6px; margin-top: 11px; }
+  .badge { font-size: 10px; padding: 3px 8px; border-radius: 999px; background: var(--surface-raised); color: var(--ink-muted); border: 1px solid var(--hairline); }
+  .badge.skill { background: var(--action-soft); color: var(--action); border-color: color-mix(in srgb, var(--action) 35%, var(--hairline)); cursor: pointer; }
+  .badge.skill:hover { filter: brightness(1.1); }
+
+  .title { margin-top: 11px; font-size: 18px; font-weight: 650; line-height: 1.3; letter-spacing: -.005em; text-wrap: balance; cursor: pointer; }
+  .summary { cursor: pointer; }
+  .summary p { margin: 10px 0 0; font-size: 13.5px; line-height: 1.65; color: var(--ink); }
+
+  .tap-hint { margin-top: 20px; text-align: center; font-family: var(--mono); font-size: 10px; letter-spacing: .04em; color: var(--ink-faint); cursor: pointer; }
+
+  /* ---------- Detail: header + tabs ---------- */
+  .detail-head { display: flex; align-items: center; gap: 10px; padding: 16px 16px 0; flex-shrink: 0; }
+  .back-btn { display: flex; align-items: center; gap: 5px; background: none; border: none; color: var(--ink-muted); font-size: 12.5px; cursor: pointer; padding: 4px 2px; }
+  .back-btn:hover { color: var(--ink); }
+  .detail-head-title { font-size: 11.5px; color: var(--ink-faint); overflow: hidden; text-overflow: ellipsis; white-space: nowrap; }
+
+  .tab-bar { display: flex; gap: 4px; padding: 12px 16px 0; flex-shrink: 0; border-bottom: 1px solid var(--hairline); }
+  .tab-btn { font-size: 12.5px; font-weight: 550; padding: 8px 4px 10px; background: none; border: none; border-bottom: 2px solid transparent; color: var(--ink-faint); cursor: pointer; }
+  .tab-btn:hover { color: var(--ink-muted); }
+  .tab-btn.active { color: var(--accent); border-bottom-color: var(--accent); }
+
+  .tab-panels { flex: 1; overflow: hidden; position: relative; }
+  .tab-panel { position: absolute; inset: 0; overflow-y: auto; padding: 18px 18px 22px; display: none; scrollbar-width: none; }
+  .tab-panel::-webkit-scrollbar { display: none; }
+  .tab-panel.active { display: block; }
+
+  /* Write-up tab */
+  .source-ref { display: flex; align-items: center; gap: 7px; font-size: 12px; color: var(--ink-muted); padding-bottom: 14px; border-bottom: 1px solid var(--hairline); }
+  .source-ref .dot { width: 6px; height: 6px; border-radius: 50%; flex-shrink: 0; }
+  .source-ref b { color: var(--ink); font-weight: 600; }
+
+  .detail-text p { margin: 14px 0 0; font-size: 13px; line-height: 1.68; color: var(--ink); }
+
+  .quote-block { margin-top: 16px; border: 1px solid var(--hairline); border-radius: 12px; background: var(--surface); padding: 13px 14px; position: relative; }
+  .quote-mark { position: absolute; top: 6px; right: 12px; font-family: Georgia, serif; font-size: 30px; color: var(--hairline-strong); line-height: 1; user-select: none; }
+  .quote-code { font-family: var(--mono); font-size: 12px; line-height: 1.6; color: var(--ink-muted); white-space: pre-wrap; }
+  .quote-cite { margin-top: 8px; font-size: 10.5px; color: var(--ink-faint); }
+
+  .example-block { margin-top: 16px; }
+  .example-label { font-family: var(--mono); font-size: 9.5px; text-transform: uppercase; letter-spacing: .06em; color: var(--ink-faint); }
+  .example-code { margin-top: 6px; font-family: var(--mono); font-size: 11.5px; line-height: 1.55; color: var(--ink-muted); white-space: pre-wrap; background: var(--surface); border: 1px solid var(--hairline); border-radius: 10px; padding: 10px 12px; }
+
+  /* Context tab */
+  .source-list { display: flex; flex-direction: column; gap: 3px; }
+  .source-row { display: flex; align-items: flex-start; gap: 10px; padding: 9px 0; border-top: 1px solid var(--hairline); }
+  .source-row:first-child { border-top: none; padding-top: 0; }
+  .source-avatar { flex-shrink: 0; width: 24px; height: 24px; border-radius: 8px; background: var(--surface-raised); border: 1px solid var(--hairline-strong); display: grid; place-items: center; font-family: var(--mono); font-size: 10.5px; font-weight: 600; color: var(--accent); }
+  .source-body .src-name { font-size: 12px; font-weight: 600; color: var(--ink); }
+  .source-body .src-text { margin-top: 1px; font-size: 12px; color: var(--ink-muted); line-height: 1.45; }
+  .empty-state { padding: 18px 4px; text-align: left; }
+  .empty-state .es-title { font-size: 12.5px; color: var(--ink-muted); }
+  .empty-state .es-sub { margin-top: 4px; font-size: 11.5px; color: var(--ink-faint); line-height: 1.5; }
+
+  .caveat-block { margin-top: 16px; padding: 11px 13px; border-radius: 10px; background: rgba(201,138,58,0.1); border: 1px solid rgba(201,138,58,0.32); font-size: 12px; color: var(--caution); line-height: 1.5; }
+  .section-label { font-family: var(--mono); font-size: 10px; text-transform: uppercase; letter-spacing: .07em; color: var(--ink-faint); margin-bottom: 10px; display: block; }
+
+  /* Skill tab */
+  .skill-head { display: flex; align-items: center; gap: 14px; }
+  .ring { position: relative; width: 52px; height: 52px; flex-shrink: 0; }
+  .ring svg { transform: rotate(-90deg); }
+  .ring-glyph { position: absolute; inset: 0; display: grid; place-items: center; font-size: 16px; }
+  .skill-head-text .skill-name { font-size: 15.5px; font-weight: 650; color: var(--ink); }
+  .skill-head-text .skill-theme { margin-top: 2px; font-size: 11px; color: var(--ink-faint); }
+  .skill-status-line { margin-top: 3px; font-family: var(--mono); font-size: 10.5px; text-transform: uppercase; letter-spacing: .04em; }
+  .skill-status-line.seen { color: var(--ink-faint); }
+  .skill-status-line.tried { color: var(--accent); }
+  .skill-status-line.mastered { color: var(--gold); }
+
+  .skill-desc { margin-top: 16px; font-size: 12.5px; line-height: 1.6; color: var(--ink-muted); }
+
+  .quick-action { margin-top: 16px; display: flex; align-items: center; justify-content: space-between; gap: 10px; padding: 11px 13px; border-radius: 12px; background: var(--action-soft); border: 1px solid color-mix(in srgb, var(--action) 30%, var(--hairline)); }
+  .quick-action-text { font-size: 12px; color: var(--ink); }
+  .quick-btn { font-size: 11.5px; font-weight: 600; color: var(--ground); background: var(--action); border: none; border-radius: 999px; padding: 6px 13px; cursor: pointer; white-space: nowrap; }
+  .quick-btn:hover { filter: brightness(1.08); }
+  .mastered-note { margin-top: 16px; padding: 11px 13px; border-radius: 12px; background: var(--gold-soft); border: 1px solid color-mix(in srgb, var(--gold) 35%, var(--hairline)); font-size: 12px; color: var(--gold); }
+
+  .assoc-label { margin-top: 22px; font-family: var(--mono); font-size: 10px; text-transform: uppercase; letter-spacing: .06em; color: var(--ink-faint); }
+  .assoc-list { margin-top: 8px; display: flex; flex-direction: column; gap: 2px; }
+  .assoc-row { padding: 9px 0; border-top: 1px solid var(--hairline); font-size: 12px; color: var(--ink-muted); display: flex; justify-content: space-between; gap: 8px; }
+  .assoc-row:first-child { border-top: none; }
+  .assoc-row .a-title { color: var(--ink); }
+  .assoc-row .a-time { flex-shrink: 0; color: var(--ink-faint); font-size: 11px; }
+  .assoc-more { margin-top: 4px; font-size: 11.5px; color: var(--ink-faint); }
+
+  .map-link { margin-top: 16px; width: 100%; padding: 10px; border-radius: 999px; background: none; border: 1px solid var(--hairline-strong); color: var(--ink-muted); font-size: 12px; font-weight: 550; cursor: pointer; }
+  .map-link:hover { border-color: var(--accent); color: var(--accent); }
+
+  .desc-block { margin-top: 40px; border: 1px solid var(--hairline); border-radius: 14px; padding: 16px 18px; background: var(--surface); max-width: 660px; }
+  .desc-block h3 { margin: 0 0 8px; font-size: 13px; font-weight: 650; }
+  .desc-block p { margin: 0; font-size: 13px; line-height: 1.6; color: var(--ink-muted); }
+  .desc-block p + p { margin-top: 8px; }
+
+  footer.page-foot { margin-top: 90px; padding-top: 20px; border-top: 1px solid var(--hairline); font-size: 12px; color: var(--ink-faint); display: flex; justify-content: space-between; gap: 20px; flex-wrap: wrap; }
+</style>
+
+<div class="page">
+  <div class="eyebrow">Prototype v4 · Push-navigation Detail</div>
+  <h1>Compact pushes into a tabbed Detail, not a filmstrip</h1>
+  <p class="lede">
+    Tap the card (or swipe right, away from the edge) to push into Detail — three real tabs,
+    click to switch, Back returns to Compact. The skill badge jumps straight to the Skill tab.
+  </p>
+
+  <div class="layout">
+    <div class="controls">
+      <div class="settled">
+        <b>Decided this round:</b>
+        <ul>
+          <li>Compact → Detail is a push transition, not paging. Detail has 3 clickable tabs: <b>Write-up</b>, <b>Context</b>, <b>Skill</b>.</li>
+          <li>Context = related/similar sources (rare — most Reels have none) + caveat, together.</li>
+          <li>Write-up gets its own lightweight single-source reference above the text — separate from Context's fuller list.</li>
+          <li>One source by default. The Context tab's cluster is the exception, shown on the MCP Reel only.</li>
+          <li>Scores now flush to the true right edge.</li>
+        </ul>
+      </div>
+    </div>
+
+    <div class="phone-outer">
+      <div class="phone"><div class="phone-screen" id="feed"></div></div>
+    </div>
+  </div>
+
+  <div class="desc-block">
+    <h3>Skill tab — first pass</h3>
+    <p>Reuses the same seen/tried/mastered ring the actual <code>/skills</code> page has a <code>TODO(UX pass)</code> waiting for (gray/teal/gold) — same visual language in both places, not a separate invention.</p>
+    <p>Deliberately not a full copy of the node detail page: description, status, a couple of associated items, and one low-commitment quick action (only offered from "seen"). Anything deeper — notes, downgrading, the full Adoption Log — stays on the real Skill Map, reached via "Open in Skill Map."</p>
+  </div>
+
+  <footer class="page-foot">
+    <span>Discussion draft — not production code.</span>
+    <span>Next.js · Tailwind · no new dependencies</span>
+  </footer>
+</div>
+
+<script>
+(function () {
+  "use strict";
+
+  const REELS = [
+    {
+      id: "skills",
+      trust: "official",
+      sourceName: "Anthropic Blog",
+      time: "3h ago",
+      badges: ["Claude-Feature", "Emerging"],
+      title: "Claude Skills: capabilities a project remembers",
+      summary: [
+        "A Skill is a folder — typically living at .claude/skills/<name>/ — containing a SKILL.md description plus any supporting files: checklists, examples, reference snippets. Claude scans the available skills before starting a task and loads the ones whose description matches what's being asked, without any explicit mention in the prompt. That's the core shift: instead of a system prompt or a CLAUDE.md that's always in context whether relevant or not, a Skill is conditionally loaded — present when it's useful, invisible otherwise.",
+        "For a team that repeats the same reviews, the same commit conventions, the same “how we structure a PR here” explanations across every new session, this quietly removes a categorically different kind of friction than a bigger context window ever could. A skill written once for “how we do code review” keeps applying months later, across new team members' sessions, without anyone having had to onboard the model by hand each time.",
+        "The rollout starts with Claude Code specifically; whether Skills carry over into the API isn't spelled out yet. Nesting works, but there's no published guidance on what happens once a project accumulates a few dozen of them."
+      ],
+      detail: [
+        "The obvious comparison is CLAUDE.md, which already does something similar — a file Claude reads automatically at the start of a session. The difference is conditionality. CLAUDE.md is unconditional: everything in it is in context on every single turn, whether the current task touches it or not. A Skill inverts that trade-off — it can be as long and specific as it needs to be, because it only enters context when its description actually matches the task in front of Claude.",
+        "There's a second, quieter implication buried in “loads automatically”: Skills are effectively self-triaging documentation. That's convenient right up until two Skills have overlapping descriptions and the wrong one — or both — get pulled in; the announcement doesn't say how conflicts are resolved, and it's the first thing worth testing rather than assuming.",
+        "Worth noting what this doesn't replace: it's still not a substitute for tool access via MCP, or for genuinely dynamic, per-call context. A Skill is static once written — closer to a smart, conditionally-loaded manual than a live data source."
+      ],
+      quote: { code: "Claude checks available skills before\nstarting a task and loads any whose\ndescription matches the request.", cite: "— Anthropic Docs, “How skills load”" },
+      exampleCode: ".claude/skills/\n  code-review/\n    SKILL.md\n    checklist.md",
+      relatedSources: [["GitHub Discussions", "First community skills shared, incl. a review template"], ["Changelog", "Rolled out to all Claude Code users today"]],
+      caveat: "Loading behavior with many simultaneously active skills is “not final yet” per Anthropic — may change before general availability.",
+      relevance: 84, quality: 77,
+      skill: { name: "Agent Skills", theme: "Agentic Development", status: "tried",
+        desc: "Building and structuring reusable Skills for Claude Code — when to write one, how narrow to scope it, how to avoid overlap.",
+        assoc: [["Nested Skills: sub-files and how they resolve", "5 days ago"], ["Community skill pack: PR review checklist", "1 week ago"]], assocMore: 3 }
+    },
+    {
+      id: "caching",
+      trust: "official",
+      sourceName: "Anthropic Changelog",
+      time: "6h ago",
+      badges: ["Claude-Feature", "Established"],
+      title: "Prompt caching discount now covers tool definitions too",
+      summary: [
+        "Prompt caching already discounted the biggest recurring cost in most agentic setups — the system prompt and any long, static context block repeated on every turn. Tool definitions were the conspicuous exception: register ten or fifteen tools with detailed JSON schemas, and that payload got resent, and paid for at full price, on every single call.",
+        "As of today that gap closes. Tool definitions are now eligible for the same cache discount as the rest of the static context — Anthropic's own number is up to 90% lower cost on the tool-definition portion of tool-heavy calls, though realized savings depend on how much of the total token count those definitions represent.",
+        "No SDK version bump, no opt-in flag — this is a backend billing change that applies automatically to eligible calls. The only thing worth checking is whether your tool list is stable between calls; dynamically built toolsets won't benefit."
+      ],
+      detail: [
+        "The mechanism is the same prefix-caching approach Anthropic has used since caching launched: identical token sequences at the start of a request get served from a cache instead of being reprocessed. What changed is scope, not mechanism — tool definitions now qualify for the discount the same way a repeated system prompt already did, as long as the tool list and schemas are byte-identical across calls.",
+        "The one practical trap is dynamic tool construction — frameworks that build the tool list conditionally per request will regenerate a slightly different schema each time, which breaks the exact-match requirement and silently forfeits the discount. If your bill doesn't move, checking tool-list stability is the first thing to verify."
+      ],
+      quote: { code: "Cached tool definitions are now billed\nat the same reduced rate as cached\nsystem prompt content.", cite: "— Anthropic Changelog, today" },
+      exampleCode: null,
+      relatedSources: [],
+      caveat: "Only applies when the tool list stays byte-identical between calls — dynamically generated tool sets per request won't benefit.",
+      relevance: 88, quality: 81,
+      skill: { name: "Prompt Caching", theme: "Claude & Models", status: "seen",
+        desc: "Understanding and applying Anthropic's prompt-caching discount in real agent setups — what qualifies, what breaks it.",
+        assoc: [["Cache TTL extended to 1 hour", "2 weeks ago"]], assocMore: 1 }
+    },
+    {
+      id: "mcp",
+      trust: "community",
+      sourceName: "GitHub — Issue #482",
+      time: "1 day ago",
+      badges: ["Tooling", "Experimental"],
+      title: "MCP server timing out in Docker? Check the bind address",
+      summary: [
+        "The failure mode is frustratingly generic — a client hangs, then dies with connect ETIMEDOUT, and the MCP server logs show nothing obviously wrong, because from the server's own point of view nothing is wrong. It's listening, it's healthy, it's just not listening on an address the client can actually reach.",
+        "The pattern shows up specifically in Docker Compose setups where the MCP server and its client run in separate containers. A server started with the framework's default configuration typically binds to 127.0.0.1 — reachable inside its own container, invisible from a sibling container on the same network calling it by service name.",
+        "Three independent threads converge on the identical fix: explicitly bind to 0.0.0.0 instead of relying on the default, via a startup flag or environment variable depending on which MCP server implementation is in use."
+      ],
+      detail: [
+        "0.0.0.0 is a wildcard bind address — every network interface, not just loopback. Inside a single container that distinction is invisible; the moment a second container enters the picture, only the wildcard bind is reachable from outside — exactly the topology Docker Compose creates by default.",
+        "This is a genuinely common default-configuration trap, not a bug in any specific MCP server — most frameworks default to loopback-only binding as a local-dev safety measure. That assumption breaks the instant local development itself involves more than one container.",
+        "The fix generalizes: any “works directly, times out in Compose” symptom involving a locally-bound service is worth checking against this exact cause first. A five-second grep for a hardcoded 127.0.0.1 against an otherwise confusing, generically-worded error."
+      ],
+      quote: { code: "Error: connect ETIMEDOUT\n→ Fix: server.listen(port, \"0.0.0.0\")\n  instead of server.listen(port) (= 127.0.0.1)", cite: "— Maintainer comment, 14 👍, marked as answer" },
+      exampleCode: "# docker-compose.yml\nservices:\n  mcp-server:\n    environment:\n      - HOST=0.0.0.0",
+      relatedSources: [["Discord", "“same issue here, fixed it instantly”"], ["r/ClaudeAI", "Thread with 3 independent confirmations"]],
+      caveat: "Reports say this mostly affects older MCP SDK versions — may already default correctly in newer ones.",
+      relevance: 71, quality: 64,
+      skill: { name: "MCP Debugging", theme: "Tooling & Workflow", status: "mastered",
+        desc: "Diagnosing and fixing common MCP server connectivity issues across local, Docker, and CI environments.",
+        assoc: [["stdio vs. HTTP transport: when connections silently drop", "3 weeks ago"], ["MCP server crashing on large payloads — memory limit fix", "1 month ago"]], assocMore: 5 }
+    }
+  ];
+
+  function escText(s) { return (s || "").replace(/&/g, "&amp;").replace(/</g, "&lt;").replace(/>/g, "&gt;"); }
+  function trustLabel(t) { return t === "official" ? "Official" : t === "independent" ? "Independent" : "Community"; }
+  function trustColorVar(t) { return t === "official" ? "var(--trust-official)" : t === "independent" ? "var(--trust-independent)" : "var(--trust-community)"; }
+
+  function scoreMini(reel) {
+    return `<div class="score-mini">
+      <div class="score-mini-item"><span class="score-mini-label">R</span><div class="score-bar"><span style="width:${reel.relevance}%"></span></div></div>
+      <div class="score-mini-item"><span class="score-mini-label">Q</span><div class="score-bar q"><span style="width:${reel.quality}%"></span></div></div>
+    </div>`;
+  }
+
+  function compactHtml(reel) {
+    let html = `<div class="meta-row"><div class="meta-left">
+      <span class="trust-tag ${reel.trust}" data-action="trust"><span class="dot"></span>${trustLabel(reel.trust)}</span>
+      <span class="time-label">${escText(reel.time)}</span>
+    </div>${scoreMini(reel)}</div>`;
+    html += `<div class="badges">`;
+    reel.badges.forEach(b => { html += `<span class="badge">${escText(b)}</span>`; });
+    html += `<span class="badge skill" data-action="open-skill">${escText(reel.skill.name)}</span>`;
+    html += `</div>`;
+    html += `<div class="title" data-action="open-writeup">${escText(reel.title)}</div>`;
+    html += `<div class="summary" data-action="open-writeup">${reel.summary.map(p => `<p>${escText(p)}</p>`).join("")}</div>`;
+    html += `<p class="tap-hint" data-action="open-writeup">tap for details →</p>`;
+    return html;
+  }
+
+  function ringSvg(status) {
+    const dash = 2 * Math.PI * 21;
+    const map = { seen: { color: "var(--hairline-strong)", frac: 0, glyph: "" }, tried: { color: "var(--accent)", frac: 0.55, glyph: "" }, mastered: { color: "var(--gold)", frac: 1, glyph: "★" } };
+    const s = map[status];
+    const offset = dash - dash * s.frac;
+    return `<div class="ring"><svg width="52" height="52" viewBox="0 0 52 52">
+      <circle cx="26" cy="26" r="21" fill="none" stroke="var(--hairline)" stroke-width="4"/>
+      ${s.frac > 0 ? `<circle cx="26" cy="26" r="21" fill="none" stroke="${s.color}" stroke-width="4" stroke-linecap="round" stroke-dasharray="${dash.toFixed(1)}" stroke-dashoffset="${offset.toFixed(1)}"/>` : ""}
+    </svg><span class="ring-glyph">${s.glyph}</span></div>`;
+  }
+
+  function writeupPanel(reel) {
+    let html = `<div class="source-ref"><span class="dot" style="background:${trustColorVar(reel.trust)}"></span>From <b>${escText(reel.sourceName)}</b> · ${trustLabel(reel.trust)}</div>`;
+    html += `<div class="detail-text">${reel.detail.map(p => `<p>${escText(p)}</p>`).join("")}</div>`;
+    html += `<div class="quote-block"><span class="quote-mark">&rdquo;</span><div class="quote-code">${escText(reel.quote.code)}</div><div class="quote-cite">${escText(reel.quote.cite)}</div></div>`;
+    if (reel.exampleCode) html += `<div class="example-block"><div class="example-label">Example</div><div class="example-code">${escText(reel.exampleCode)}</div></div>`;
+    return html;
+  }
+
+  function contextPanel(reel) {
+    let html = `<span class="section-label">Related / similar sources</span>`;
+    if (reel.relatedSources.length === 0) {
+      html += `<div class="empty-state"><div class="es-title">Single-sourced.</div><div class="es-sub">No related coverage found (yet) — most Reels look like this. When several sources converge on the same thing, they'll be listed here.</div></div>`;
+    } else {
+      html += `<div class="source-list">` + reel.relatedSources.map(([src, text]) => `
+        <div class="source-row"><div class="source-avatar">${escText(src.replace(/[^A-Za-z0-9]/g, "").slice(0, 2).toUpperCase())}</div>
+        <div class="source-body"><div class="src-name">${escText(src)}</div><div class="src-text">${escText(text)}</div></div></div>`).join("") + `</div>`;
+    }
+    if (reel.caveat) html += `<div class="caveat-block">⚠ ${escText(reel.caveat)}</div>`;
+    return html;
+  }
+
+  function skillPanel(reel) {
+    const sk = reel.skill;
+    let html = `<div class="skill-head">${ringSvg(sk.status)}<div class="skill-head-text">
+      <div class="skill-name">${escText(sk.name)}</div>
+      <div class="skill-theme">${escText(sk.theme)}</div>
+      <div class="skill-status-line ${sk.status}">${sk.status}</div>
+    </div></div>`;
+    html += `<p class="skill-desc">${escText(sk.desc)}</p>`;
+    if (sk.status === "seen") {
+      html += `<div class="quick-action"><span class="quick-action-text">Tried this already?</span><button class="quick-btn" type="button" data-action="mark-tried">Mark as tried</button></div>`;
+    } else if (sk.status === "mastered") {
+      html += `<div class="mastered-note">★ Mastered — confirmed through the Adoption Log.</div>`;
+    }
+    html += `<span class="assoc-label">Also under this skill</span>`;
+    html += `<div class="assoc-list">` + sk.assoc.map(([t, time]) => `<div class="assoc-row"><span class="a-title">${escText(t)}</span><span class="a-time">${escText(time)}</span></div>`).join("") + `</div>`;
+    if (sk.assocMore) html += `<div class="assoc-more">+ ${sk.assocMore} more</div>`;
+    html += `<button class="map-link" type="button">Open in Skill Map →</button>`;
+    return html;
+  }
+
+  function buildSlot(reel) {
+    const state = { open: false, tab: "writeup" };
+
+    const slot = document.createElement("div");
+    slot.className = "reel-slot";
+
+    const compact = document.createElement("div");
+    compact.className = "view-compact";
+    compact.innerHTML = compactHtml(reel);
+
+    const detail = document.createElement("div");
+    detail.className = "view-detail";
+    detail.innerHTML = `
+      <div class="detail-head">
+        <button class="back-btn" type="button" data-action="close">‹ Back</button>
+        <span class="detail-head-title">${escText(reel.title)}</span>
+      </div>
+      <div class="tab-bar">
+        <button class="tab-btn" type="button" data-tab="writeup">Write-up</button>
+        <button class="tab-btn" type="button" data-tab="context">Context</button>
+        <button class="tab-btn" type="button" data-tab="skill">Skill</button>
+      </div>
+      <div class="tab-panels">
+        <div class="tab-panel" data-panel="writeup">${writeupPanel(reel)}</div>
+        <div class="tab-panel" data-panel="context">${contextPanel(reel)}</div>
+        <div class="tab-panel" data-panel="skill">${skillPanel(reel)}</div>
+      </div>`;
+
+    slot.append(compact, detail);
+
+    function render() {
+      compact.classList.toggle("pushed", state.open);
+      detail.classList.toggle("open", state.open);
+      detail.querySelectorAll(".tab-btn").forEach(b => b.classList.toggle("active", b.dataset.tab === state.tab));
+      detail.querySelectorAll(".tab-panel").forEach(p => p.classList.toggle("active", p.dataset.panel === state.tab));
+    }
+
+    function open(tab) { state.open = true; state.tab = tab || "writeup"; render(); }
+    function close() { state.open = false; render(); }
+
+    compact.addEventListener("click", (e) => {
+      const el = e.target.closest("[data-action]");
+      if (!el) return;
+      if (el.dataset.action === "trust") { e.stopPropagation(); alert("Would open the source URL — out of scope for this prototype."); return; }
+      if (el.dataset.action === "open-skill") { e.stopPropagation(); open("skill"); return; }
+      if (el.dataset.action === "open-writeup") { open("writeup"); }
+    });
+
+    detail.addEventListener("click", (e) => {
+      const tabBtn = e.target.closest(".tab-btn");
+      if (tabBtn) { state.tab = tabBtn.dataset.tab; render(); return; }
+      if (e.target.closest("[data-action='close']")) { close(); return; }
+      if (e.target.closest(".map-link")) { alert("Would navigate to /skills/" + reel.skill.name.toLowerCase().replace(/\s+/g, "-") + " — out of scope here."); return; }
+      if (e.target.closest("[data-action='mark-tried']")) {
+        reel.skill.status = "tried";
+        detail.querySelector("[data-panel='skill']").innerHTML = skillPanel(reel);
+        render();
+      }
+    });
+
+    // swipe-right to open, swipe-left to close — edge dead-zone avoids fighting Safari's back gesture
+    let startX = null, startY = null;
+    const EDGE = 24;
+    slot.addEventListener("touchstart", (e) => {
+      const x = e.touches[0].clientX;
+      if (x < EDGE || x > slot.clientWidth - EDGE) { startX = null; return; }
+      startX = x; startY = e.touches[0].clientY;
+    }, { passive: true });
+    slot.addEventListener("touchend", (e) => {
+      if (startX === null) return;
+      const dx = e.changedTouches[0].clientX - startX;
+      const dy = e.changedTouches[0].clientY - startY;
+      if (Math.abs(dx) > 50 && Math.abs(dx) > Math.abs(dy) * 1.4) {
+        if (dx > 0 && !state.open) open("writeup");   // swipe right opens Detail, per your spec
+        else if (dx < 0 && state.open) close();        // swipe left closes back to Compact
+      }
+      startX = null;
+    }, { passive: true });
+
+    render();
+    return slot;
+  }
+
+  const feed = document.getElementById("feed");
+  REELS.forEach(reel => feed.appendChild(buildSlot(reel)));
+})();
+</script>
