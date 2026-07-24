@@ -2,17 +2,21 @@ import { NextResponse } from "next/server";
 import { mergeNode } from "@/lib/skilltagger/nodes";
 
 interface RouteParams {
-  params: Promise<{ id: string }>;
+  params: Promise<{ slug: string }>;
 }
 
 /**
  * Route handler backing "Mergen" on /skills (T12.6): folds a pending
  * SkillTagger proposal into an existing active node (chosen via the form's
  * target-slug select) instead of creating a new one.
+ *
+ * Param is named `slug` only to share the Next.js dynamic-path slot with
+ * src/app/skills/[slug]/page.tsx (Epic 7) — the value is still the numeric
+ * skill_nodes.id string, parsed below with Number(...).
  */
 export async function POST(request: Request, { params }: RouteParams) {
-  const { id } = await params;
-  const nodeId = Number(id);
+  const { slug } = await params;
+  const nodeId = Number(slug);
   if (!Number.isInteger(nodeId)) {
     return NextResponse.json({ error: "invalid id" }, { status: 400 });
   }
