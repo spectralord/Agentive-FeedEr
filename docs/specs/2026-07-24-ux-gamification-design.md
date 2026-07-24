@@ -155,7 +155,13 @@ right call; don't reintroduce a checkbox here.
 
 ---
 
-## 5. Skill Map
+## 5. Skill Map — near-term restyle
+
+> **Scope note:** this section is the *near-term* pass on what exists today (the marked
+> `TODO(UX pass)`). The larger target vision for Skills — constellation view, Guides, To-Trys,
+> Knowledge Base — is **§9**, and is where the product is actually headed. §5 is deliberately
+> shippable on its own without any of §9 landing; §9 builds on §5's ring language rather than
+> replacing it.
 
 ### 5.1 `/skills` grid + node detail — the marked TODO
 
@@ -288,6 +294,146 @@ grounded in actual independent-source counting, not just "who published it").
 write through the same `setProgress` call — two independent implementations of "mark as tried"
 would drift (e.g., one remembering to write an adoption-log-worthy note path and one not). Treat
 this as a hard constraint on implementation, not a style preference.
+
+---
+
+## 9. Skill Map & Knowledge Base — target vision
+
+> Companion ADRs: **0018** (Skill Guides), **0019** (Actionables + two-track progress),
+> **0020** (constellation layout & placement). All three are *proposed* — they change schema and
+> add pipeline passes, which is Product/Architecture territory per ADR 0014, not this session's
+> lane. They are written to be grilled, not merged unreviewed.
+
+### 9.1 The gap this closes
+
+The product does "notice" well and "apply" not at all. There is no bridge between *"I saw news
+about X"* and *"I claim I know X"* — no verb for **study** anywhere in the app. That gap is the
+stated core value ("retain & apply"), and it is currently empty.
+
+Concretely: ADR 0008 promises a durable knowledge layer that accumulates while Reels rotate out.
+But inspect what actually accumulates today — the node's existence, a one-line description, and
+your own notes. **No knowledge.** When every Reel under "Prompt Caching" ages out, the node is an
+empty shell. §9.2's Guide is what makes the durable layer actually carry something durable.
+
+### 9.2 Three things live under a Skill Node
+
+| Layer | What | Lifecycle | User verb |
+|---|---|---|---|
+| **Feed** | Reels + Experience Reports tagged to the node | Ephemeral (rotates out, ADR 0008) | notice |
+| **Guide** | Synthesised knowledge from everything ever tagged here (ADR 0018) | Durable | study |
+| **To-Try** | Discrete sourced actionables (ADR 0019) | Durable | apply |
+
+Reels are **inputs** to a node, never progress events. Reading a news item is not competence, so
+Reel-seen state must not touch skill progress — confirmed with the product owner. Feed-level
+read/unread bookkeeping, if it ever exists, stays in the ephemeral layer alongside
+`interactions`.
+
+### 9.3 Two-track progress: declared vs. evidenced
+
+The 2026-07-22 grill already recorded that self-declaration and actionable-evidence "exist
+alongside each other." This design honours that literally — two independent tracks per node:
+
+- **Declared** — `user_progress.status` (`seen`/`tried`/`mastered`), honour-based, downgrades
+  allowed, **no gates anywhere** (the explicit Skill-*Map*-not-Tree decision).
+- **Evidenced** — guide read, N of M To-Trys completed, notes written.
+
+Both are shown together. **"Mastered ring, zero evidence marks" stays fully allowed and fully
+visible** — that combination is useful self-knowledge, not something to scold or block. Nothing
+in this design gates a status change on evidence.
+
+### 9.4 Four honest states — a free fix available today
+
+`getSkillMap()` currently does `progressMap.get(node.id)?.status ?? DEFAULT_PROGRESS_STATUS`,
+collapsing *"no `user_progress` row at all"* into `"seen"`. The database already distinguishes
+untouched from explicitly-seen; the read layer discards it before the UI can use it.
+
+So the map can show **untouched / seen / tried / mastered** with **no migration** — just stop
+throwing the distinction away (`status: ProgressStatus | null`, or an added `declared: boolean`).
+"Untouched" is the truthful state for a node SkillTagger created off a Reel nobody ever opened,
+and it restores meaning to the bottom rung of the ring.
+
+### 9.5 Constellation view — the sprawling map
+
+The 8 themes in `src/lib/skills.ts` are **permanent hand-placed regions**; skill nodes are stars
+scattered *inside* their own region. The skeleton is designed and fixed, only the leaves are
+dynamic — that is what makes an emergent graph read as deliberately laid out.
+
+- **Progress is luminosity, not points.** Untouched nodes are barely-visible outlines; the map
+  literally brightens as you learn. Gold appears exactly once in the whole design (mastered),
+  which is what keeps gold meaningful. No confetti, no score counter — the reward is that your
+  own sky fills in.
+- **Size = content volume** (`contentCount`), so a heavily-covered skill reads as bigger.
+- **Links = co-occurrence** between skills appearing in the same topic clusters — grounded in
+  real data, *not* designed prerequisites, so no gating semantics can sneak in through the back
+  door.
+- **Placement** is the one genuinely hard part → ADR 0020.
+
+### 9.6 Knowledge Base view — a second face, not a third taxonomy
+
+The KB is **a second view over the same skill nodes**, not a new grouping entity. A third
+taxonomy above skill nodes would collide exactly the way a second cluster hierarchy would have —
+the argument ADR 0013 already made and rejected.
+
+- **Constellation** answers *"where am I?"* — visual, progress-oriented.
+- **Knowledge Base** answers *"what can I learn?"* — textual, grouped by theme, showing per-node
+  guide state, open To-Try count, and staleness.
+
+Same nodes, same colour language, different affordances.
+
+### 9.7 Consolidation mechanisms (the "quiz family")
+
+Ranked by what to actually build:
+
+1. **Explain-it-back (recommended primary).** Write 3–4 sentences in your own words; the guide's
+   content is used to surface what you left out. Beats multiple-choice on every axis that
+   matters: it tests judgment rather than recall, it is cheaper to generate than good
+   distractors, and — decisively — **your explanation is a durable artifact**. An `own` Experience
+   Report (ADR 0007) is already exactly that shape, so studying feeds back into the content layer
+   instead of evaporating.
+2. **Knowledge decay.** Nodes dim by time-since-touched, making the map itself the
+   spaced-repetition mechanism — no separate review queue, no nagging. **Hard constraint: decay
+   dims, never demotes.** A declared status is never lost. "This could use a refresher," never
+   "you lost progress" — that distinction is the entire difference between motivating and
+   guilt-inducing, and it must not be softened in implementation.
+3. **"What changed" diffs.** When a guide re-synthesises after new Reels arrive, show the delta
+   since you last read it. Uniquely natural for this product — it sits on a news stream *and* a
+   synthesised document — and nearly free once Guides exist.
+4. **Confidence calibration.** Rate certainty before revealing; over time you learn where you are
+   systematically overconfident. Cheap to bolt onto any of the above.
+
+**Deliberately skipped: classic flashcards.** Proven technique, wrong fit — it turns a
+judgment-oriented tool into rote drilling, and evolving practices and trade-offs don't reduce to
+atomic facts well.
+
+If quizzes proper are built: **test judgment, never trivia.** *"Your agent rebuilds its tool list
+per request — will caching help, and why not?"* is worth generating; *"what percentage discount
+does caching give?"* is news trivia that ages out with the Reel. And a manual "I read this"
+checkbox is worth being honest about — it adds a click and zero information, the same honour-based
+signal as declaring a status. That's fine as bookkeeping; it just isn't evidence.
+
+### 9.8 Mobile
+
+28 nodes at a desktop viewport works; the whole sky at once on a phone does not. Design
+**tap-a-constellation-to-zoom** explicitly — the 8 themes are legible at phone size, and tapping
+one fills the screen with that theme's stars. This is progressive disclosure that matches the
+existing theme grouping, not a shrunken desktop layout. The Knowledge Base view needs no such
+treatment; it is already a list.
+
+### 9.9 Sequencing (cheapest-first, each independently valuable)
+
+1. **Four honest states** (§9.4) — no migration, pure read-layer fix.
+2. **To-Trys / Actionables** (ADR 0019) — *no new LLM pass at all*: `reels.action` +
+   `effortTag` + `skill` are already populated and sourced-only. This is promoting an existing
+   column to a checkable object. Smallest step that delivers deliberately-earned progress.
+3. **Guides** (ADR 0018) — one new pipeline pass; the step that makes the durable layer real and
+   the one everything else leans on.
+4. **Constellation view** (ADR 0020) — the visual payoff; needs §9.4 and reads much better once
+   Guides exist (a node with no guide is just a dot).
+5. **Explain-it-back / decay / diffs** (§9.7) — only meaningful once Guides exist.
+
+**Honest caution:** Guides are load-bearing. The constellation without them is a beautiful shell
+over thin content — the prototype deliberately renders "No guide yet" nodes to make that visible.
+Don't build 4 before 3 and expect it to feel finished.
 
 ---
 
