@@ -17,9 +17,14 @@ Glossar: Verifier, caveat, confidence, Korroboration.
 
 ## Stufe 1 — Reel-Verifier (MVP)
 
-### ☐ T10.1 — Schema: `caveat` an `reels`
+### ☑ T10.1 — Schema: `caveat` an `reels`
 - `reels.caveat text` (nullable). Migration. **Verifikation:** Migration grün; Feld
   default `null`.
+- Umgesetzt: `reels.caveat` (text, nullable) + `reels.caveat_checked_at` (timestamp,
+  nullable) — zweite Spalte nötig, weil `caveat` selbst sowohl vor als auch nach einem
+  legitimen "kein Vorbehalt gefunden"-Lauf `null` ist (siehe Abweichungen unten,
+  gleiches Muster wie `topic_clusters.knowledge_checked_at`, Epic 11). Migration
+  `drizzle/0009_moaning_mongu.sql`.
 
 ### ☐ T10.2 — Kritiker-Pass (`src/lib/verifier/run.ts`)
 - Eigener LLM-Call (injizierbarer `StructuredCaller` wie Enrichment/SkillTagger),

@@ -100,6 +100,17 @@ export const reels = pgTable("reels", {
   // independent/first-hand account; false = recognizable reblog of another
   // cluster member; null = not yet clustered. See ADR 0013 point 4.
   isPrimary: boolean("is_primary"),
+  // Epic 10 (ADR 0011, T10.1): Stage-1 Reel-Verifier output — a short,
+  // grounded fidelity/skepticism caveat, or null when the critic pass found
+  // nothing to flag (the normal case). Deliberately does NOT feed
+  // quality_score (ADR 0004: a separate signal, display-layer only).
+  // `caveat` itself stays nullable both before AND after a legitimate run
+  // (null can mean "not checked yet" or "checked, no issue found"), so
+  // `caveatCheckedAt` (same "timestamp marks the check ran" pattern as
+  // topicClusters.knowledgeCheckedAt, Epic 11) is the idempotency marker —
+  // see src/lib/verifier/run.ts.
+  caveat: text("caveat"),
+  caveatCheckedAt: timestamp("caveat_checked_at", { withTimezone: true }),
   metadata: jsonb("metadata").notNull().default({}),
   createdAt: timestamp("created_at", { withTimezone: true }).notNull().defaultNow(),
 });
