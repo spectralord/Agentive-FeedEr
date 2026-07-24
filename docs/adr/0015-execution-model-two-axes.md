@@ -66,3 +66,6 @@ wie die App) — im local-Profil die lokale DB, im cloud-Override die Railway-DB
 - Lokaler Job-Einstieg (`npm run job:cc` o. ä.), der ohne API/Railway läuft.
 - Umsetzung in **Epic 17**; bleibt geparkt bis Benutzer-Go.
 - Teilt die Claude-Code-Routine-Mechanik mit dem geplanten Refactoring-Agent (Epic 16).
+- **Bindende Folge-Konvention (Benutzer 2026-07-23):** *Jede* künftige KI-Funktion wird über die
+  Executor-Naht gebaut und läuft damit in **beiden** Ausprägungen (`api` + `claude-code`) — nie
+  ein direkter API-Aufruf in einem LLM-Schritt. Siehe CLAUDE.md → „Design-Prozess".

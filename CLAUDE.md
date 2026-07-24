@@ -66,6 +66,14 @@ Der Prozess läuft auf **drei Ebenen**, jede mit Auslöser / Owner / Artefakt:
 - **Parallelitätsgrad:** max. ~2–3 gleichzeitige Subagenten (so viel wie gut reviewbar), jeder
   auf eigenem Branch; **Task-Board + README-Status-Tabelle** sind die einzige Wahrheitsquelle,
   an jeder Epic-Grenze aktualisiert.
+- **KI-Funktionen immer über die Executor-Naht — beide Ausprägungen (bindend, ADR 0015):**
+  Jeder neue LLM-Schritt (SkillTagger, Clustering, Knowledge-Check, künftige) läuft über einen
+  **injizierten `Executor`** (`src/lib/executor/`, = `StructuredCaller`-Signatur), **nie** direkt
+  über `callStructured`/die API. Dadurch funktioniert er automatisch in **beiden** Ausprägungen
+  (`api` **und** `claude-code`). Pflicht je neuem Schritt: injizierter Executor (Default
+  `callStructured`), Verdrahtung über den in `pipeline.ts` einmal aufgelösten Executor,
+  **zod-Validierung** des Outputs (ADR 0003), Unit-Test mit **gemocktem** Caller. Kein direkter
+  API-Zugriff, kein stiller API-Fallback im `claude-code`-Pfad.
 
 ## Projekt-Dokumentation
 
