@@ -118,7 +118,7 @@ export const topicClusters = pgTable("topic_clusters", {
 - **Verifikation:** curl gegen `npm run start` — Cluster mit N Reels zeigt Stapelkarte mit
   „N Quellen"; Aufklappen zeigt Mitglieder; Primär oben; Solo-Reels unverändert.
 
-### ☐ T15.5 — Cluster-Anzeige-Feinschliff (klein)
+### ✅ T15.5 — Cluster-Anzeige-Feinschliff (klein)
 - Stapelkarte zeigt die **Quellen-Namen** der Mitglieder (Transparenz, welche Quellen).
   **Kein** `confidence`-Badge hier — few/some/strong kommt in Epic 11; Epic 15 zeigt nur die
   rohe Quellenzahl + Namen.
@@ -142,3 +142,50 @@ export const topicClusters = pgTable("topic_clusters", {
 
 ## Abweichungen/Fragen
 _(vom ausführenden Modell zu pflegen)_
+
+- **`.env.example` existiert nicht im Repo** (nie angelegt, obwohl README §4 es referenziert
+  — vermutlich Altlast aus früheren Epics). Konservativ: nicht neu angelegt, um keinen
+  Scope über das Clustering hinaus zu erfinden; die zwei neuen Vars sind stattdessen in
+  `src/lib/env.ts` (zod, mit Defaults) und in `docs/plan/README.md` §4 dokumentiert.
+- **`is_primary` bei Propose wird immer `true` erzwungen**, unabhängig davon, was das Modell
+  im `is_primary`-Feld zurückgibt (`src/lib/clustering/cluster.ts`'s `toResult`: der
+  Propose-Zweig konsultiert das Feld gar nicht). Begründung: „erstes Mitglied ist per
+  Definition Primär" (Epic-Text) ist eindeutig — es gibt bei Propose noch kein anderes
+  Cluster-Mitglied, von dem ein Reblog stammen könnte, also wäre jede andere Antwort ein
+  Widerspruch in sich. Konservativste, eindeutigste Lesart statt Modell-Urteil hier zu
+  vertrauen.
+- **Aktive Kandidaten-Cluster werden innerhalb *eines* Laufs live nachgeführt**
+  (`runClustering` hält eine In-Memory-Kopie, die bei jedem Match/Propose sofort
+  aktualisiert wird), sodass ein in diesem Lauf gerade erst vorgeschlagenes Cluster für
+  ein *späteres* Reel im selben Lauf schon als Match-Kandidat sichtbar ist. Notwendig,
+  damit mehrere neue Quellen zur selben, brandneuen Geschichte innerhalb eines
+  Pipeline-Laufs korrekt in einem Cluster landen statt jede ihr eigenes zu eröffnen (sonst
+  würde der zentrale Zweck des Epics — Korroboration über mehrere Quellen — bei
+  Same-Run-Duplikaten systematisch unterlaufen). Nebenfolge: `MAX_CLUSTER_CANDIDATES` kann
+  dadurch innerhalb eines einzelnen Laufs transient leicht überschritten werden (nur durch
+  in diesem Lauf neu entstandene Cluster); bei MVP-Datenvolumen (Default `MAX_ENRICH_PER_RUN
+  = 100`) als unkritisch bewertet. Die Kappung gilt weiterhin voll für aus früheren Läufen
+  geladene Cluster.
+- **T15.5 ist bereits durch T15.4 vollständig erfüllt**, ohne zusätzlichen Code: die eine
+  `ReelStackCard`-Komponente wurde von Anfang an mit beiden Anforderungen gebaut (Quellen-
+  Namen aller Mitglieder in der aufklappbaren Liste inkl. Primär-Kennzeichnung; keinerlei
+  confidence-/few-some-strong-Text). Kein sinnvoller separater Codeänderungs-Commit möglich
+  — T15.5 wurde stattdessen mit einem eigenen, code-losen Dokumentations-Commit abgehakt
+  (Checkbox + dieser Hinweis), Verifikation per curl gegen den bereits in T15.4 gebauten Stand.
+- **Clustering-Gate prüft nur `quality_score >= QUALITY_THRESHOLD`**, nicht zusätzlich den
+  `hide`-Interaction-Status — der Epic-Text nennt explizit nur „angezeigt werden (quality_score
+  ≥ QUALITY_THRESHOLD bzw. relevanz-relevant)" als Gate-Kriterium für den Clustering-*Pass*.
+  Ein versteckter (`hide`) Reel wird also weiterhin geclustert (bekommt eine `topic_cluster_id`),
+  zählt aber dank des bestehenden `getReels()`-Hide-Filters trotzdem nicht zum sichtbaren
+  Stapel im Feed — die „taucht nicht im Stapel auf"-Anforderung ist rein über die
+  Feed-Query/Gruppierung erfüllt (T15.4), nicht über eine zusätzliche Sperre im
+  Clustering-Pass selbst.
+- **Die Stapelkarten-Aktionsleiste (Save/Up/Down/Hide) wirkt nur auf das Primär-Reel** —
+  wie bei einer Solo-Karte. Die übrigen Mitglieder haben in diesem Epic keine eigene
+  Aktionsleiste (Epic-Text verlangt für die Mitgliederliste nur „Transparenz, welche
+  Quellen", keine Interaktion). Klick auf „Hide" beim Primär-Reel entfernt die gesamte
+  Stapelkarte clientseitig sofort aus der Ansicht; serverseitig bleiben die übrigen
+  Mitglieder unverändert und erscheinen beim nächsten Laden korrekt (als Solo-Karte, falls
+  nur noch eines übrig ist — siehe `groupReelsForFeed`).
+- **Epic 15 verarbeitet nur Reels**, keine Erfahrungsberichte — passend zum Epic-Text
+  „Reels (und später Erfahrungsberichte)" (explizit vertagt, kein MVP-Scope).
