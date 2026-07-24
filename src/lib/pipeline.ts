@@ -11,6 +11,7 @@ import { runFeedbackSummary, type FeedbackSummaryResult } from "@/lib/feedback/r
 import { runIngestion, type IngestionResult } from "@/lib/ingestion/run";
 import { runKnowledgeCheck, type KnowledgeCheckResult } from "@/lib/knowledge-check/run";
 import { runSkillTagging, type SkillTaggingResult } from "@/lib/skilltagger/run";
+import { runVerifier, type VerifierRunResult } from "@/lib/verifier/run";
 
 export type PipelineMode = "full" | "ingestion" | "enrichment";
 export type PipelineTrigger = "manual" | "cron";
@@ -21,6 +22,7 @@ export interface PipelineSummary {
   skillTagging?: SkillTaggingResult;
   clustering?: ClusteringResult;
   knowledgeCheck?: KnowledgeCheckResult;
+  verifier?: VerifierRunResult;
   feedback?: FeedbackSummaryResult;
 }
 
@@ -50,6 +52,17 @@ export async function runPipelinePhases(
     // `claude-code` uses subscription quota via the local CLI — never both.
     const executor = getExecutor(resolveExecutionConfig(env()));
     summary.enrichment = await runEnrichment(db, executor);
+    // Epic 10 (ADR 0011, Stage 1): Reel-Verifier critic pass runs right after
+    // enrichment, on the same executor — gated to displayed reels
+    // (quality_score >= QUALITY_THRESHOLD) not yet checked, sets reels.caveat
+    // + caveat_checked_at. Its own runner never throws per-item, but guard
+    // the call anyway (same never-abort-the-run contract as the other steps
+    // here).
+    try {
+      summary.verifier = await runVerifier(db, executor);
+    } catch (error) {
+      console.error("[pipeline] verifier failed:", error);
+    }
     // Epic 12 (ADR 0009): SkillTagger runs right after enrichment, on the
     // same executor — Match-or-Propose against the current active node
     // list, sets reels.skill or proposes a pending node. Also the backstop

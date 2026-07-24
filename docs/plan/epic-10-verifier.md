@@ -41,7 +41,7 @@ Glossar: Verifier, caveat, confidence, Korroboration.
   bzw. relevanz-relevant) und noch keinen Verifier-Lauf hatten.
 - **Verifikation:** Unit-Tests mit gemocktem Caller: Überzeichnung → caveat; treues Reel → null.
 
-### ☐ T10.3 — In die Pipeline einhängen
+### ☑ T10.3 — In die Pipeline einhängen
 - Als **eigener Schritt nach dem Enrichment** (Muster wie SkillTagger, ADR 0011/0009),
   idempotent („nur Reels ohne Verifier-Lauf"). In `src/lib/pipeline.ts` einklinken, sodass
   Cron **und** Admin-Button ihn mitlaufen lassen. Verifier-Fehler brechen den Lauf nicht ab.
