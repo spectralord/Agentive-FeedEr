@@ -31,7 +31,7 @@ Glossar: Topic-Knowledge-Check, confidence, freshness, Korroboration, Topic-Clus
 
 ## Tasks
 
-### ☐ T11.1 — Schema: Cluster-`confidence` + Freshness/Supersession
+### ☑ T11.1 — Schema: Cluster-`confidence` + Freshness/Supersession
 - An `topic_clusters` ergänzen:
   ```ts
   confidence: text("confidence", { enum: ["few", "some", "strong"] }),  // nullable bis berechnet

@@ -1,4 +1,5 @@
 import {
+  type AnyPgColumn,
   boolean,
   integer,
   jsonb,
@@ -45,11 +46,31 @@ export const rawItems = pgTable(
 // distinct from the broad Skill-Node grouping (Epic 12). `lastMatchedAt`
 // drives the Match-or-Propose "active window" (only clusters matched within
 // `CLUSTER_WINDOW_DAYS` are match candidates for a new reel).
+//
+// Epic 11 (ADR 0012, T11.1): the Topic-Knowledge-Check computes two outputs
+// per cluster from one cross-source comparison — `confidence` (corroboration,
+// grounded count of independent `is_primary` members, T11.2) and
+// `freshness`/supersession (a grounded LLM comparison against clusters
+// sharing a skill-node, T11.3). Both are nullable until the check has run at
+// least once. Supersession is conservative (ADR 0008 human-in-the-loop):
+// `supersededByClusterId`/`supersedeReason` are a *proposal* set by T11.3;
+// `lifecycleState` only flips to `deprecated` once a human confirms via the
+// T11.5 route — the freshness pass itself never changes it.
 export const topicClusters = pgTable("topic_clusters", {
   id: serial("id").primaryKey(),
   title: text("title").notNull(),
   createdAt: timestamp("created_at", { withTimezone: true }).notNull().defaultNow(),
   lastMatchedAt: timestamp("last_matched_at", { withTimezone: true }).notNull().defaultNow(),
+  confidence: text("confidence", { enum: ["few", "some", "strong"] }),
+  independentCount: integer("independent_count"),
+  lifecycleState: text("lifecycle_state", { enum: ["active", "deprecated"] })
+    .notNull()
+    .default("active"),
+  supersededByClusterId: integer("superseded_by_cluster_id").references(
+    (): AnyPgColumn => topicClusters.id,
+  ),
+  supersedeReason: text("supersede_reason"),
+  knowledgeCheckedAt: timestamp("knowledge_checked_at", { withTimezone: true }),
 });
 
 export const reels = pgTable("reels", {
