@@ -21,9 +21,10 @@ export interface ReelStackCardProps {
  * as one stack card instead of N separate cards — the primary member's full
  * content on top (identical to a solo ReelCard), with a banner showing "N
  * sources on this topic" and an expandable list of the other members' source
- * names + titles. Deliberately no confidence badge here (few/some/strong is
- * Epic 11's `is_primary`-derived corroboration scale) — only the raw source
- * count + names, per ADR 0013's MVP cut.
+ * names + titles. The raw source count + names here is separate from Epic
+ * 11's `confidence` (few/some/strong) badge, which ReelCardBody renders
+ * itself (shared with the solo ReelCard) whenever the primary reel's cluster
+ * has a computed confidence — no special-casing needed here.
  *
  * The card-level hide/save/up/down actions apply to the primary reel only,
  * same as a solo card; the other members have no separate action bar here

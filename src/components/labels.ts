@@ -21,3 +21,11 @@ export const EFFORT_LABELS: Record<"5-min-test" | "afternoon" | "know-only", str
   afternoon: "Afternoon",
   "know-only": "Know only",
 };
+
+/** Epic 11 (ADR 0012, T11.5): the cluster corroboration scale, subtle wording
+ *  deliberately separate from R/Q scores. */
+export const CONFIDENCE_LABELS: Record<"few" | "some" | "strong", string> = {
+  few: "Few sources",
+  some: "Some sources",
+  strong: "Strong corroboration",
+};

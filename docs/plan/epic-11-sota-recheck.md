@@ -77,7 +77,7 @@ Glossar: Topic-Knowledge-Check, confidence, freshness, Korroboration, Topic-Clus
 - **Verifikation:** Query-Test: Reel eines Clusters mit `deprecated`/`confidence` liefert die
   Cluster-Werte in der Feed-/Saved-/Overview-Sicht.
 
-### ☐ T11.5 — Anzeige (confidence + „Neueres verfügbar")
+### ☑ T11.5 — Anzeige (confidence + „Neueres verfügbar")
 - Stapelkarte/Cluster-Sicht zeigt `confidence` als dezentes Badge (`few/some/strong`, getrennt
   von `quality_score`/`relevance_score`, ADR 0004). Auf abgelösten Inhalten ein Hinweis
   „🕓 Neueres verfügbar" mit Link zum ablösenden Cluster; **Bestätigen-Aktion**, die

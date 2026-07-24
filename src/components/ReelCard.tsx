@@ -3,7 +3,7 @@ import { isNew } from "@/lib/labels";
 import type { ReelActionFlags } from "@/lib/interactions";
 import { formatRelativeTime } from "@/lib/relativeTime";
 import { ReelCardShell } from "./ReelCardShell";
-import { CATEGORY_LABELS, EFFORT_LABELS, MATURITY_LABELS } from "./labels";
+import { CATEGORY_LABELS, CONFIDENCE_LABELS, EFFORT_LABELS, MATURITY_LABELS } from "./labels";
 
 function Badge({ children }: { children: React.ReactNode }) {
   return (
@@ -45,6 +45,11 @@ export function ReelCardBody({ reel, stackBanner }: { reel: FeedReel; stackBanne
         <Badge>{MATURITY_LABELS[reel.maturity]}</Badge>
         {reel.experimental && <Badge>🧪 experimental</Badge>}
         {showNewBadge && <Badge>🆕 New</Badge>}
+        {/* Epic 11 (ADR 0012, T11.5): corroboration scale, subtle and
+            deliberately separate from the R/Q score footer below. Can be
+            present even on a solo card — a cluster keeps its confidence even
+            when it currently renders with only one visible member. */}
+        {reel.confidence && <Badge>🔎 {CONFIDENCE_LABELS[reel.confidence]}</Badge>}
       </div>
 
       <h2 className="mt-3 text-lg font-semibold leading-snug text-zinc-50">{reel.title}</h2>
@@ -69,6 +74,35 @@ export function ReelCardBody({ reel, stackBanner }: { reel: FeedReel; stackBanne
               {EFFORT_LABELS[reel.effortTag]}
             </span>
           )}
+        </div>
+      )}
+
+      {/* Epic 11 (ADR 0012/0008, T11.5): a freshness-pass supersession
+          proposal is shown but never auto-hides the content — only visible
+          while lifecycleState is still "active" (once a human confirms via
+          the deprecate route, the cluster is deprecated and this notice no
+          longer applies to it). */}
+      {reel.supersededByClusterId !== null && reel.lifecycleState === "active" && (
+        <div className="mt-4 rounded-lg border border-amber-800/40 bg-amber-950/30 p-3">
+          <p className="text-sm text-amber-200">
+            🕓 Newer available{reel.supersedeReason ? `: ${reel.supersedeReason}` : ""}
+          </p>
+          <div className="mt-2 flex items-center gap-3">
+            <a
+              href={`/clusters/${reel.supersededByClusterId}`}
+              className="text-xs underline decoration-amber-700 underline-offset-2 hover:text-amber-100"
+            >
+              View newer cluster
+            </a>
+            <form method="post" action={`/clusters/${reel.topicClusterId}/deprecate`}>
+              <button
+                type="submit"
+                className="rounded-full border border-amber-700 px-3 py-1 text-xs text-amber-200 transition-colors hover:bg-amber-900/40"
+              >
+                Confirm superseded
+              </button>
+            </form>
+          </div>
         </div>
       )}
 
