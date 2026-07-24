@@ -1,10 +1,12 @@
 # Epic 17 — Ausführungs-Modi (Trigger × Executor, Claude-Code-Kontingent)
 
-> **Status: IN UMSETZUNG (2026-07-23, ADR 0015).** T17.1–T17.4 + T17.7 fertig & getestet
-> (Executor-Naht, Profile/Validierung, `ClaudeCodeExecutor`, `job:cc`, Fehlerbehandlung);
-> T17.5 teil-erledigt (Enrichment + Feedback laufen über den Executor); **T17.6 offen**
-> (CC-Routine-Scheduler = reine Infra, nicht in dieser Umgebung end-to-end testbar).
-> Aus `future-todos.md` T6 hochgezogen.
+> **Status: IN UMSETZUNG (2026-07-23, ADR 0015; aktualisiert 2026-07-24).**
+> T17.1–T17.5 + T17.7 fertig & getestet (Executor-Naht, Profile/Validierung,
+> `ClaudeCodeExecutor`, `job:cc`, Fehlerbehandlung; seit Epic 12/15/11 laufen auch
+> SkillTagger, Clustering und der Knowledge-Check-Freshness-Pass über denselben
+> injizierten Executor — T17.5 damit vollständig statt nur teil-erledigt).
+> **T17.6 offen** (CC-Routine-Scheduler = reine Infra, nicht in dieser Umgebung
+> end-to-end testbar). Aus `future-todos.md` T6 hochgezogen.
 
 **Ziel:** Die LLM-Arbeit der Pipeline wahlweise über die **API** (`ANTHROPIC_API_KEY`, kostet)
 oder über **Claude-Code-Kontingent** (Agent-Turn, kostenneutral) laufen lassen, plus einen
@@ -50,10 +52,15 @@ Executor, Trigger, Profil.
 - **Verifikation:** Lauf gegen lokale DB ohne gesetzten `ANTHROPIC_API_KEY` erzeugt Reels;
   Netzwerk-Assertion: kein Anthropic-API-Call.
 
-### ◑ T17.5 — Enrichment-first ausrollen, dann restliche Schritte
+### ☑ T17.5 — Enrichment-first ausrollen, dann restliche Schritte
 - Zuerst nur Enrichment über den gewählten Executor; danach SkillTagger/Clustering/
   Knowledge-Check/Feedback über dieselbe Naht (jeweils eigenes `emit_*`-Tool bzw. Reuse).
 - **Verifikation:** Enrichment im CC-Modus grün; Schritte einzeln nachgezogen, Tests grün.
+- **Erledigt (2026-07-24):** mit Epic 12 (SkillTagger), 15 (Clustering) und 11 T11.1–T11.6
+  (Knowledge-Check-Freshness-Pass) sind alle LLM-Pipeline-Schritte (Enrichment, SkillTagger,
+  Clustering, Knowledge-Check, Feedback-Summary) über denselben in `pipeline.ts` aufgelösten
+  Executor verdrahtet (`getExecutor(resolveExecutionConfig(env()))`) — kein Schritt ruft
+  `callStructured`/die API direkt auf. Damit vollständig statt teil-erledigt.
 
 ### ☐ T17.6 — Scheduler: Claude-Code-Routine (`claude-code-cron`)
 - Für den Cloud-Fall „Claude Code Cron"/„Claude Code API": geplante **Claude-Code-Routine**,
@@ -90,10 +97,11 @@ Executor, Trigger, Profil.
   robust unit-testbar (injizierbarer Runner). Das in ADR 0015 (F3=C) beschriebene
   **Agent-Batch + `emit_reel`-Tool** bleibt eine spätere **Optimierung** (ADR 0015 nannte
   per-Item explizit als Fallback A/B). Kein API-Zugriff, kein stiller Fallback.
-- **T17.5 „restliche Schritte" noch nicht anwendbar.** SkillTagger/Clustering/Knowledge-Check
-  (Epics 11/12/15) sind noch **nicht gebaut**. Enrichment **und** Feedback-Summary laufen bereits
-  über den injizierten Executor; sobald die weiteren Schritte über dieselbe Naht entstehen, greift
-  die uniforme Executor-Injektion automatisch. Deshalb T17.5 als teil-erledigt (◑) markiert.
+- **T17.5 nachträglich abgeschlossen (2026-07-24):** Epics 12 (SkillTagger), 15
+  (Clustering) und 11 T11.1–T11.6 (Knowledge-Check) sind inzwischen gebaut und laufen alle
+  über denselben injizierten Executor (siehe `runPipelinePhases` in `src/lib/pipeline.ts`) —
+  die uniforme Executor-Injektion griff wie erwartet automatisch, ohne dass T17.5 selbst
+  nochmal angefasst werden musste.
 - **T17.6 offen (Infra).** Der Claude-Code-Routine-Scheduler (`claude-code-cron` gegen die
   Railway-DB) ist Setup/Infra und in dieser Umgebung nicht end-to-end verifizierbar; Bau + Doku
   später (teilt Mechanik mit Epic 16 Refactoring-Agent).
