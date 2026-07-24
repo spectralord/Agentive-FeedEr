@@ -53,7 +53,7 @@ Glossar: Topic-Knowledge-Check, confidence, freshness, Korroboration, Topic-Clus
 - **Verifikation:** Unit-Tests mit geseedeten Cluster-Mitgliedern (Primär/Echo/Erfahrungsbericht)
   → erwartete `confidence`.
 
-### ☐ T11.3 — Freshness/Supersession-Vergleich (`src/lib/knowledge-check/freshness.ts`)
+### ☑ T11.3 — Freshness/Supersession-Vergleich (`src/lib/knowledge-check/freshness.ts`)
 - **Kandidaten-Auswahl:** Cluster, die sich eine **Skill-Node teilen** (breite Ebene, Epic 12),
   sind Vergleichspartner — genau dort passiert Ablösung (enge Cluster innerhalb *eines* Themas).
 - **LLM-Pass** (injizierbarer `StructuredCaller`, Default `ANTHROPIC_MODEL`): Input =
