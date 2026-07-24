@@ -3,13 +3,15 @@ import { and, count, isNotNull, isNull } from "drizzle-orm";
 import { db } from "@/db/client";
 import { rawItems, reels, type PipelineRun } from "@/db/schema";
 import { adminEnabled, isAuthed } from "@/lib/admin/auth";
+import { listSourcesWithErrorCounts } from "@/lib/admin/sources";
 import { env } from "@/lib/env";
 import { recentRuns } from "@/lib/pipeline";
+import { formatRelativeTime } from "@/lib/relativeTime";
 
 export const dynamic = "force-dynamic";
 
 interface AdminPageProps {
-  searchParams: Promise<{ started?: string; busy?: string }>;
+  searchParams: Promise<{ started?: string; busy?: string; retried?: string }>;
 }
 
 async function loadStats() {
@@ -84,13 +86,27 @@ function RunButton({ mode, label }: { mode: string; label: string }) {
   );
 }
 
+function RetryButton({ sourceId }: { sourceId: number }) {
+  return (
+    <form method="post" action={`/api/admin/sources/${sourceId}/retry`}>
+      <button
+        type="submit"
+        className="rounded-full border border-amber-700 px-2 py-1 text-xs text-amber-200 transition-colors hover:bg-amber-900/40"
+      >
+        Reset enrich errors
+      </button>
+    </form>
+  );
+}
+
 export default async function AdminPage({ searchParams }: AdminPageProps) {
   if (!adminEnabled()) redirect("/admin/login");
   if (!(await isAuthed())) redirect("/admin/login");
 
-  const { started, busy } = await searchParams;
+  const { started, busy, retried } = await searchParams;
   const stats = await loadStats();
   const runs = await recentRuns(db());
+  const sourcesList = await listSourcesWithErrorCounts(db());
   const keySet = Boolean(env().ANTHROPIC_API_KEY);
 
   return (
@@ -104,6 +120,9 @@ export default async function AdminPage({ searchParams }: AdminPageProps) {
 
       {started && <p className="mb-3 text-sm text-emerald-300">Run #{started} started.</p>}
       {busy && <p className="mb-3 text-sm text-amber-300">A run is already in progress — please wait.</p>}
+      {retried !== undefined && (
+        <p className="mb-3 text-sm text-emerald-300">Cleared {retried} enrich error(s) — will retry next run.</p>
+      )}
 
       <section className="mb-6">
         <h2 className="mb-2 text-sm font-medium text-zinc-400">System</h2>
@@ -147,6 +166,37 @@ export default async function AdminPage({ searchParams }: AdminPageProps) {
                   </span>
                 </div>
                 <div className="mt-1 text-xs text-zinc-400">{runSummary(run)}</div>
+              </li>
+            ))}
+          </ul>
+        )}
+      </section>
+
+      <section className="mt-6">
+        <h2 className="mb-2 text-sm font-medium text-zinc-400">Sources</h2>
+        {sourcesList.length === 0 ? (
+          <p className="text-sm text-zinc-500">No sources configured.</p>
+        ) : (
+          <ul className="flex flex-col gap-2">
+            {sourcesList.map((source) => (
+              <li key={source.id} className="rounded-lg border border-zinc-800 bg-zinc-900/40 px-3 py-2 text-sm">
+                <div className="flex items-center justify-between gap-2">
+                  <span className="text-zinc-100">
+                    {source.name} <span className="text-xs text-zinc-500">({source.type})</span>
+                  </span>
+                  <span className={`text-xs ${source.enabled ? "text-emerald-300" : "text-zinc-500"}`}>
+                    {source.enabled ? "enabled" : "disabled"}
+                  </span>
+                </div>
+                <div className="mt-1 flex items-center justify-between gap-2 text-xs text-zinc-400">
+                  <span>
+                    Last polled: {source.lastPolledAt ? formatRelativeTime(source.lastPolledAt) : "never"}
+                    {source.enrichErrorCount > 0 && (
+                      <span className="ml-2 text-amber-300">{source.enrichErrorCount} enrich error(s)</span>
+                    )}
+                  </span>
+                  {source.enrichErrorCount > 0 && <RetryButton sourceId={source.id} />}
+                </div>
               </li>
             ))}
           </ul>

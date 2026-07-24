@@ -61,7 +61,7 @@ export const pipelineRuns = pgTable("pipeline_runs", {
   (raw_items, reels, unenriched, enrich_errors).
 - **Verifikation:** curl zeigt Läufe + Counts.
 
-### ☐ T13.7 — Bonus: Quellen-Liste (read-only) + Fehler-Retry
+### ☑ T13.7 — Bonus: Quellen-Liste (read-only) + Fehler-Retry
 - Quellen mit `enabled`/`last_polled_at`. Aktion „enrich_error zurücksetzen" (Items neu
   anreicherbar). (Quellen-Toggle schreibend = später.)
 - **Verifikation:** Retry setzt `enrich_error=null`; Quelle-Liste rendert.
@@ -79,9 +79,24 @@ export const pipelineRuns = pgTable("pipeline_runs", {
   da der Button die Pipeline im Web-Container ausführt.
 
 ## Abweichungen/Fragen
-- **Umgesetzt: T13.1–T13.6** (der vom Benutzer verlangte Kern + Bonus-Status/Läufe).
-  **T13.7 (Quellen-Liste + Fehler-Retry) bewusst offen** gelassen (Bonus, Zeit/Scope in der
-  autonomen Nacht-Session) — bleibt als Folge-Task.
+- **Umgesetzt: T13.1–T13.7** (der vom Benutzer verlangte Kern + beide Bonus-Tasks).
+- **T13.7:** Datenzugriff in `src/lib/admin/sources.ts` (`listSourcesWithErrorCounts`,
+  `resetEnrichErrors`), gleiches Muster wie `recentRuns` in `src/lib/pipeline.ts`. Retry-Route
+  `POST /api/admin/sources/[id]/retry` folgt exakt dem Guard/POST/Redirect-Muster von
+  `/api/admin/run`. Der Fehler-Count pro Quelle ist eine einzelne gruppierte Query
+  (`GROUP BY source_id` über `raw_items` mit `enrich_error IS NOT NULL`), da Admin-only/
+  Low-Traffic. `resetEnrichErrors` setzt bewusst nur `enrich_error = NULL` (nicht
+  `enriched_at`) — `runEnrichment` (`src/lib/enrichment/run.ts`) selektiert Zeilen mit
+  `enriched_at IS NULL AND enrich_error IS NULL`, das reicht also zum Wieder-Aufgreifen im
+  nächsten Lauf. Verifikation via Dev-Build (`npm run start`) + curl: Sources-Sektion
+  rendert Name/Typ/enabled/last-polled/Error-Count; Retry-POST liefert 303 mit
+  `?retried=<n>`, DB-Check bestätigt `enrich_error IS NULL`; unautorisierter POST → 401.
+  Integrationstest `src/lib/admin/sources.integration.test.ts` (5 Tests) deckt Listing und
+  Retry-Isolation zwischen Quellen ab.
+- **Zusätzlich (Review-Fund, nicht Teil von T13.7):** `runSummary()` in `src/app/admin/page.tsx`
+  zeigte `clustering` (Epic 15) und `knowledgeCheck` (Epic 11) aus `PipelineSummary` nicht an,
+  obwohl beide Felder seit längerem existieren. Ergänzt (eigener `fix`-Commit, nicht Teil des
+  T13.7-Commits).
 - **Pipeline-API leicht anders als skizziert:** statt einer einzelnen `runDailyPipeline`
   wurde in `src/lib/pipeline.ts` aufgeteilt in `runPipelinePhases` (reiner Phasen-Runner),
   `beginRun`/`runAndFinish` (Tracking + Guard) und `executeTrackedRun` (Cron). Grund:

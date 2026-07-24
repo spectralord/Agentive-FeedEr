@@ -123,7 +123,7 @@ Ein Epic ist fertig, wenn:
 | 10 — Content Verifier | `epic-10-verifier.md` | Fast-Follow | ✅ gegrillt (ADR 0011); Stufe-1 (Reel-`caveat`) baubar; Stufe 2 → in Epic 11 aufgegangen |
 | 11 — Topic-Knowledge-Check (Freshness + Korroboration) | `epic-11-sota-recheck.md` | Fast-Follow | ◑ T11.1–T11.6 fertig & getestet (ADR 0012/0013); T11.7 (Erfahrungsberichte-Korroboration, braucht eigenen Cluster-Bezug-Entscheid) und T11.8 (externe Web-Korroboration, eigener ADR nötig) zurückgestellt — siehe Abweichungen in `epic-11-sota-recheck.md` |
 | 12 — SkillTagger | `epic-12-skill-tagger.md` | Fast-Follow (vor Epic 7) | ☐ offen |
-| 13 — Admin-Console | `epic-13-admin-console.md` | Fast-Follow | ✅ T13.1–T13.6 fertig (Cron-Button + Status; `ADMIN_TOKEN` in Railway = Benutzer-Aktion; T13.7 offen) |
+| 13 — Admin-Console | `epic-13-admin-console.md` | Fast-Follow | ✅ fertig (T13.1–T13.7; Cron-Button + Status + Quellen-Liste/Fehler-Retry; `ADMIN_TOKEN` in Railway = Benutzer-Aktion) |
 | 14 — Quellen-Validierung & -Überprüfung | `epic-14-source-health.md` | Fast-Follow (erst grillen) | ☐ geparkt (bauen „wenn der Rest steht") |
 | 15 — Topic-Clustering (Fundament) | `epic-15-topic-clustering.md` | Fast-Follow | ✅ fertig (ADR 0013; T15.1–T15.5 gebaut & getestet — siehe Abweichungen in `epic-15-topic-clustering.md`); Vorläufer für Epic 11 |
 | 16 — Refactoring-Agent (nächtl. Claude-Code-Cron) | `epic-16-refactoring-agent.md` | Tooling/Vision (erst grillen) | ☐ geparkt (teilt CC-Routine-Mechanik mit Epic 17) |
