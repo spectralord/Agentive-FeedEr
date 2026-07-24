@@ -40,6 +40,18 @@ export const rawItems = pgTable(
   (t) => [uniqueIndex("raw_items_source_external_uq").on(t.sourceId, t.externalId)],
 );
 
+// Epic 15: narrow, specific topic clusters (ADR 0013) — the "same concrete
+// thing and its usage" grouping used for corroboration/freshness (Epic 11),
+// distinct from the broad Skill-Node grouping (Epic 12). `lastMatchedAt`
+// drives the Match-or-Propose "active window" (only clusters matched within
+// `CLUSTER_WINDOW_DAYS` are match candidates for a new reel).
+export const topicClusters = pgTable("topic_clusters", {
+  id: serial("id").primaryKey(),
+  title: text("title").notNull(),
+  createdAt: timestamp("created_at", { withTimezone: true }).notNull().defaultNow(),
+  lastMatchedAt: timestamp("last_matched_at", { withTimezone: true }).notNull().defaultNow(),
+});
+
 export const reels = pgTable("reels", {
   id: serial("id").primaryKey(),
   rawItemId: integer("raw_item_id")
@@ -60,7 +72,13 @@ export const reels = pgTable("reels", {
   action: text("action"),
   effortTag: text("effort_tag", { enum: ["5-min-test", "afternoon", "know-only"] }),
   skill: text("skill"),
-  topicClusterId: integer("topic_cluster_id"),
+  // Epic 15 (ADR 0013): reserved since Epic 2, activated here as a real FK.
+  // Nullable — null until the clustering pass processes this reel.
+  topicClusterId: integer("topic_cluster_id").references(() => topicClusters.id),
+  // Epic 15: set by the clustering pass alongside topicClusterId. true =
+  // independent/first-hand account; false = recognizable reblog of another
+  // cluster member; null = not yet clustered. See ADR 0013 point 4.
+  isPrimary: boolean("is_primary"),
   metadata: jsonb("metadata").notNull().default({}),
   createdAt: timestamp("created_at", { withTimezone: true }).notNull().defaultNow(),
 });
@@ -190,3 +208,5 @@ export type UserProgress = typeof userProgress.$inferSelect;
 export type NewUserProgress = typeof userProgress.$inferInsert;
 export type UserProgressNote = typeof userProgressNotes.$inferSelect;
 export type NewUserProgressNote = typeof userProgressNotes.$inferInsert;
+export type TopicCluster = typeof topicClusters.$inferSelect;
+export type NewTopicCluster = typeof topicClusters.$inferInsert;

@@ -60,7 +60,7 @@ Vision-Backlog V1. Glossar: Topic-Cluster.
 
 ## Tasks
 
-### ☐ T15.1 — Schema: `topic_clusters` + `reels.is_primary` + `topic_cluster_id` aktivieren
+### ✅ T15.1 — Schema: `topic_clusters` + `reels.is_primary` + `topic_cluster_id` aktivieren
 ```ts
 export const topicClusters = pgTable("topic_clusters", {
   id: serial("id").primaryKey(),
