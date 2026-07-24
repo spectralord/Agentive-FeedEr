@@ -1,7 +1,8 @@
 import Link from "next/link";
-import { DEFAULT_FEED_LIMIT, getReels } from "@/lib/feed";
+import { DEFAULT_FEED_LIMIT, getReels, groupReelsForFeed } from "@/lib/feed";
 import { getInteractionFlags } from "@/lib/interactions";
 import { ReelCard } from "@/components/ReelCard";
+import { ReelStackCard } from "@/components/ReelStackCard";
 import { buildLoadMoreHref, FilterBar, type FilterState } from "@/components/FilterBar";
 
 export type FeedSearchParams = FilterState;
@@ -45,6 +46,9 @@ export default async function FeedPage({ searchParams }: FeedPageProps) {
     before: params.before ? new Date(params.before) : undefined,
   });
   const interactionFlags = await getInteractionFlags(reels.map((r) => r.id));
+  // Epic 15 (T15.4): topic clusters with >= 2 displayed members bundle into
+  // one stack card; everything else renders as a plain solo card, unchanged.
+  const feedItems = groupReelsForFeed(reels);
 
   return (
     <>
@@ -53,9 +57,23 @@ export default async function FeedPage({ searchParams }: FeedPageProps) {
         <EmptyState hasFilters={hasFilters} />
       ) : (
         <div className="feed -mt-12 h-dvh snap-y snap-mandatory overflow-y-auto overflow-x-hidden">
-          {reels.map((reel) => (
-            <ReelCard key={reel.id} reel={reel} interactions={interactionFlags.get(reel.id)} />
-          ))}
+          {feedItems.map((item) =>
+            item.type === "stack" ? (
+              <ReelStackCard
+                key={`cluster-${item.clusterId}`}
+                clusterTitle={item.clusterTitle}
+                primary={item.primary}
+                others={item.others}
+                interactions={interactionFlags.get(item.primary.id)}
+              />
+            ) : (
+              <ReelCard
+                key={item.reel.id}
+                reel={item.reel}
+                interactions={interactionFlags.get(item.reel.id)}
+              />
+            ),
+          )}
           {reels.length === DEFAULT_FEED_LIMIT && (
             <div className="flex min-h-24 items-center justify-center px-6 py-10">
               <Link

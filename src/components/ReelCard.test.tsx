@@ -20,6 +20,9 @@ const baseReel: FeedReel = {
   action: null,
   effortTag: null,
   skill: null,
+  topicClusterId: null,
+  isPrimary: null,
+  clusterTitle: null,
 };
 
 describe("ReelCard", () => {

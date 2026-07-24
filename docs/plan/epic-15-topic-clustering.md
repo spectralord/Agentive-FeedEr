@@ -108,7 +108,7 @@ export const topicClusters = pgTable("topic_clusters", {
 - **Verifikation:** Integrationstest: neue Reels → nach Lauf `topic_cluster_id` + `isPrimary`
   gesetzt; zweiter Lauf verarbeitet 0.
 
-### ☐ T15.4 — Feed: Bündelung als Stapelkarte
+### ✅ T15.4 — Feed: Bündelung als Stapelkarte
 - Feed-Query gruppiert anzeigbare Reels nach `topic_cluster_id`. Cluster mit **≥ 2** Reels
   erscheinen als **eine Stapelkarte**: Titel des Clusters, „N Quellen zu diesem Thema",
   oben das **Primär**-Reel (`isPrimary=true`, sonst neuestes), die übrigen aufklappbar.

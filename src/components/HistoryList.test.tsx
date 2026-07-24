@@ -20,6 +20,9 @@ const baseReel: FeedReel = {
   action: "Probier es aus.",
   effortTag: null,
   skill: null,
+  topicClusterId: null,
+  isPrimary: null,
+  clusterTitle: null,
 };
 
 describe("HistoryList", () => {

@@ -75,7 +75,7 @@ describe("assignCluster (mocked caller — no real API call)", () => {
 
     const result = await assignCluster({ title: "x", summary: "y", sourceName: "z" }, [], caller);
     expect(result).toEqual({ propose: { title: "Brand new topic" } });
-    expect("isPrimary" in (result as { propose: unknown }).propose).toBe(false);
+    expect(Object.keys((result as { propose: object }).propose)).toEqual(["title"]);
   });
 
   it("rejects a malformed tool response (schema validation, no silent pass-through)", async () => {

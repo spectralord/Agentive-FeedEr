@@ -1,6 +1,6 @@
 import { and, desc, eq, gt, gte, lt, notExists } from "drizzle-orm";
 import { db } from "@/db/client";
-import { interactions, rawItems, reels, sources } from "@/db/schema";
+import { interactions, rawItems, reels, sources, topicClusters } from "@/db/schema";
 import { CATEGORIES, MATURITIES } from "@/lib/enrichment/schema";
 import { env } from "@/lib/env";
 
@@ -52,6 +52,89 @@ export interface FeedReel {
   action: string | null;
   effortTag: "5-min-test" | "afternoon" | "know-only" | null;
   skill: string | null;
+  /** Epic 15 (ADR 0013): narrow topic cluster this reel was assigned to by the
+   *  clustering pass, or null if not yet clustered. */
+  topicClusterId: number | null;
+  /** Epic 15: true = independent/first-hand account, false = recognizable
+   *  reblog of another cluster member, null = not yet clustered. */
+  isPrimary: boolean | null;
+  /** Epic 15: the cluster's title, or null if topicClusterId is null. */
+  clusterTitle: string | null;
+}
+
+/** One topic cluster with >= 2 displayed members, bundled for the "N sources
+ *  on this topic" stack card (T15.4). Primary = the member with is_primary
+ *  true, else the newest (see groupReelsForFeed). */
+export interface FeedStackItem {
+  type: "stack";
+  clusterId: number;
+  clusterTitle: string;
+  primary: FeedReel;
+  others: FeedReel[];
+}
+
+export interface FeedSoloItem {
+  type: "solo";
+  reel: FeedReel;
+}
+
+export type FeedItem = FeedStackItem | FeedSoloItem;
+
+/**
+ * Groups an already-fetched, already-ordered (newest first) reel list into
+ * feed items: a topic cluster with >= 2 members becomes one FeedStackItem
+ * positioned at its newest member's slot; everything else (no cluster, or a
+ * cluster reduced to a single visible member — e.g. the other member(s) are
+ * hidden, ADR 0013/T15.4 "leert sich ein Stapel auf 1, wird es wieder
+ * Einzelkarte") renders as a plain FeedSoloItem, unchanged from before Epic 15.
+ *
+ * Additive to the existing hide mechanic: `reels` here is whatever getReels
+ * already returned (hidden reels excluded), so a hidden member simply isn't
+ * present to be grouped in the first place.
+ */
+export function groupReelsForFeed(reelsList: FeedReel[]): FeedItem[] {
+  const items: FeedItem[] = [];
+  const stackIndexByClusterId = new Map<number, number>();
+
+  for (const reel of reelsList) {
+    if (reel.topicClusterId === null) {
+      items.push({ type: "solo", reel });
+      continue;
+    }
+
+    const existingIndex = stackIndexByClusterId.get(reel.topicClusterId);
+    if (existingIndex === undefined) {
+      items.push({
+        type: "stack",
+        clusterId: reel.topicClusterId,
+        clusterTitle: reel.clusterTitle ?? "",
+        primary: reel, // provisional — reconciled below once all members are known
+        others: [],
+      });
+      stackIndexByClusterId.set(reel.topicClusterId, items.length - 1);
+    } else {
+      const item = items[existingIndex];
+      if (item.type === "stack") item.others.push(reel);
+    }
+  }
+
+  return items.map((item) => {
+    if (item.type !== "stack") return item;
+    if (item.others.length === 0) {
+      // Only one visible member left (e.g. the rest are hidden) — reverts to solo.
+      return { type: "solo", reel: item.primary };
+    }
+    const allMembers = [item.primary, ...item.others];
+    const explicitPrimary = allMembers.find((m) => m.isPrimary === true);
+    const primary = explicitPrimary ?? allMembers[0]; // allMembers[0] is the newest (input order)
+    return {
+      type: "stack",
+      clusterId: item.clusterId,
+      clusterTitle: item.clusterTitle,
+      primary,
+      others: allMembers.filter((m) => m.id !== primary.id),
+    };
+  });
 }
 
 function isKnownCategory(value: string): value is FeedCategory {
@@ -129,10 +212,14 @@ export async function getReels(opts: GetReelsOptions = {}): Promise<FeedReel[]> 
       action: reels.action,
       effortTag: reels.effortTag,
       skill: reels.skill,
+      topicClusterId: reels.topicClusterId,
+      isPrimary: reels.isPrimary,
+      clusterTitle: topicClusters.title,
     })
     .from(reels)
     .innerJoin(rawItems, eq(reels.rawItemId, rawItems.id))
     .innerJoin(sources, eq(rawItems.sourceId, sources.id))
+    .leftJoin(topicClusters, eq(reels.topicClusterId, topicClusters.id))
     .where(conditions.length > 0 ? and(...conditions) : undefined)
     .orderBy(desc(rawItems.publishedAt))
     .limit(opts.limit ?? DEFAULT_FEED_LIMIT);

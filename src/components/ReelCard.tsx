@@ -20,67 +20,80 @@ export interface ReelCardProps {
   interactions?: ReelActionFlags;
 }
 
-/** One reel card, sized to fill the viewport (see .reel/.feed scroll-snap in page.tsx). */
-export function ReelCard({ reel, interactions }: ReelCardProps) {
+/**
+ * The reel's content — header/badges/title/summary/example/action/footer.
+ * Shared between a plain solo card (ReelCard below) and the "N sources on
+ * this topic" stack card (ReelStackCard, Epic 15 T15.4/T15.5), which renders
+ * this unchanged for the cluster's primary reel plus its own banner slot on top.
+ */
+export function ReelCardBody({ reel, stackBanner }: { reel: FeedReel; stackBanner?: React.ReactNode }) {
   const showNewBadge = isNew(reel);
 
   return (
-    <ReelCardShell reelId={reel.id} initial={interactions ?? NO_INTERACTIONS}>
-      <div className="mx-auto flex h-dvh max-w-xl flex-col overflow-y-auto px-6 pb-20 pt-28">
-        <header className="flex items-center gap-2 text-xs text-zinc-400">
-          <span className="font-medium text-zinc-300">{reel.sourceName}</span>
-          <span aria-hidden="true">·</span>
-          <time dateTime={reel.publishedAt.toISOString()}>
-            {formatRelativeTime(reel.publishedAt)}
-          </time>
-        </header>
+    <div className="mx-auto flex h-dvh max-w-xl flex-col overflow-y-auto px-6 pb-20 pt-28">
+      {stackBanner}
+      <header className="flex items-center gap-2 text-xs text-zinc-400">
+        <span className="font-medium text-zinc-300">{reel.sourceName}</span>
+        <span aria-hidden="true">·</span>
+        <time dateTime={reel.publishedAt.toISOString()}>
+          {formatRelativeTime(reel.publishedAt)}
+        </time>
+      </header>
 
-        <div className="mt-2 flex flex-wrap gap-1.5">
-          <Badge>{CATEGORY_LABELS[reel.category]}</Badge>
-          <Badge>{MATURITY_LABELS[reel.maturity]}</Badge>
-          {reel.experimental && <Badge>🧪 experimental</Badge>}
-          {showNewBadge && <Badge>🆕 New</Badge>}
-        </div>
-
-        <h2 className="mt-3 text-lg font-semibold leading-snug text-zinc-50">{reel.title}</h2>
-        <p className="mt-2 text-sm leading-relaxed text-zinc-300">{reel.summary}</p>
-
-        {reel.example && (
-          <div className="mt-4">
-            <p className="text-xs font-medium uppercase tracking-wide text-zinc-500">
-              Example (from the source)
-            </p>
-            <pre className="mt-1 overflow-x-auto rounded-lg bg-zinc-900 p-3 font-mono text-xs whitespace-pre-wrap text-zinc-200">
-              {reel.example}
-            </pre>
-          </div>
-        )}
-
-        {reel.action && (
-          <div className="mt-4 rounded-lg border border-emerald-800/40 bg-emerald-950/30 p-3">
-            <p className="text-sm text-emerald-200">➜ For you: {reel.action}</p>
-            {reel.effortTag && (
-              <span className="mt-2 inline-block rounded-full bg-emerald-900/60 px-2 py-0.5 text-xs text-emerald-300">
-                {EFFORT_LABELS[reel.effortTag]}
-              </span>
-            )}
-          </div>
-        )}
-
-        <footer className="mt-auto flex items-center justify-between gap-3 pt-6 text-xs text-zinc-500">
-          <a
-            href={reel.url}
-            target="_blank"
-            rel="noreferrer"
-            className="underline decoration-zinc-700 underline-offset-2 hover:text-zinc-300"
-          >
-            View source
-          </a>
-          <span>
-            R {reel.relevanceScore} · Q {reel.qualityScore}
-          </span>
-        </footer>
+      <div className="mt-2 flex flex-wrap gap-1.5">
+        <Badge>{CATEGORY_LABELS[reel.category]}</Badge>
+        <Badge>{MATURITY_LABELS[reel.maturity]}</Badge>
+        {reel.experimental && <Badge>🧪 experimental</Badge>}
+        {showNewBadge && <Badge>🆕 New</Badge>}
       </div>
+
+      <h2 className="mt-3 text-lg font-semibold leading-snug text-zinc-50">{reel.title}</h2>
+      <p className="mt-2 text-sm leading-relaxed text-zinc-300">{reel.summary}</p>
+
+      {reel.example && (
+        <div className="mt-4">
+          <p className="text-xs font-medium uppercase tracking-wide text-zinc-500">
+            Example (from the source)
+          </p>
+          <pre className="mt-1 overflow-x-auto rounded-lg bg-zinc-900 p-3 font-mono text-xs whitespace-pre-wrap text-zinc-200">
+            {reel.example}
+          </pre>
+        </div>
+      )}
+
+      {reel.action && (
+        <div className="mt-4 rounded-lg border border-emerald-800/40 bg-emerald-950/30 p-3">
+          <p className="text-sm text-emerald-200">➜ For you: {reel.action}</p>
+          {reel.effortTag && (
+            <span className="mt-2 inline-block rounded-full bg-emerald-900/60 px-2 py-0.5 text-xs text-emerald-300">
+              {EFFORT_LABELS[reel.effortTag]}
+            </span>
+          )}
+        </div>
+      )}
+
+      <footer className="mt-auto flex items-center justify-between gap-3 pt-6 text-xs text-zinc-500">
+        <a
+          href={reel.url}
+          target="_blank"
+          rel="noreferrer"
+          className="underline decoration-zinc-700 underline-offset-2 hover:text-zinc-300"
+        >
+          View source
+        </a>
+        <span>
+          R {reel.relevanceScore} · Q {reel.qualityScore}
+        </span>
+      </footer>
+    </div>
+  );
+}
+
+/** One reel card, sized to fill the viewport (see .reel/.feed scroll-snap in page.tsx). */
+export function ReelCard({ reel, interactions }: ReelCardProps) {
+  return (
+    <ReelCardShell reelId={reel.id} initial={interactions ?? NO_INTERACTIONS}>
+      <ReelCardBody reel={reel} />
     </ReelCardShell>
   );
 }

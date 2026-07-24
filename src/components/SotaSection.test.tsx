@@ -20,6 +20,9 @@ function reel(overrides: Partial<FeedReel> & Pick<FeedReel, "id">): FeedReel {
     action: null,
     effortTag: null,
     skill: null,
+    topicClusterId: null,
+    isPrimary: null,
+    clusterTitle: null,
     ...overrides,
   };
 }
