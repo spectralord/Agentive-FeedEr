@@ -26,7 +26,7 @@ Glossar: Verifier, caveat, confidence, Korroboration.
   gleiches Muster wie `topic_clusters.knowledge_checked_at`, Epic 11). Migration
   `drizzle/0009_moaning_mongu.sql`.
 
-### ☐ T10.2 — Kritiker-Pass (`src/lib/verifier/run.ts`)
+### ☑ T10.2 — Kritiker-Pass (`src/lib/verifier/run.ts`)
 - Eigener LLM-Call (injizierbarer `StructuredCaller` wie Enrichment/SkillTagger),
   Modell konfigurierbar (Default Haiku). Input: **Quelle (`raw_item`) + fertiges Reel**
   (summary/example/action). Output (JSON-Schema, zod-validiert):
@@ -85,3 +85,15 @@ Glossar: Verifier, caveat, confidence, Korroboration.
 
 ## Abweichungen/Fragen
 _(vom ausführenden Modell zu pflegen)_
+
+- **Idempotenz-Marker (T10.1/T10.2):** zweite Spalte `reels.caveat_checked_at`
+  (timestamp, nullable) statt `caveat` selbst als Marker zu missbrauchen — `caveat`
+  ist nach einem legitimen "kein Vorbehalt"-Ergebnis genauso `null` wie vor dem
+  ersten Lauf. Gleiches Muster wie `topic_clusters.knowledge_checked_at` (Epic 11).
+- **Modell-Konfiguration (T10.2):** kein neuer Env-Var. `checkReel`/`runVerifier`
+  nutzen `callStructured`'s eigenen `ANTHROPIC_MODEL`-Default (kein `model`-Override
+  übergeben) — gleiches Präzedenz wie SkillTagger/Clustering, die ebenfalls keinen
+  dedizierten Override haben. Der Epic-Text nennt "Default Haiku, konfigurierbar",
+  aber keinen konkreten Var-Namen; da `ANTHROPIC_MODEL` bereits auf Haiku defaultet,
+  ist die konservativste Interpretation, keinen zusätzlichen Var einzuführen (im
+  Unterschied zu `KNOWLEDGE_CHECK_MODEL`, das eine eigene Rechtfertigung hatte).
