@@ -91,6 +91,9 @@
 | `PIPELINE_TRIGGER` | nein | profil-abh. | Override: `railway-cron` \| `claude-code-cron` \| `manual`. Illegale Kombi wirft. |
 | `CLUSTER_WINDOW_DAYS` | nein | `30` | Epic 15: „aktives Fenster" für Cluster-Match-Kandidaten (`last_matched_at` darin). |
 | `MAX_CLUSTER_CANDIDATES` | nein | `40` | Epic 15: Kosten-/Kontext-Guard, max. Kandidaten-Cluster pro Reel-Prompt. |
+| `CONF_SOME_MIN` | nein | `2` | Epic 11: ab so vielen unabhängigen Belegen (distinct Source, `is_primary=true`) ⇒ `confidence=some`. |
+| `CONF_STRONG_MIN` | nein | `4` | Epic 11: ab so vielen unabhängigen Belegen ⇒ `confidence=strong`. |
+| `KNOWLEDGE_CHECK_MODEL` | nein | `ANTHROPIC_MODEL` | Epic 11: Modell-Override für den Freshness-/Supersession-LLM-Pass. |
 
 `.env.example` führt alle Variablen; `src/lib/env.ts` validiert sie mit zod
 (Defaults dort zentral, nirgendwo sonst hartkodiert).

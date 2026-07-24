@@ -46,6 +46,23 @@ const envSchema = z.object({
   // as MAX_ENRICH_PER_RUN).
   CLUSTER_WINDOW_DAYS: z.coerce.number().int().positive().default(30),
   MAX_CLUSTER_CANDIDATES: z.coerce.number().int().positive().default(40),
+  // Epic 11 (ADR 0012, T11.2): confidence-scale thresholds — number of
+  // independent (is_primary=true) cluster members mapped to few/some/strong.
+  // `1` is always "few" (below CONF_SOME_MIN); CONF_SOME_MIN..CONF_STRONG_MIN-1
+  // is "some"; >= CONF_STRONG_MIN is "strong". See src/lib/knowledge-check/confidence.ts.
+  CONF_SOME_MIN: z.coerce.number().int().positive().default(2),
+  CONF_STRONG_MIN: z.coerce.number().int().positive().default(4),
+  // Epic 11 (T11.3): optional model override for the freshness/supersession
+  // LLM pass. Left optional/undefined here (same "empty string = unset"
+  // preprocess pattern as ANTHROPIC_API_KEY/ADMIN_TOKEN above) rather than
+  // given its own hardcoded default like DEEPEN_MODEL — the fallback to
+  // ANTHROPIC_MODEL is resolved at the call site (same `opts.model ??
+  // env().ANTHROPIC_MODEL` pattern callStructured uses in src/lib/claude.ts),
+  // see src/lib/knowledge-check/freshness.ts.
+  KNOWLEDGE_CHECK_MODEL: z.preprocess(
+    (v) => (v === "" ? undefined : v),
+    z.string().min(1).optional(),
+  ),
 });
 
 export type Env = z.infer<typeof envSchema>;

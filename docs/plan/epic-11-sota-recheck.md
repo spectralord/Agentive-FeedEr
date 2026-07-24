@@ -44,7 +44,7 @@ Glossar: Topic-Knowledge-Check, confidence, freshness, Korroboration, Topic-Clus
   ```
 - **Verifikation:** Migration grün; Felder default `null` bzw. `active`.
 
-### ☐ T11.2 — Korroboration → `confidence` (`src/lib/knowledge-check/confidence.ts`)
+### ☑ T11.2 — Korroboration → `confidence` (`src/lib/knowledge-check/confidence.ts`)
 - Pro aktivem Cluster: **unabhängige Belege zählen** = distinct `source` unter den Mitgliedern
   mit `is_primary=true` (jeder eigenständige Erfahrungsbericht zählt ebenfalls). Reine
   Reblogs (`is_primary=false`) zählen **nicht**.
