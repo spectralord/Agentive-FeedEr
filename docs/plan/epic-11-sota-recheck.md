@@ -70,7 +70,7 @@ Glossar: Topic-Knowledge-Check, confidence, freshness, Korroboration, Topic-Clus
 - **Verifikation:** Unit-Tests mit gemocktem Caller: klare Ablösung → Vorschlag gesetzt;
   unabhängige Themen → `null`.
 
-### ☐ T11.4 — Propagation auf referenzierende Items
+### ☑ T11.4 — Propagation auf referenzierende Items
 - `confidence`/`freshness` sind Cluster-Eigenschaften; abgeleitete Sichten (ADR 0004) ziehen sie
   auf: gespeicherte Reels, SOTA-/Übersichts-Einträge, später Skill-Nodes. Ein Reel „erbt" die
   `confidence` seines Clusters und den Supersession-Hinweis.

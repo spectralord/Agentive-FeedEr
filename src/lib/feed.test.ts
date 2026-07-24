@@ -3,9 +3,9 @@
 // Seeds its own sources/raw_items/reels (TRUNCATE + insert) — see epic-3 notes
 // on why this is acceptable even though it clears any externally seeded reels.
 import { afterAll, beforeEach, describe, expect, it } from "vitest";
-import { sql } from "drizzle-orm";
+import { eq, sql } from "drizzle-orm";
 import { db, getPool } from "@/db/client";
-import { rawItems, reels, sources } from "@/db/schema";
+import { rawItems, reels, sources, topicClusters } from "@/db/schema";
 import { env } from "@/lib/env";
 import { getReels } from "./feed";
 
@@ -60,7 +60,7 @@ function daysAgo(n: number): Date {
 
 describe("getReels (integration)", () => {
   beforeEach(async () => {
-    await db().execute(sql`TRUNCATE reels, raw_items, sources RESTART IDENTITY CASCADE`);
+    await db().execute(sql`TRUNCATE topic_clusters, reels, raw_items, sources RESTART IDENTITY CASCADE`);
   });
 
   afterAll(async () => {
@@ -266,5 +266,60 @@ describe("getReels (integration)", () => {
 
     const withoutExperimental = await getReels({ excludeExperimental: true });
     expect(withoutExperimental.map((r) => r.rawItemId)).toEqual([2]);
+  });
+
+  it("propagates a cluster's confidence/lifecycle/supersession fields onto its reel (T11.4)", async () => {
+    const [supersedingCluster] = await db()
+      .insert(topicClusters)
+      .values({ title: "Claude Code fork command" })
+      .returning();
+    const [cluster] = await db()
+      .insert(topicClusters)
+      .values({
+        title: "Claude Code batch command",
+        confidence: "strong",
+        independentCount: 5,
+        lifecycleState: "deprecated",
+        supersededByClusterId: supersedingCluster.id,
+        supersedeReason: "Changelog states fork replaces the deprecated batch flag.",
+      })
+      .returning();
+
+    const [source] = await db().insert(sources).values({ name: "s", type: "rss", url: "u" }).returning();
+    const item = await seedReel(source.id, {
+      externalId: "clustered",
+      publishedAt: daysAgo(1),
+      category: "tooling",
+      qualityScore: 90,
+    });
+    await db().update(reels).set({ topicClusterId: cluster.id, isPrimary: true }).where(eq(reels.rawItemId, item.id));
+
+    const [reel] = await getReels();
+    expect(reel.topicClusterId).toBe(cluster.id);
+    expect(reel.clusterTitle).toBe("Claude Code batch command");
+    expect(reel.confidence).toBe("strong");
+    expect(reel.independentCount).toBe(5);
+    expect(reel.lifecycleState).toBe("deprecated");
+    expect(reel.supersededByClusterId).toBe(supersedingCluster.id);
+    expect(reel.supersedeReason).toBe("Changelog states fork replaces the deprecated batch flag.");
+  });
+
+  it("a reel with no cluster gets null for all cluster-derived fields (T11.4)", async () => {
+    const [source] = await db().insert(sources).values({ name: "s", type: "rss", url: "u" }).returning();
+    await seedReel(source.id, {
+      externalId: "unclustered",
+      publishedAt: daysAgo(1),
+      category: "tooling",
+      qualityScore: 90,
+    });
+
+    const [reel] = await getReels();
+    expect(reel.topicClusterId).toBeNull();
+    expect(reel.clusterTitle).toBeNull();
+    expect(reel.confidence).toBeNull();
+    expect(reel.independentCount).toBeNull();
+    expect(reel.lifecycleState).toBeNull();
+    expect(reel.supersededByClusterId).toBeNull();
+    expect(reel.supersedeReason).toBeNull();
   });
 });

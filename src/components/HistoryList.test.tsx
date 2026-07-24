@@ -23,6 +23,11 @@ const baseReel: FeedReel = {
   topicClusterId: null,
   isPrimary: null,
   clusterTitle: null,
+  confidence: null,
+  independentCount: null,
+  lifecycleState: null,
+  supersededByClusterId: null,
+  supersedeReason: null,
 };
 
 describe("HistoryList", () => {

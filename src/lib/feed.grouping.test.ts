@@ -24,6 +24,11 @@ function reel(overrides: Partial<FeedReel> & Pick<FeedReel, "id">): FeedReel {
     topicClusterId: null,
     isPrimary: null,
     clusterTitle: null,
+    confidence: null,
+    independentCount: null,
+    lifecycleState: null,
+    supersededByClusterId: null,
+    supersedeReason: null,
     ...overrides,
   };
 }

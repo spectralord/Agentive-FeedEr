@@ -60,6 +60,19 @@ export interface FeedReel {
   isPrimary: boolean | null;
   /** Epic 15: the cluster's title, or null if topicClusterId is null. */
   clusterTitle: string | null;
+  /** Epic 11 (ADR 0012): the cluster's corroboration scale (few/some/strong),
+   *  or null if not yet computed or the reel has no cluster. */
+  confidence: "few" | "some" | "strong" | null;
+  /** Epic 11: the independent-source count backing `confidence`, or null. */
+  independentCount: number | null;
+  /** Epic 11: the cluster's lifecycle state (active/deprecated), or null if
+   *  the reel has no cluster. */
+  lifecycleState: "active" | "deprecated" | null;
+  /** Epic 11: id of the cluster that supersedes this one — a *proposal* from
+   *  the freshness pass, not yet confirmed (ADR 0008) — or null. */
+  supersededByClusterId: number | null;
+  /** Epic 11: the grounded reason behind supersededByClusterId, or null. */
+  supersedeReason: string | null;
 }
 
 /** One topic cluster with >= 2 displayed members, bundled for the "N sources
@@ -215,6 +228,11 @@ export async function getReels(opts: GetReelsOptions = {}): Promise<FeedReel[]> 
       topicClusterId: reels.topicClusterId,
       isPrimary: reels.isPrimary,
       clusterTitle: topicClusters.title,
+      confidence: topicClusters.confidence,
+      independentCount: topicClusters.independentCount,
+      lifecycleState: topicClusters.lifecycleState,
+      supersededByClusterId: topicClusters.supersededByClusterId,
+      supersedeReason: topicClusters.supersedeReason,
     })
     .from(reels)
     .innerJoin(rawItems, eq(reels.rawItemId, rawItems.id))
