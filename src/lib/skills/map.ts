@@ -1,16 +1,17 @@
 import { desc, eq, and, inArray, sql } from "drizzle-orm";
 import { db } from "@/db/client";
 import { experienceReports, rawItems, reels, skillNodes } from "@/db/schema";
-import type { SkillNode } from "@/db/schema";
+import type { SkillNode, UserProgress, UserProgressNote } from "@/db/schema";
 import { listActiveNodes } from "@/lib/skilltagger/nodes";
 import {
   DEFAULT_PROGRESS_STATUS,
   getProgress,
   getProgressMap,
+  isProgressStatus,
   listNotesForNode,
+  setProgress,
   type ProgressStatus,
 } from "@/lib/skills/progress";
-import type { UserProgressNote } from "@/db/schema";
 
 /**
  * Read side of the Skill Map (T7.3): active `skill_nodes` (created by Epic
@@ -164,4 +165,27 @@ export async function getNodeDetail(slug: string): Promise<SkillNodeDetail | und
     status: status?.status ?? DEFAULT_PROGRESS_STATUS,
     notes,
   };
+}
+
+/**
+ * Slug-addressed wrapper around `setProgress` for the `/skills/[slug]/progress`
+ * route handler (routes address nodes by slug, like the rest of the UI;
+ * `user_progress` itself is keyed by the numeric skill_node_id). Only
+ * resolves `active` nodes, same restriction as `getNodeDetail`. Returns
+ * `undefined` if the slug/status is invalid so the route can 404/400.
+ */
+export async function setProgressBySlug(
+  slug: string,
+  status: string,
+  note?: string,
+): Promise<UserProgress | undefined> {
+  if (!isProgressStatus(status)) return undefined;
+
+  const [node] = await db()
+    .select({ id: skillNodes.id })
+    .from(skillNodes)
+    .where(and(eq(skillNodes.slug, slug), eq(skillNodes.status, "active")));
+  if (!node) return undefined;
+
+  return setProgress(node.id, status, note);
 }

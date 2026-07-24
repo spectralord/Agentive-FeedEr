@@ -1,11 +1,21 @@
+import { AdoptionLog } from "@/components/AdoptionLog";
+import { SkillMap } from "@/components/SkillMap";
 import { listActiveNodes, listPendingNodes } from "@/lib/skilltagger/nodes";
+import { getSkillMap } from "@/lib/skills/map";
+import { listAdoptionLog } from "@/lib/skills/progress";
 
-// Pending proposals change with every pipeline run — never a frozen
-// build-time snapshot (same reasoning as /overview, /experience).
+// Pending proposals, the Skill Map, and the Adoption-Log all change with
+// every pipeline run / user action — never a frozen build-time snapshot
+// (same reasoning as /overview, /experience).
 export const dynamic = "force-dynamic";
 
 export default async function SkillsPage() {
-  const [pending, active] = await Promise.all([listPendingNodes(), listActiveNodes()]);
+  const [pending, active, themes, adoptionLog] = await Promise.all([
+    listPendingNodes(),
+    listActiveNodes(),
+    getSkillMap(),
+    listAdoptionLog(),
+  ]);
 
   return (
     <div className="mx-auto max-w-xl px-4 py-6">
@@ -79,22 +89,22 @@ export default async function SkillsPage() {
         </ul>
       )}
 
-      {active.length > 0 && (
-        <section className="mt-8">
-          <h2 className="mb-2 text-sm font-medium text-zinc-400">Existing skills ({active.length})</h2>
-          <ul className="flex flex-wrap gap-1.5">
-            {active.map((node) => (
-              <li
-                key={node.id}
-                className="rounded-full border border-zinc-800 px-2.5 py-1 text-xs text-zinc-400"
-                title={node.description}
-              >
-                {node.title}
-              </li>
-            ))}
-          </ul>
-        </section>
-      )}
+      <section className="mt-10">
+        <h2 className="text-sm font-medium text-zinc-400">Skill Map ({active.length})</h2>
+        <p className="mt-1 text-xs text-zinc-500">
+          Confirmed skills, grouped by theme. Click a node for details, content, and to update
+          your status.
+        </p>
+        <SkillMap themes={themes} />
+      </section>
+
+      <section className="mt-10">
+        <h2 className="text-sm font-medium text-zinc-400">Adoption Log ({adoptionLog.length})</h2>
+        <p className="mt-1 text-xs text-zinc-500">
+          What you actually adopted — every status-change note, across all nodes, newest first.
+        </p>
+        <AdoptionLog entries={adoptionLog} />
+      </section>
     </div>
   );
 }

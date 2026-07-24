@@ -39,7 +39,7 @@ export const userProgress = pgTable("user_progress", {
 ```
 - **Verifikation:** Migration grün.
 
-### ☐ T7.2 — Node-Aggregation im Daily-Job
+### ⊘ T7.2 — Node-Aggregation im Daily-Job (superseded by Epic 12, not built — see Abweichungen)
 - Nach dem Enrichment: alle distinct `reels.skill`-Slugs ohne `skill_nodes`-Eintrag →
   **ein** Claude-Call (Batch) erzeugt pro neuem Slug `{ title, theme, description }`;
   Themes aus fester kleiner Liste wählen lassen (z. B. „Claude & Modelle",
@@ -48,7 +48,7 @@ export const userProgress = pgTable("user_progress", {
 - Upsert; bestehende Nodes nie überschreiben.
 - **Verifikation:** Test mit gemocktem Call; zweimaliger Lauf erzeugt keine Duplikate.
 
-### ☐ T7.3 — `/skills`-Seite (Skill-Map)
+### ☑ T7.3 — `/skills`-Seite (Skill-Map)
 - Gruppierung nach `theme` (CSS-Grid-Cluster; **kein** Graph-Layout, keine neue Lib).
 - Node-Kachel: Titel, Reel-Anzahl, Status-Ring (grau=seen/blau=tried/gold=mastered),
   „🧪"-Punkt wenn > 50 % der zugehörigen Reels experimentell.
@@ -60,7 +60,7 @@ export const userProgress = pgTable("user_progress", {
   `user_progress` (eine Wahrheit, keine Doppelbuchung).
 - **Verifikation:** Seed mit 3 Themes/6 Nodes; Statuswechsel + Notizen persistieren.
 
-### ☐ T7.4 — Adoption-Log-Ansicht
+### ☑ T7.4 — Adoption-Log-Ansicht
 - Auf `/skills` ein Tab/Abschnitt „Adoption-Log": alle `user_progress`-Notizen +
   tried-Notizen aus Epic 6, chronologisch — „was habe ich durch das Tool wirklich
   übernommen".
