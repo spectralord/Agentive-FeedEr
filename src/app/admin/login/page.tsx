@@ -13,11 +13,11 @@ export default async function AdminLoginPage({ searchParams }: LoginPageProps) {
   if (!adminEnabled()) {
     return (
       <div className="mx-auto flex min-h-[70dvh] max-w-xl flex-col items-center justify-center gap-3 px-6 text-center">
-        <p className="text-lg font-medium">Admin deaktiviert</p>
+        <p className="text-lg font-medium">Admin disabled</p>
         <p className="text-sm text-zinc-400">
-          Setze die Umgebungsvariable{" "}
+          Set the environment variable{" "}
           <code className="rounded bg-zinc-800 px-1.5 py-0.5 font-mono text-xs">ADMIN_TOKEN</code>{" "}
-          (z. B. in Railway), um den Admin-Bereich zu aktivieren.
+          (e.g. in Railway) to enable the admin area.
         </p>
       </div>
     );
@@ -27,8 +27,8 @@ export default async function AdminLoginPage({ searchParams }: LoginPageProps) {
 
   return (
     <div className="mx-auto flex min-h-[70dvh] max-w-sm flex-col justify-center gap-4 px-6">
-      <h1 className="text-lg font-semibold">Admin-Login</h1>
-      {error && <p className="text-sm text-red-400">Falsches Token.</p>}
+      <h1 className="text-lg font-semibold">Admin login</h1>
+      {error && <p className="text-sm text-red-400">Wrong token.</p>}
       <form method="post" action="/api/admin/login" className="flex flex-col gap-3">
         <input
           type="password"
@@ -41,7 +41,7 @@ export default async function AdminLoginPage({ searchParams }: LoginPageProps) {
           type="submit"
           className="rounded-lg bg-zinc-100 px-3 py-2 text-sm font-medium text-zinc-900 transition-colors hover:bg-white"
         >
-          Anmelden
+          Log in
         </button>
       </form>
     </div>

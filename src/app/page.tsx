@@ -13,18 +13,18 @@ interface FeedPageProps {
 function EmptyState({ hasFilters }: { hasFilters: boolean }) {
   return (
     <div className="mx-auto flex h-dvh max-w-xl flex-col items-center justify-center gap-3 px-6 text-center">
-      <p className="text-lg font-medium">Noch keine Reels</p>
+      <p className="text-lg font-medium">No Reels yet</p>
       {hasFilters ? (
         <p className="text-sm text-zinc-400">
-          Keine Reels für diese Filterkombination.{" "}
+          No Reels for this filter combination.{" "}
           <a href="/" className="underline decoration-zinc-700 hover:text-zinc-300">
-            Filter zurücksetzen
+            Reset filters
           </a>
           .
         </p>
       ) : (
         <p className="text-sm text-zinc-400">
-          Die Pipeline läuft ab Epic 1/2 — Quellen einsammeln mit{" "}
+          The pipeline runs from Epic 1/2 — collect sources with{" "}
           <code className="rounded bg-zinc-800 px-1.5 py-0.5 font-mono text-xs">
             npm run job:daily
           </code>
@@ -62,7 +62,7 @@ export default async function FeedPage({ searchParams }: FeedPageProps) {
                 href={buildLoadMoreHref(params, reels[reels.length - 1].publishedAt.toISOString())}
                 className="rounded-full border border-zinc-700 px-4 py-2 text-sm text-zinc-300 transition-colors hover:bg-zinc-800"
               >
-                Ältere laden
+                Load older
               </Link>
             </div>
           )}

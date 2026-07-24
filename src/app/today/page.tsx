@@ -11,14 +11,14 @@ import { getTodayTopReels } from "@/lib/today";
 export const dynamic = "force-dynamic";
 
 function formatToday(now: Date): string {
-  return new Intl.DateTimeFormat("de-DE", { day: "2-digit", month: "2-digit", year: "numeric" }).format(now);
+  return new Intl.DateTimeFormat("en-GB", { day: "2-digit", month: "2-digit", year: "numeric" }).format(now);
 }
 
 function EmptyState() {
   return (
     <div className="mx-auto flex h-dvh max-w-xl flex-col items-center justify-center gap-3 px-6 text-center">
-      <p className="text-lg font-medium">Heute nichts Wichtiges</p>
-      <p className="text-sm text-zinc-400">— genieß die Ruhe.</p>
+      <p className="text-lg font-medium">Nothing important today</p>
+      <p className="text-sm text-zinc-400">— enjoy the quiet.</p>
     </div>
   );
 }
@@ -37,15 +37,15 @@ export default async function TodayPage() {
   return (
     <>
       <nav
-        aria-label="Heute wichtig"
+        aria-label="Important today"
         className="fixed inset-x-0 top-12 z-10 border-b border-zinc-800/60 bg-zinc-950/70 backdrop-blur"
       >
         <div className="mx-auto flex max-w-xl flex-col gap-0.5 px-4 py-2">
           <div className="flex items-baseline justify-between text-sm">
-            <span className="font-semibold text-zinc-100">Heute wichtig ({reels.length})</span>
+            <span className="font-semibold text-zinc-100">Important today ({reels.length})</span>
             <span className="text-xs text-zinc-400">{formatToday(now)}</span>
           </div>
-          {usedFallback && <p className="text-xs text-amber-300">inkl. gestern</p>}
+          {usedFallback && <p className="text-xs text-amber-300">incl. yesterday</p>}
         </div>
       </nav>
 
@@ -58,12 +58,12 @@ export default async function TodayPage() {
 
         <div className="reel flex min-h-dvh snap-start items-center justify-center [scroll-snap-stop:always]">
           <div className="mx-auto flex max-w-xl flex-col items-center gap-4 px-6 text-center">
-            <p className="text-lg font-medium text-zinc-50">Das war&apos;s für heute ✅</p>
+            <p className="text-lg font-medium text-zinc-50">That&apos;s it for today ✅</p>
             <Link
               href="/"
               className="rounded-full border border-zinc-700 px-4 py-2 text-sm text-zinc-300 transition-colors hover:bg-zinc-800"
             >
-              Zum vollen Feed
+              To the full feed
             </Link>
           </div>
         </div>

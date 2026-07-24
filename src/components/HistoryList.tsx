@@ -10,7 +10,7 @@ function Badge({ children }: { children: React.ReactNode }) {
 }
 
 /**
- * Verlauf (T5.3): a plain chronological scroll list (no scroll-snap, unlike
+ * History (T5.3): a plain chronological scroll list (no scroll-snap, unlike
  * the Reel feed) of compact rows. Derived badges reuse the exact same
  * src/lib/labels.ts functions as ReelCard/SOTA — no duplicated logic.
  */
@@ -18,7 +18,7 @@ export function HistoryList({ reels }: { reels: FeedReel[] }) {
   if (reels.length === 0) {
     return (
       <p className="mx-auto max-w-xl px-4 py-10 text-center text-sm text-zinc-400">
-        Keine Reels für diese Filterkombination.
+        No Reels for this filter combination.
       </p>
     );
   }
@@ -38,8 +38,8 @@ export function HistoryList({ reels }: { reels: FeedReel[] }) {
           <div className="flex flex-wrap items-center gap-1.5">
             <Badge>{CATEGORY_LABELS[reel.category]}</Badge>
             <Badge>{MATURITY_LABELS[reel.maturity]}</Badge>
-            {reel.experimental && <Badge>🧪 experimentell</Badge>}
-            {isNew(reel) && <Badge>🆕 Neu</Badge>}
+            {reel.experimental && <Badge>🧪 experimental</Badge>}
+            {isNew(reel) && <Badge>🆕 New</Badge>}
             {isSota(reel) && <Badge>⭐ SOTA</Badge>}
             {isBestPractice(reel) && <Badge>🛠️ Best Practice</Badge>}
           </div>

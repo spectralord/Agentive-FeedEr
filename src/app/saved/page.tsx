@@ -11,7 +11,7 @@ export default async function SavedPage() {
   return (
     <div className="pb-16 pt-4">
       <div className="mx-auto max-w-xl px-4">
-        <h1 className="text-sm font-semibold text-zinc-100">🔖 Gespeichert ({reels.length})</h1>
+        <h1 className="text-sm font-semibold text-zinc-100">🔖 Saved ({reels.length})</h1>
       </div>
       <SavedList reels={reels} />
     </div>

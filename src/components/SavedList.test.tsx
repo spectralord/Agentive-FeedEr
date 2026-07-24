@@ -28,14 +28,14 @@ describe("SavedList", () => {
     const html = renderToStaticMarkup(<SavedList reels={[baseSavedReel]} />);
 
     expect(html).toContain("Ein gespeichertes Item");
-    expect(html).toContain("Gespeichert vor 2 Tagen");
+    expect(html).toContain("Saved 2 days ago");
     expect(html).toContain("some-source");
     expect(html).toContain("Tooling");
-    expect(html).toContain("Etabliert");
+    expect(html).toContain("Established");
     expect(html).toContain("R 90");
     expect(html).toContain("Q 90");
     expect(html).toContain('action="/saved/1/remove"');
-    expect(html).toContain("Entfernen");
+    expect(html).toContain("Remove");
   });
 
   it("has no 'tried/erledigt' checkbox (revised scope, epic-6)", () => {
@@ -46,6 +46,6 @@ describe("SavedList", () => {
 
   it("renders an empty-state message when nothing is saved", () => {
     const html = renderToStaticMarkup(<SavedList reels={[]} />);
-    expect(html).toContain("Noch nichts gespeichert");
+    expect(html).toContain("Nothing saved yet");
   });
 });

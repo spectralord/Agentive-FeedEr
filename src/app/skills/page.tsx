@@ -10,15 +10,15 @@ export default async function SkillsPage() {
   return (
     <div className="mx-auto max-w-xl px-4 py-6">
       <h1 className="text-lg font-semibold text-zinc-100">
-        Neue Skills {pending.length > 0 && `(${pending.length})`}
+        New Skills {pending.length > 0 && `(${pending.length})`}
       </h1>
       <p className="mt-1 text-xs text-zinc-500">
-        Vorschläge des SkillTaggers (Match-or-Propose) — anlegen, in einen bestehenden Skill
-        mergen oder verwerfen. Bestätigte Skills ordnet der nächste Lauf automatisch zu.
+        SkillTagger proposals (Match-or-Propose) — create, merge into an existing skill, or
+        discard. Confirmed skills are assigned automatically on the next run.
       </p>
 
       {pending.length === 0 ? (
-        <p className="mt-6 text-sm text-zinc-500">Keine offenen Vorschläge.</p>
+        <p className="mt-6 text-sm text-zinc-500">No open proposals.</p>
       ) : (
         <ul className="mt-4 flex flex-col gap-3">
           {pending.map((node) => (
@@ -38,7 +38,7 @@ export default async function SkillsPage() {
                     type="submit"
                     className="rounded-full bg-zinc-100 px-3 py-1.5 text-xs font-medium text-zinc-900 transition-colors hover:bg-zinc-300"
                   >
-                    Anlegen
+                    Create
                   </button>
                 </form>
 
@@ -51,7 +51,7 @@ export default async function SkillsPage() {
                       className="rounded-full border border-zinc-700 bg-zinc-900 px-2 py-1.5 text-xs text-zinc-300"
                     >
                       <option value="" disabled>
-                        In Skill mergen…
+                        Merge into skill…
                       </option>
                       {active.map((a) => (
                         <option key={a.id} value={a.slug}>
@@ -63,14 +63,14 @@ export default async function SkillsPage() {
                       type="submit"
                       className="rounded-full border border-zinc-700 px-3 py-1.5 text-xs text-zinc-200 transition-colors hover:bg-zinc-800"
                     >
-                      Mergen
+                      Merge
                     </button>
                   </form>
                 )}
 
                 <form method="post" action={`/skills/${node.id}/discard`}>
                   <button type="submit" className="text-xs text-zinc-500 hover:text-red-400">
-                    Verwerfen
+                    Discard
                   </button>
                 </form>
               </div>
@@ -81,7 +81,7 @@ export default async function SkillsPage() {
 
       {active.length > 0 && (
         <section className="mt-8">
-          <h2 className="mb-2 text-sm font-medium text-zinc-400">Bestehende Skills ({active.length})</h2>
+          <h2 className="mb-2 text-sm font-medium text-zinc-400">Existing skills ({active.length})</h2>
           <ul className="flex flex-wrap gap-1.5">
             {active.map((node) => (
               <li

@@ -18,9 +18,9 @@ export const LIFECYCLE_STATES = ["active", "deprecated", "archived"] as const;
 export type LifecycleState = (typeof LIFECYCLE_STATES)[number];
 
 export const AUTHOR_TYPE_LABELS: Record<AuthorType, string> = {
-  own: "Eigen",
-  curated: "Kuratiert",
-  colleague: "Kolleg:in",
+  own: "Own",
+  curated: "Curated",
+  colleague: "Colleague",
 };
 
 export const DEFAULT_REPORT_LIMIT = 200;

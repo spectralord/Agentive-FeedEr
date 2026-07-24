@@ -38,16 +38,16 @@ export default async function ExperiencePage({ searchParams }: ExperiencePagePro
       <div className="mx-auto max-w-xl px-4 pt-4">
         <div className="flex items-center justify-between gap-2">
           <div>
-            <h1 className="text-sm font-semibold text-zinc-100">📓 Erfahrung</h1>
+            <h1 className="text-sm font-semibold text-zinc-100">📓 Experience</h1>
             <p className="mt-0.5 text-xs text-zinc-500">
-              Gelebte Erfahrung, keine verifizierten News — getrennt vom Reel-Feed.
+              Lived experience, not verified news — separate from the Reel feed.
             </p>
           </div>
           <Link
             href="/experience/new"
             className="shrink-0 rounded-full bg-zinc-100 px-3 py-1.5 text-xs font-medium text-zinc-900 transition-colors hover:bg-zinc-300"
           >
-            + Neuer Bericht
+            + New report
           </Link>
         </div>
       </div>

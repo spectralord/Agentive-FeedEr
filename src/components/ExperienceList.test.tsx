@@ -25,7 +25,7 @@ describe("ExperienceList", () => {
     const html = renderToStaticMarkup(<ExperienceList reports={[baseReport]} />);
     expect(html).toContain("Ein Erfahrungsbericht");
     expect(html).toContain("Ich");
-    expect(html).toContain("Eigen");
+    expect(html).toContain("Own");
     expect(html).toContain("Normaler Text.");
   });
 
@@ -33,10 +33,10 @@ describe("ExperienceList", () => {
     const withStar = renderToStaticMarkup(
       <ExperienceList reports={[{ ...baseReport, important: true }]} />,
     );
-    expect(withStar).toContain("⭐ wichtig");
+    expect(withStar).toContain("⭐ important");
 
     const without = renderToStaticMarkup(<ExperienceList reports={[baseReport]} />);
-    expect(without).not.toContain("⭐ wichtig");
+    expect(without).not.toContain("⭐ important");
   });
 
   it("shows a deprecated badge with reason and superseded-by link", () => {
@@ -52,24 +52,24 @@ describe("ExperienceList", () => {
         ]}
       />,
     );
-    expect(html).toContain("⚠️ veraltet");
+    expect(html).toContain("⚠️ deprecated");
     expect(html).toContain("durch neueren Bericht ersetzt");
     expect(html).toContain("/experience/42/edit");
-    expect(html).toContain("ersetzt durch #42");
+    expect(html).toContain("superseded by #42");
   });
 
   it("shows an archived badge", () => {
     const html = renderToStaticMarkup(
       <ExperienceList reports={[{ ...baseReport, lifecycleState: "archived" }]} />,
     );
-    expect(html).toContain("🗄️ archiviert");
+    expect(html).toContain("🗄️ archived");
   });
 
   it("shows deprecate/archive actions for an active report (T9.6)", () => {
     const html = renderToStaticMarkup(<ExperienceList reports={[baseReport]} />);
-    expect(html).toContain("Als veraltet markieren");
-    expect(html).toContain("Archivieren");
-    expect(html).not.toContain("Reaktivieren");
+    expect(html).toContain("Mark as deprecated");
+    expect(html).toContain("Archive");
+    expect(html).not.toContain("Reactivate");
     expect(html).toContain(`action="/experience/${baseReport.id}/lifecycle"`);
   });
 
@@ -77,23 +77,23 @@ describe("ExperienceList", () => {
     const html = renderToStaticMarkup(
       <ExperienceList reports={[{ ...baseReport, lifecycleState: "deprecated" }]} />,
     );
-    expect(html).toContain("Reaktivieren");
-    expect(html).toContain("Archivieren");
-    expect(html).not.toContain("Als veraltet markieren");
+    expect(html).toContain("Reactivate");
+    expect(html).toContain("Archive");
+    expect(html).not.toContain("Mark as deprecated");
   });
 
   it("shows only reactivate for an archived report", () => {
     const html = renderToStaticMarkup(
       <ExperienceList reports={[{ ...baseReport, lifecycleState: "archived" }]} />,
     );
-    expect(html).toContain("Reaktivieren");
-    expect(html).not.toContain("Archivieren");
-    expect(html).not.toContain("Als veraltet markieren");
+    expect(html).toContain("Reactivate");
+    expect(html).not.toContain("Archive");
+    expect(html).not.toContain("Mark as deprecated");
   });
 
   it("renders an empty-state message for no reports", () => {
     const html = renderToStaticMarkup(<ExperienceList reports={[]} />);
-    expect(html).toContain("Keine Berichte für diese Filterkombination.");
+    expect(html).toContain("No reports for this filter combination.");
   });
 
   it("XSS sanity: a <script> tag in the body is rendered as escaped text, never executed (T9.7)", () => {

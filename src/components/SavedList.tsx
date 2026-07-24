@@ -18,7 +18,7 @@ export function SavedList({ reels }: { reels: SavedReel[] }) {
   if (reels.length === 0) {
     return (
       <p className="mx-auto max-w-xl px-4 py-10 text-center text-sm text-zinc-400">
-        Noch nichts gespeichert — tippe 🔖 auf einem Reel.
+        Nothing saved yet — tap 🔖 on a Reel.
       </p>
     );
   }
@@ -28,7 +28,7 @@ export function SavedList({ reels }: { reels: SavedReel[] }) {
       {reels.map((reel) => (
         <li key={reel.id} className="flex flex-col gap-1.5 py-3">
           <div className="flex items-center gap-2 text-xs text-zinc-400">
-            <span>Gespeichert {formatRelativeTime(reel.savedAt)}</span>
+            <span>Saved {formatRelativeTime(reel.savedAt)}</span>
             <span aria-hidden="true">·</span>
             <span>{reel.sourceName}</span>
           </div>
@@ -36,7 +36,7 @@ export function SavedList({ reels }: { reels: SavedReel[] }) {
           <div className="flex flex-wrap items-center gap-1.5">
             <Badge>{CATEGORY_LABELS[reel.category]}</Badge>
             <Badge>{MATURITY_LABELS[reel.maturity]}</Badge>
-            {reel.experimental && <Badge>🧪 experimentell</Badge>}
+            {reel.experimental && <Badge>🧪 experimental</Badge>}
           </div>
 
           <a
@@ -57,7 +57,7 @@ export function SavedList({ reels }: { reels: SavedReel[] }) {
                 type="submit"
                 className="rounded-full border border-zinc-700 px-3 py-1 text-xs text-zinc-300 transition-colors hover:bg-zinc-800"
               >
-                Entfernen
+                Remove
               </button>
             </form>
           </div>

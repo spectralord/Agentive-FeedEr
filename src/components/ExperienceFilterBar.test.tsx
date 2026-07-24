@@ -22,18 +22,18 @@ describe("buildExperienceHref", () => {
 describe("ExperienceFilterBar", () => {
   it("highlights the active author_type chip and default toggle labels", () => {
     const html = renderToStaticMarkup(<ExperienceFilterBar current={{}} />);
-    expect(html).toContain("Alle");
-    expect(html).toContain("Eigen");
-    expect(html).toContain("Kuratiert");
-    expect(html).toContain("veraltete zeigen");
-    expect(html).toContain("archivierte zeigen");
+    expect(html).toContain("All");
+    expect(html).toContain("Own");
+    expect(html).toContain("Curated");
+    expect(html).toContain("deprecated show");
+    expect(html).toContain("archived show");
   });
 
   it("flips toggle labels to 'ausblenden' when active", () => {
     const html = renderToStaticMarkup(
       <ExperienceFilterBar current={{ deprecated: "1", archived: "1" }} />,
     );
-    expect(html).toContain("veraltete ausblenden");
-    expect(html).toContain("archivierte ausblenden");
+    expect(html).toContain("deprecated hide");
+    expect(html).toContain("archived hide");
   });
 });

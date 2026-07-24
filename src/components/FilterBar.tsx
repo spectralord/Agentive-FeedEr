@@ -36,7 +36,7 @@ export function buildFilterHref(
 }
 
 /**
- * Builds the "Ältere laden" href: keeps category/new/weak from `current`
+ * Builds the "Load older" href: keeps category/new/weak from `current`
  * and sets `before` to the given cursor (T3.5 — server-side pagination).
  */
 export function buildLoadMoreHref(current: FilterState, beforeIso: string): string {
@@ -60,7 +60,7 @@ export function FilterBar({ current }: { current: FilterState }) {
 
   return (
     <nav
-      aria-label="Feed-Filter"
+      aria-label="Feed filter"
       className="fixed inset-x-0 top-12 z-10 border-b border-zinc-800/60 bg-zinc-950/70 backdrop-blur"
     >
       <div className="mx-auto flex max-w-xl items-center gap-1.5 overflow-x-auto px-4 py-2 text-sm">
@@ -80,7 +80,7 @@ export function FilterBar({ current }: { current: FilterState }) {
           href={buildFilterHref(current, { new: isNew ? undefined : "1" })}
           className={chipClass(isNew)}
         >
-          🆕 Neu
+          🆕 New
         </Link>
         <Link
           href={buildFilterHref(current, { weak: isWeak ? undefined : "1" })}
@@ -90,7 +90,7 @@ export function FilterBar({ current }: { current: FilterState }) {
               : "bg-zinc-800 text-zinc-300 hover:bg-zinc-700"
           }`}
         >
-          Schwaches Signal {isWeak ? "ausblenden" : "zeigen"}
+          Weak signal {isWeak ? "hide" : "show"}
         </Link>
       </div>
     </nav>

@@ -79,4 +79,6 @@ Der Prozess läuft auf **drei Ebenen**, jede mit Auslöser / Owner / Artefakt:
 
 - Glossar: `CONTEXT.md` · ADRs: `docs/adr/` · Design: `docs/specs/` ·
   Ausführbarer Entwicklungsplan: `docs/plan/README.md` (Epics 0–8 + Vision-Backlog).
-- Sprache: UI-Texte und Doku Deutsch, Code/Kommentare/Commits Englisch.
+- Sprache: **alles Englisch** — UI-Texte, generierter Content, Doku, Code/Kommentare/Commits
+  (umgestellt 2026-07-24, T3). Domain-Glossar: `CONTEXT.en.md`. Bestehende deutsche Doku
+  (ADRs/Epics) wird bei Gelegenheit nachgezogen; neue Doku direkt auf Englisch.

@@ -15,7 +15,7 @@ const geistMono = Geist_Mono({
 
 export const metadata: Metadata = {
   title: "Agentive-FeedEr",
-  description: "KI-News als Reels — kuratiert, aufbereitet, anwendbar.",
+  description: "AI news as Reels — curated, prepared, actionable.",
 };
 
 export const viewport: Viewport = {
@@ -23,11 +23,11 @@ export const viewport: Viewport = {
 };
 
 const navItems = [
-  { href: "/today", label: "Heute" },
+  { href: "/today", label: "Today" },
   { href: "/", label: "Feed" },
-  { href: "/overview", label: "Übersicht" },
-  { href: "/saved", label: "Gespeichert" },
-  { href: "/experience", label: "Erfahrung" },
+  { href: "/overview", label: "Overview" },
+  { href: "/saved", label: "Saved" },
+  { href: "/experience", label: "Experience" },
   { href: "/skills", label: "Skills" },
   { href: "/admin", label: "Admin" },
 ];
@@ -39,7 +39,7 @@ export default function RootLayout({
 }>) {
   return (
     <html
-      lang="de"
+      lang="en"
       className={`${geistSans.variable} ${geistMono.variable} h-full antialiased`}
     >
       <body className="min-h-full bg-zinc-950 text-zinc-100">

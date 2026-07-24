@@ -37,13 +37,13 @@ describe("ReelCard", () => {
     expect(html).toContain("simon-willison");
     expect(html).toContain("Ein Titel");
     expect(html).toContain("Eine Zusammenfassung.");
-    expect(html).toContain("Beispiel (aus der Quelle)");
+    expect(html).toContain("Example (from the source)");
     expect(html).toContain("const x = 42;");
-    expect(html).toContain("➜ Für dich:");
+    expect(html).toContain("➜ For you:");
     expect(html).toContain("Probiere das Feature");
-    expect(html).toContain("5-Min-Test");
-    expect(html).toContain("🧪 experimentell");
-    expect(html).toContain("🆕 Neu");
+    expect(html).toContain("5-min test");
+    expect(html).toContain("🧪 experimental");
+    expect(html).toContain("🆕 New");
     expect(html).toContain("R 82");
     expect(html).toContain("Q 74");
     expect(html).toContain('href="https://example.com/item"');
@@ -69,10 +69,10 @@ describe("ReelCard", () => {
     const html = renderToStaticMarkup(<ReelCard reel={reel} />);
 
     expect(html).toContain("Ein Titel");
-    expect(html).not.toContain("Beispiel (aus der Quelle)");
-    expect(html).not.toContain("➜ Für dich:");
-    expect(html).not.toContain("🧪 experimentell");
-    expect(html).not.toContain("🆕 Neu");
+    expect(html).not.toContain("Example (from the source)");
+    expect(html).not.toContain("➜ For you:");
+    expect(html).not.toContain("🧪 experimental");
+    expect(html).not.toContain("🆕 New");
     expect(html).toContain("R 82");
     expect(html).toContain("Q 74");
   });

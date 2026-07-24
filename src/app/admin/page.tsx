@@ -27,7 +27,7 @@ async function loadStats() {
 }
 
 function fmtDuration(run: PipelineRun): string {
-  if (!run.finishedAt) return "läuft…";
+  if (!run.finishedAt) return "running…";
   const ms = run.finishedAt.getTime() - run.startedAt.getTime();
   return ms < 1000 ? `${ms} ms` : `${(ms / 1000).toFixed(1)} s`;
 }
@@ -42,16 +42,16 @@ function runSummary(run: PipelineRun): string {
   const parts: string[] = [];
   if (s.ingestion) {
     const failed = s.ingestion.perSource.filter((p) => p.error).map((p) => p.name);
-    parts.push(`+${s.ingestion.totalInserted} Items${failed.length ? ` · Quellen-Fehler: ${failed.join(", ")}` : ""}`);
+    parts.push(`+${s.ingestion.totalInserted} items${failed.length ? ` · source errors: ${failed.join(", ")}` : ""}`);
   }
   if (s.enrichment) parts.push(`Enrich ${s.enrichment.succeeded}✓/${s.enrichment.failed}✗`);
   if (s.skillTagging) {
     parts.push(
-      `Skills ${s.skillTagging.matched} Match/${s.skillTagging.proposed} Vorschlag${s.skillTagging.failed ? `/${s.skillTagging.failed}✗` : ""}`,
+      `Skills ${s.skillTagging.matched} match/${s.skillTagging.proposed} proposed${s.skillTagging.failed ? `/${s.skillTagging.failed}✗` : ""}`,
     );
   }
-  if (s.feedback?.ran) parts.push(`Feedback-Summary aktualisiert (${s.feedback.bulletCount} Punkte)`);
-  if (run.error) parts.push(`Fehler: ${run.error}`);
+  if (s.feedback?.ran) parts.push(`Feedback summary updated (${s.feedback.bulletCount} bullets)`);
+  if (run.error) parts.push(`Error: ${run.error}`);
   return parts.join(" · ") || "—";
 }
 
@@ -98,42 +98,42 @@ export default async function AdminPage({ searchParams }: AdminPageProps) {
       <div className="mb-4 flex items-center justify-between">
         <h1 className="text-lg font-semibold">Admin</h1>
         <form method="post" action="/api/admin/logout">
-          <button type="submit" className="text-xs text-zinc-500 hover:text-zinc-300">Abmelden</button>
+          <button type="submit" className="text-xs text-zinc-500 hover:text-zinc-300">Log out</button>
         </form>
       </div>
 
-      {started && <p className="mb-3 text-sm text-emerald-300">Lauf #{started} gestartet.</p>}
-      {busy && <p className="mb-3 text-sm text-amber-300">Es läuft bereits ein Durchlauf — bitte warten.</p>}
+      {started && <p className="mb-3 text-sm text-emerald-300">Run #{started} started.</p>}
+      {busy && <p className="mb-3 text-sm text-amber-300">A run is already in progress — please wait.</p>}
 
       <section className="mb-6">
         <h2 className="mb-2 text-sm font-medium text-zinc-400">System</h2>
         <div className="grid grid-cols-2 gap-2 sm:grid-cols-3">
           <Tile label="Raw Items" value={String(stats.rawTotal)} />
           <Tile label="Reels" value={String(stats.reelTotal)} />
-          <Tile label="Unangereichert" value={String(stats.unenriched)} />
-          <Tile label="Enrich-Fehler" value={String(stats.errored)} warn={stats.errored > 0} />
-          <Tile label="ANTHROPIC_API_KEY" value={keySet ? "gesetzt" : "fehlt"} warn={!keySet} />
+          <Tile label="Unenriched" value={String(stats.unenriched)} />
+          <Tile label="Enrich errors" value={String(stats.errored)} warn={stats.errored > 0} />
+          <Tile label="ANTHROPIC_API_KEY" value={keySet ? "set" : "missing"} warn={!keySet} />
         </div>
       </section>
 
       <section className="mb-6">
-        <h2 className="mb-2 text-sm font-medium text-zinc-400">Pipeline ausführen</h2>
+        <h2 className="mb-2 text-sm font-medium text-zinc-400">Run pipeline</h2>
         <div className="flex flex-wrap gap-2">
-          <RunButton mode="full" label="Voll ausführen" />
-          <RunButton mode="ingestion" label="Nur Ingestion" />
-          <RunButton mode="enrichment" label="Nur Enrichment" />
+          <RunButton mode="full" label="Run full" />
+          <RunButton mode="ingestion" label="Ingestion only" />
+          <RunButton mode="enrichment" label="Enrichment only" />
         </div>
         {!keySet && (
           <p className="mt-2 text-xs text-amber-300">
-            Ohne <code className="font-mono">ANTHROPIC_API_KEY</code> läuft nur Ingestion sinnvoll; Enrichment schlägt fehl.
+            Without <code className="font-mono">ANTHROPIC_API_KEY</code> only ingestion is useful; enrichment fails.
           </p>
         )}
       </section>
 
       <section>
-        <h2 className="mb-2 text-sm font-medium text-zinc-400">Letzte Läufe</h2>
+        <h2 className="mb-2 text-sm font-medium text-zinc-400">Recent runs</h2>
         {runs.length === 0 ? (
-          <p className="text-sm text-zinc-500">Noch keine Läufe.</p>
+          <p className="text-sm text-zinc-500">No runs yet.</p>
         ) : (
           <ul className="flex flex-col gap-2">
             {runs.map((run) => (
@@ -143,7 +143,7 @@ export default async function AdminPage({ searchParams }: AdminPageProps) {
                     #{run.id} {run.status} · {run.trigger}/{run.mode}
                   </span>
                   <span className="text-xs text-zinc-500">
-                    {run.startedAt.toLocaleString("de-DE")} · {fmtDuration(run)}
+                    {run.startedAt.toLocaleString("en-GB")} · {fmtDuration(run)}
                   </span>
                 </div>
                 <div className="mt-1 text-xs text-zinc-400">{runSummary(run)}</div>

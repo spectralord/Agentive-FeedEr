@@ -7,10 +7,10 @@ import {
 } from "./prompt";
 
 describe("feedback prompt", () => {
-  it("system prompt requires the tool call and German mag/überspringt bullets", () => {
+  it("system prompt requires the tool call and English likes/skips bullets", () => {
     expect(FEEDBACK_SYSTEM_PROMPT).toContain(FEEDBACK_TOOL_NAME);
-    expect(FEEDBACK_SYSTEM_PROMPT).toContain("mag: …");
-    expect(FEEDBACK_SYSTEM_PROMPT).toContain("überspringt: …");
+    expect(FEEDBACK_SYSTEM_PROMPT).toContain("likes: …");
+    expect(FEEDBACK_SYSTEM_PROMPT).toContain("skips: …");
   });
 
   it("user prompt lists each interaction with title/category/skill, newest first order preserved", () => {
@@ -19,10 +19,10 @@ describe("feedback prompt", () => {
       { type: "hide", createdAt: new Date("2026-07-22T10:00:00Z"), title: "Item B", category: "industry-news", skill: null },
     ]);
 
-    expect(prompt).toContain("gespeichert");
+    expect(prompt).toContain("saved");
     expect(prompt).toContain("Item A");
     expect(prompt).toContain("mcp-servers");
-    expect(prompt).toContain("ausgeblendet");
+    expect(prompt).toContain("hidden");
     expect(prompt).toContain("Item B");
     expect(prompt).toContain("—"); // null skill rendered as em-dash
     expect(prompt.indexOf("Item A")).toBeLessThan(prompt.indexOf("Item B"));

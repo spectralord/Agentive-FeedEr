@@ -46,17 +46,17 @@ describe("OverviewFilterBar", () => {
       <OverviewFilterBar current={{ period: "30", category: "tooling", maturity: "established" }} />,
     );
 
-    expect(html).toContain("30 Tage");
+    expect(html).toContain("30 days");
     expect(html).toContain("Tooling");
-    expect(html).toContain("Etabliert");
-    expect(html).toContain("Relevanz ≥ 70");
-    expect(html).toContain("🛠️ Nur Best Practice");
-    expect(html).toContain("experimentell ausblenden"); // default: shown, click hides
+    expect(html).toContain("Established");
+    expect(html).toContain("Relevance ≥ 70");
+    expect(html).toContain("🛠️ Best Practice only");
+    expect(html).toContain("experimental hide"); // default: shown, click hides
   });
 
-  it("shows 'experimentell zeigen' when experimental=0 (currently hidden)", () => {
+  it("shows 'experimental show' when experimental=0 (currently hidden)", () => {
     const html = renderToStaticMarkup(<OverviewFilterBar current={{ experimental: "0" }} />);
-    expect(html).toContain("experimentell zeigen");
+    expect(html).toContain("experimental show");
     expect(html).toContain('href="/overview"'); // clicking removes the param, back to default (shown)
   });
 

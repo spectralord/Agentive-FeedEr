@@ -27,7 +27,7 @@ export function ExperienceList({ reports }: { reports: ExperienceReport[] }) {
   if (reports.length === 0) {
     return (
       <p className="mx-auto max-w-xl px-4 py-10 text-center text-sm text-zinc-400">
-        Keine Berichte für diese Filterkombination.
+        No reports for this filter combination.
       </p>
     );
   }
@@ -43,9 +43,9 @@ export function ExperienceList({ reports }: { reports: ExperienceReport[] }) {
             <span aria-hidden="true">·</span>
             <span>{report.authorLabel}</span>
             <Badge>{AUTHOR_TYPE_LABELS[report.authorType]}</Badge>
-            {report.important && <Badge>⭐ wichtig</Badge>}
-            {report.lifecycleState === "deprecated" && <Badge tone="amber">⚠️ veraltet</Badge>}
-            {report.lifecycleState === "archived" && <Badge>🗄️ archiviert</Badge>}
+            {report.important && <Badge>⭐ important</Badge>}
+            {report.lifecycleState === "deprecated" && <Badge tone="amber">⚠️ deprecated</Badge>}
+            {report.lifecycleState === "archived" && <Badge>🗄️ archived</Badge>}
           </div>
 
           <Link
@@ -57,7 +57,7 @@ export function ExperienceList({ reports }: { reports: ExperienceReport[] }) {
 
           {report.lifecycleState !== "active" && report.lifecycleReason && (
             <p className="text-xs text-amber-300">
-              Grund: {report.lifecycleReason}
+              Reason: {report.lifecycleReason}
               {report.supersededByReportId !== null && (
                 <>
                   {" "}
@@ -66,7 +66,7 @@ export function ExperienceList({ reports }: { reports: ExperienceReport[] }) {
                     href={`/experience/${report.supersededByReportId}/edit`}
                     className="underline"
                   >
-                    ersetzt durch #{report.supersededByReportId}
+                    superseded by #{report.supersededByReportId}
                   </Link>
                 </>
               )}
@@ -103,21 +103,21 @@ function LifecycleActions({ report }: { report: ExperienceReport }) {
           className="flex flex-wrap items-center gap-1"
         >
           <input type="hidden" name="state" value="deprecated" />
-          <input type="text" name="reason" placeholder="Grund (optional)" className={actionInputClass} />
+          <input type="text" name="reason" placeholder="Reason (optional)" className={actionInputClass} />
           <input
             type="number"
             name="supersededByReportId"
-            placeholder="ersetzt durch #"
+            placeholder="superseded by #"
             className={actionInputClass}
           />
           <button type="submit" className={actionButtonClass}>
-            Als veraltet markieren
+            Mark as deprecated
           </button>
         </form>
         <form action={`/experience/${report.id}/lifecycle`} method="post">
           <input type="hidden" name="state" value="archived" />
           <button type="submit" className={actionButtonClass}>
-            Archivieren
+            Archive
           </button>
         </form>
       </div>
@@ -130,13 +130,13 @@ function LifecycleActions({ report }: { report: ExperienceReport }) {
         <form action={`/experience/${report.id}/lifecycle`} method="post">
           <input type="hidden" name="state" value="active" />
           <button type="submit" className={actionButtonClass}>
-            Reaktivieren
+            Reactivate
           </button>
         </form>
         <form action={`/experience/${report.id}/lifecycle`} method="post">
           <input type="hidden" name="state" value="archived" />
           <button type="submit" className={actionButtonClass}>
-            Archivieren
+            Archive
           </button>
         </form>
       </div>
@@ -148,7 +148,7 @@ function LifecycleActions({ report }: { report: ExperienceReport }) {
       <form action={`/experience/${report.id}/lifecycle`} method="post">
         <input type="hidden" name="state" value="active" />
         <button type="submit" className={actionButtonClass}>
-          Reaktivieren
+          Reactivate
         </button>
       </form>
     </div>

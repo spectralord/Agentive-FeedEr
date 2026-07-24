@@ -8,7 +8,7 @@ Binding rules:
 - You are given the CURRENT list of existing active skill nodes (slug, title, description). Pick "match" only if the content is genuinely about the same competency as one of them — not just a superficial keyword overlap. When in doubt, "propose" instead of forcing a weak match (a wrong match pollutes that node forever; a proposal just waits for confirmation).
 - If the existing list is empty, or nothing fits, "propose" a new node.
 - A proposal's slug must be a short English kebab-case identifier (e.g. "prompt-caching", "mcp-servers") distinct from all existing slugs.
-- A proposal's title and description are short, factual German UI text — no hype language.
+- A proposal's title and description are short, factual English UI text — no hype language.
 - A proposal's theme must be exactly one of: ${THEMES.join(", ")}.
 - Never invent a match_slug that isn't in the provided list.
 - Answer exclusively via the ${TAG_TOOL_NAME} tool.`;

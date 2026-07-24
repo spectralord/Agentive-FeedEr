@@ -77,7 +77,7 @@ describe("SotaSection", () => {
     const html = renderToStaticMarkup(<SotaSection groups={groupSota([oldReel])} />);
 
     expect(html).toContain("Uraltes SOTA-Reel");
-    expect(html).toContain("⭐ Aktueller State of the Art");
+    expect(html).toContain("⭐ Current State of the Art");
     expect(html).toContain("Erster Satz."); // first-sentence summary excerpt
     expect(html).not.toContain("Zweiter Satz.");
     expect(html).toContain('href="/?category=tooling"');
@@ -85,6 +85,6 @@ describe("SotaSection", () => {
 
   it("shows an empty-state message when there are no SOTA groups", () => {
     const html = renderToStaticMarkup(<SotaSection groups={[]} />);
-    expect(html).toContain("Noch keine SOTA-Reels.");
+    expect(html).toContain("No SOTA Reels yet.");
   });
 });
