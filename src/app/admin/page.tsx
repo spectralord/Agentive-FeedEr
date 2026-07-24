@@ -39,6 +39,11 @@ function runSummary(run: PipelineRun): string {
     ingestion?: { totalInserted: number; perSource: { name: string; error?: string }[] };
     enrichment?: { processed: number; succeeded: number; failed: number };
     skillTagging?: { processed: number; matched: number; proposed: number; failed: number };
+    clustering?: { processed: number; matched: number; proposed: number; failed: number };
+    knowledgeCheck?: {
+      confidence: unknown[];
+      freshness: { groupsChecked: number; supersededFound: number; failed: number } | null;
+    };
     feedback?: { ran: boolean; newInteractions: number; bulletCount?: number };
   };
   const parts: string[] = [];
@@ -50,6 +55,17 @@ function runSummary(run: PipelineRun): string {
   if (s.skillTagging) {
     parts.push(
       `Skills ${s.skillTagging.matched} match/${s.skillTagging.proposed} proposed${s.skillTagging.failed ? `/${s.skillTagging.failed}✗` : ""}`,
+    );
+  }
+  if (s.clustering) {
+    parts.push(
+      `Clusters ${s.clustering.matched} match/${s.clustering.proposed} proposed${s.clustering.failed ? `/${s.clustering.failed}✗` : ""}`,
+    );
+  }
+  if (s.knowledgeCheck) {
+    const f = s.knowledgeCheck.freshness;
+    parts.push(
+      `Knowledge check: ${s.knowledgeCheck.confidence.length} clusters scored${f ? ` · freshness ${f.supersededFound} superseded${f.failed ? `/${f.failed}✗` : ""}` : ""}`,
     );
   }
   if (s.feedback?.ran) parts.push(`Feedback summary updated (${s.feedback.bulletCount} bullets)`);
