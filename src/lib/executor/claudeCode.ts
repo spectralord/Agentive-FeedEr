@@ -43,9 +43,9 @@ export function buildClaudeCodePrompt(opts: StructuredCallOptions): string {
     "",
     opts.user,
     "",
-    "Antworte AUSSCHLIESSLICH mit einem einzigen JSON-Objekt, das exakt diesem JSON-Schema entspricht:",
+    "Respond with EXACTLY one JSON object that matches this JSON schema:",
     JSON.stringify(opts.inputSchema),
-    'Wo die Quelle etwas nicht hergibt, nutze null statt zu erfinden. Gib nur das JSON aus — kein weiterer Text, keine Code-Fences.',
+    "Where the source does not support a value, use null instead of inventing. Output only the JSON — no other text, no code fences.",
   ].join("\n");
 }
 

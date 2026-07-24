@@ -22,7 +22,7 @@ describe("buildClaudeCodePrompt", () => {
     expect(p).toContain("SYSTEM-PROMPT");
     expect(p).toContain("USER-PROMPT");
     expect(p).toContain('"summary"');
-    expect(p).toMatch(/null statt zu erfinden/);
+    expect(p).toMatch(/use null instead of inventing/);
   });
 });
 

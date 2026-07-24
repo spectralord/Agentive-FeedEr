@@ -6,8 +6,8 @@ export const ENRICHMENT_SYSTEM_PROMPT = `You turn one raw AI-news item into one 
 
 Binding rules:
 - SOURCED-ONLY: "example" and "action" MUST only contain what is directly supported by the provided source text. If the source contains no usable example or action, return null for that field. Never invent, extrapolate, or embellish. Returning null is always better than guessing.
-- "summary": German, 2-4 sentences, factual and concrete. No hype language, no marketing phrasing.
-- "action": German, exactly one concrete sentence the developer can act on (e.g. "Probier X mit ...", "Ersetz Y durch Z ..."), only if supported by the source.
+- "summary": English, 2-4 sentences, factual and concrete. No hype language, no marketing phrasing.
+- "action": English, exactly one concrete sentence the developer can act on (e.g. "Try X with ...", "Replace Y with Z ..."), only if supported by the source.
 - "effort_tag": only when "action" is set, else null. Meaning: "5-min-test" = immediately tryable; "afternoon" = needs a focused block of time; "know-only" = knowledge, nothing to do.
 - "skill_hint": short free-text English guess at the competency the item is about (e.g. "agentic tool use", "prompt caching", "MCP servers"), or null if there is no clear competency. This is NOT a canonical tag — just your best guess in plain words; a later step reconciles it against the controlled skill list.
 - "experimental": true when the content is an impulse, experiment or "just tried this out" piece rather than something production-ready — independent of maturity.
