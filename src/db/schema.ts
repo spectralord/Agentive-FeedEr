@@ -102,6 +102,39 @@ export const skillNodes = pgTable("skill_nodes", {
   createdAt: timestamp("created_at", { withTimezone: true }).notNull().defaultNow(),
 });
 
+// Epic 7: self-declared progress per skill node (Skill-Map, Variante A — no
+// prerequisite tree, no gates). One row per node (`skillNodeId` is the
+// primary key, no separate `id`) — the current status + most recent note, so
+// map tiles/detail views never need a join to show "where am I on this
+// node". Full note history lives in `user_progress_notes` below; this
+// column always mirrors the latest entry (see src/lib/skills/progress.ts).
+export const userProgress = pgTable("user_progress", {
+  skillNodeId: integer("skill_node_id")
+    .primaryKey()
+    .references(() => skillNodes.id),
+  status: text("status", { enum: ["seen", "tried", "mastered"] }).notNull().default("seen"),
+  note: text("note"),
+  updatedAt: timestamp("updated_at", { withTimezone: true }).notNull().defaultNow(),
+});
+
+// Epic 7 (T7.4, Adoption-Log): append-only history of notes attached to a
+// status change on a node. A plain small table (not a jsonb array on
+// user_progress) — same style as `interactions` (event rows with a note),
+// and lets the Adoption-Log query "all notes, newest first, across every
+// node" with a single indexed order-by instead of unnesting jsonb across
+// rows. Only written when `setProgress` is called with a non-empty note
+// (see src/lib/skills/progress.ts) — a bare status change with no note is
+// not "adopted", so it doesn't clutter the log.
+export const userProgressNotes = pgTable("user_progress_notes", {
+  id: serial("id").primaryKey(),
+  skillNodeId: integer("skill_node_id")
+    .notNull()
+    .references(() => skillNodes.id),
+  status: text("status", { enum: ["seen", "tried", "mastered"] }).notNull(),
+  note: text("note").notNull(),
+  createdAt: timestamp("created_at", { withTimezone: true }).notNull().defaultNow(),
+});
+
 // Epic 13: history of daily-pipeline runs (cron and manual admin triggers share
 // this table). See ADR 0010.
 export const pipelineRuns = pgTable("pipeline_runs", {
@@ -153,3 +186,7 @@ export type Interaction = typeof interactions.$inferSelect;
 export type NewInteraction = typeof interactions.$inferInsert;
 export type AppStateRow = typeof appState.$inferSelect;
 export type NewAppStateRow = typeof appState.$inferInsert;
+export type UserProgress = typeof userProgress.$inferSelect;
+export type NewUserProgress = typeof userProgress.$inferInsert;
+export type UserProgressNote = typeof userProgressNotes.$inferSelect;
+export type NewUserProgressNote = typeof userProgressNotes.$inferInsert;
