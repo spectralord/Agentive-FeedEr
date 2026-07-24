@@ -28,6 +28,7 @@ const navItems = [
   { href: "/overview", label: "Übersicht" },
   { href: "/saved", label: "Gespeichert" },
   { href: "/experience", label: "Erfahrung" },
+  { href: "/skills", label: "Skills" },
   { href: "/admin", label: "Admin" },
 ];
 

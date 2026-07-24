@@ -36,6 +36,13 @@
       "when": 1784802744368,
       "tag": "0004_skinny_lady_bullseye",
       "breakpoints": true
+    },
+    {
+      "idx": 5,
+      "version": "7",
+      "when": 1784844471988,
+      "tag": "0005_classy_hellcat",
+      "breakpoints": true
     }
   ]
 }

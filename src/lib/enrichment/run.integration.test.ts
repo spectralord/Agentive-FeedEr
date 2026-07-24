@@ -18,7 +18,7 @@ const validOutput = {
   example: null,
   action: null,
   effort_tag: null,
-  skill: "mcp-servers",
+  skill_hint: "MCP servers",
 };
 
 async function seedRawItem(externalId: string) {
@@ -60,6 +60,10 @@ describe("runEnrichment (integration)", () => {
     expect(reel.rawItemId).toBe(item.id);
     expect(reel.qualityScore).toBe(80);
     expect(reel.action).toBeNull();
+    // ADR 0009: enrichment never sets the canonical skill — only the
+    // SkillTagger does. The raw hint rides along in metadata instead.
+    expect(reel.skill).toBeNull();
+    expect(reel.metadata).toEqual({ skillHint: "MCP servers" });
 
     const rerun = await runEnrichment(db(), caller, "profile");
     expect(rerun.processed).toBe(0); // enriched_at set — never billed twice

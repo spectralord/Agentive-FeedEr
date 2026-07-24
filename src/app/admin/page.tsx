@@ -36,6 +36,7 @@ function runSummary(run: PipelineRun): string {
   const s = (run.summary ?? {}) as {
     ingestion?: { totalInserted: number; perSource: { name: string; error?: string }[] };
     enrichment?: { processed: number; succeeded: number; failed: number };
+    skillTagging?: { processed: number; matched: number; proposed: number; failed: number };
     feedback?: { ran: boolean; newInteractions: number; bulletCount?: number };
   };
   const parts: string[] = [];
@@ -44,6 +45,11 @@ function runSummary(run: PipelineRun): string {
     parts.push(`+${s.ingestion.totalInserted} Items${failed.length ? ` · Quellen-Fehler: ${failed.join(", ")}` : ""}`);
   }
   if (s.enrichment) parts.push(`Enrich ${s.enrichment.succeeded}✓/${s.enrichment.failed}✗`);
+  if (s.skillTagging) {
+    parts.push(
+      `Skills ${s.skillTagging.matched} Match/${s.skillTagging.proposed} Vorschlag${s.skillTagging.failed ? `/${s.skillTagging.failed}✗` : ""}`,
+    );
+  }
   if (s.feedback?.ran) parts.push(`Feedback-Summary aktualisiert (${s.feedback.bulletCount} Punkte)`);
   if (run.error) parts.push(`Fehler: ${run.error}`);
   return parts.join(" · ") || "—";

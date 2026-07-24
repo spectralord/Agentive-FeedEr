@@ -64,7 +64,12 @@ export async function runEnrichment(
           example: output.example,
           action: output.action,
           effortTag: output.effort_tag,
-          skill: output.skill,
+          // reels.skill is deliberately NOT set here (ADR 0009): it stays
+          // null until the SkillTagger (Epic 12) reconciles the raw
+          // skill_hint below against the canonical skill_nodes list. The
+          // hint rides along in `metadata` (schema-migration-free field,
+          // see CONTEXT.md "Attribut") so the tagger can read it back.
+          metadata: output.skill_hint ? { skillHint: output.skill_hint } : {},
         });
         await tx.update(rawItems).set({ enrichedAt: new Date() }).where(eq(rawItems.id, item.id));
       });
