@@ -1,4 +1,4 @@
-import { and, desc, eq, gt, gte, lt, notExists } from "drizzle-orm";
+import { and, desc, eq, gt, gte, isNull, lt, notExists } from "drizzle-orm";
 import { db } from "@/db/client";
 import { interactions, rawItems, reels, sources, topicClusters } from "@/db/schema";
 import { CATEGORIES, MATURITIES } from "@/lib/enrichment/schema";
@@ -31,6 +31,12 @@ export interface GetReelsOptions {
    * `maturity` enum) — Übersicht "🧪 experimentell zeigen" toggle, T5.3.
    */
   excludeExperimental?: boolean;
+  /**
+   * Epic 10 (ADR 0011, T10.4): exclude reels with a non-null `caveat`. Default
+   * is to show them (transparency, per the epic file) — this only applies
+   * when the feed/overview toggle explicitly asks to hide caveats.
+   */
+  hideCaveats?: boolean;
   /** Max rows returned, default 50. */
   limit?: number;
 }
@@ -73,6 +79,9 @@ export interface FeedReel {
   supersededByClusterId: number | null;
   /** Epic 11: the grounded reason behind supersededByClusterId, or null. */
   supersedeReason: string | null;
+  /** Epic 10 (ADR 0011): the Stage-1 Reel-Verifier's caveat, or null if the
+   *  critic pass found nothing to flag (the normal case) or hasn't run yet. */
+  caveat: string | null;
 }
 
 /** One topic cluster with >= 2 displayed members, bundled for the "N sources
@@ -206,6 +215,9 @@ export async function getReels(opts: GetReelsOptions = {}): Promise<FeedReel[]> 
   if (opts.excludeExperimental) {
     conditions.push(eq(reels.experimental, false));
   }
+  if (opts.hideCaveats) {
+    conditions.push(isNull(reels.caveat));
+  }
 
   const rows = await db()
     .select({
@@ -233,6 +245,7 @@ export async function getReels(opts: GetReelsOptions = {}): Promise<FeedReel[]> 
       lifecycleState: topicClusters.lifecycleState,
       supersededByClusterId: topicClusters.supersededByClusterId,
       supersedeReason: topicClusters.supersedeReason,
+      caveat: reels.caveat,
     })
     .from(reels)
     .innerJoin(rawItems, eq(reels.rawItemId, rawItems.id))

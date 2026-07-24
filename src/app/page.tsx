@@ -37,12 +37,13 @@ function EmptyState({ hasFilters }: { hasFilters: boolean }) {
 
 export default async function FeedPage({ searchParams }: FeedPageProps) {
   const params = await searchParams;
-  const hasFilters = Boolean(params.category || params.new || params.weak);
+  const hasFilters = Boolean(params.category || params.new || params.weak || params.caveat);
 
   const reels = await getReels({
     category: params.category,
     onlyNew: params.new === "1",
     showWeak: params.weak === "1",
+    hideCaveats: params.caveat === "0",
     before: params.before ? new Date(params.before) : undefined,
   });
   const interactionFlags = await getInteractionFlags(reels.map((r) => r.id));

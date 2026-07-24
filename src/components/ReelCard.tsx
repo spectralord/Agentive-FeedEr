@@ -55,6 +55,15 @@ export function ReelCardBody({ reel, stackBanner }: { reel: FeedReel; stackBanne
       <h2 className="mt-3 text-lg font-semibold leading-snug text-zinc-50">{reel.title}</h2>
       <p className="mt-2 text-sm leading-relaxed text-zinc-300">{reel.summary}</p>
 
+      {/* Epic 10 (ADR 0011, T10.4): the Stage-1 Reel-Verifier's caveat, if any
+          — subtle and non-alarmist by design (small muted text, no boxed
+          alert), deliberately separate from both the confidence badge above
+          and the R/Q score footer below. Never affects quality_score
+          (ADR 0004) — display-layer only. */}
+      {reel.caveat && (
+        <p className="mt-2 text-xs text-amber-500/80">⚠️ {reel.caveat}</p>
+      )}
+
       {reel.example && (
         <div className="mt-4">
           <p className="text-xs font-medium uppercase tracking-wide text-zinc-500">

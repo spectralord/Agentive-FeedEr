@@ -21,6 +21,7 @@ interface SeedSpec {
   maturity?: "experimental" | "emerging" | "established";
   experimental?: boolean;
   relevanceScore?: number;
+  caveat?: string | null;
 }
 
 async function seedReel(sourceId: number, spec: SeedSpec) {
@@ -49,6 +50,7 @@ async function seedReel(sourceId: number, spec: SeedSpec) {
       qualityScore: spec.qualityScore,
       example: spec.example ?? null,
       action: spec.action ?? null,
+      caveat: spec.caveat ?? null,
     });
 
   return item;
@@ -266,6 +268,29 @@ describe("getReels (integration)", () => {
 
     const withoutExperimental = await getReels({ excludeExperimental: true });
     expect(withoutExperimental.map((r) => r.rawItemId)).toEqual([2]);
+  });
+
+  it("shows reels with a caveat by default and hides them with hideCaveats (T10.4)", async () => {
+    const [source] = await db().insert(sources).values({ name: "s", type: "rss", url: "u" }).returning();
+    await seedReel(source.id, {
+      externalId: "flagged",
+      publishedAt: daysAgo(1),
+      category: "tooling",
+      qualityScore: 90,
+      caveat: "Summary overclaims: source says X, not Y.",
+    });
+    await seedReel(source.id, {
+      externalId: "not-flagged",
+      publishedAt: daysAgo(1),
+      category: "tooling",
+      qualityScore: 90,
+    });
+
+    const all = await getReels({});
+    expect(all).toHaveLength(2); // default: shown (transparency)
+
+    const withoutCaveats = await getReels({ hideCaveats: true });
+    expect(withoutCaveats.map((r) => r.rawItemId)).toEqual([2]);
   });
 
   it("propagates a cluster's confidence/lifecycle/supersession fields onto its reel (T11.4)", async () => {

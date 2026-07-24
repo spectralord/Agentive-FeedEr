@@ -15,6 +15,9 @@ export interface OverviewFilterState {
   minRelevance?: string; // "50" | "70" — absent = "0" (no floor)
   bestPractice?: string; // "1"
   experimental?: string; // "0" hides flagged reels; absent/anything else shows them (default on)
+  /** Epic 10 (ADR 0011, T10.4): "0" hides reels with a caveat; absent/anything
+   *  else shows them (default on — transparency, per the epic file). */
+  caveat?: string;
 }
 
 const PERIODS: Array<{ value: string | undefined; label: string }> = [
@@ -47,6 +50,7 @@ export function buildOverviewHref(
   if (merged.minRelevance) params.set("minRelevance", merged.minRelevance);
   if (merged.bestPractice) params.set("bestPractice", merged.bestPractice);
   if (merged.experimental) params.set("experimental", merged.experimental);
+  if (merged.caveat) params.set("caveat", merged.caveat);
 
   const qs = params.toString();
   return qs ? `/overview?${qs}` : "/overview";
@@ -69,6 +73,7 @@ function ChipRow({ children }: { children: React.ReactNode }) {
 export function OverviewFilterBar({ current }: { current: OverviewFilterState }) {
   const bestPractice = current.bestPractice === "1";
   const hideExperimental = current.experimental === "0";
+  const hideCaveats = current.caveat === "0";
 
   return (
     <nav
@@ -137,6 +142,13 @@ export function OverviewFilterBar({ current }: { current: OverviewFilterState })
             className={chipClass(bestPractice)}
           >
             🛠️ Best Practice only
+          </Link>
+          {/* Epic 10 (ADR 0011, T10.4): default is "show" (transparency). */}
+          <Link
+            href={buildOverviewHref(current, { caveat: hideCaveats ? undefined : "0" })}
+            className={chipClass(hideCaveats)}
+          >
+            ⚠️ Caveats {hideCaveats ? "show" : "hide"}
           </Link>
           <Link
             href={buildOverviewHref(current, { experimental: hideExperimental ? undefined : "0" })}

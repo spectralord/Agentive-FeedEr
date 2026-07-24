@@ -32,10 +32,11 @@ describe("buildOverviewHref", () => {
         minRelevance: "70",
         bestPractice: "1",
         experimental: "0",
+        caveat: "0",
       },
     );
     expect(href).toBe(
-      "/overview?period=90&category=research&maturity=established&minRelevance=70&bestPractice=1&experimental=0",
+      "/overview?period=90&category=research&maturity=established&minRelevance=70&bestPractice=1&experimental=0&caveat=0",
     );
   });
 });
@@ -63,5 +64,14 @@ describe("OverviewFilterBar", () => {
   it("every rendered chip href is a bookmarkable /overview URL", () => {
     const html = renderToStaticMarkup(<OverviewFilterBar current={{ minRelevance: "50" }} />);
     expect(html).toMatch(/href="\/overview/);
+  });
+
+  it("shows 'Caveats hide' by default and 'Caveats show' when caveat=0 (T10.4)", () => {
+    const defaultHtml = renderToStaticMarkup(<OverviewFilterBar current={{}} />);
+    expect(defaultHtml).toContain("⚠️ Caveats hide");
+
+    const hiddenHtml = renderToStaticMarkup(<OverviewFilterBar current={{ caveat: "0" }} />);
+    expect(hiddenHtml).toContain("⚠️ Caveats show");
+    expect(hiddenHtml).toContain('href="/overview"'); // clicking removes the param, back to default (shown)
   });
 });

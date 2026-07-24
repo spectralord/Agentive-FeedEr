@@ -28,6 +28,7 @@ const baseReel: FeedReel = {
   lifecycleState: null,
   supersededByClusterId: null,
   supersedeReason: null,
+  caveat: null,
 };
 
 describe("HistoryList", () => {

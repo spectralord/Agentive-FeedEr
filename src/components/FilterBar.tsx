@@ -7,22 +7,27 @@ export interface FilterState {
   category?: string;
   new?: string;
   weak?: string;
+  /** Epic 10 (ADR 0011, T10.4): "0" hides reels with a caveat; absent/anything
+   *  else shows them (default on — transparency, per the epic file). Same
+   *  "0 hides" convention as OverviewFilterBar's `experimental` field. */
+  caveat?: string;
   before?: string;
 }
 
 /**
- * Builds the feed URL for a filter change. Preserves category/new/weak from
- * `current` unless overridden; always drops `before` — changing a filter
- * restarts pagination from the top.
+ * Builds the feed URL for a filter change. Preserves category/new/weak/caveat
+ * from `current` unless overridden; always drops `before` — changing a
+ * filter restarts pagination from the top.
  */
 export function buildFilterHref(
   current: FilterState,
-  overrides: Partial<Pick<FilterState, "category" | "new" | "weak">>,
+  overrides: Partial<Pick<FilterState, "category" | "new" | "weak" | "caveat">>,
 ): string {
   const merged = {
     category: current.category,
     new: current.new,
     weak: current.weak,
+    caveat: current.caveat,
     ...overrides,
   };
 
@@ -30,13 +35,14 @@ export function buildFilterHref(
   if (merged.category) params.set("category", merged.category);
   if (merged.new) params.set("new", merged.new);
   if (merged.weak) params.set("weak", merged.weak);
+  if (merged.caveat) params.set("caveat", merged.caveat);
 
   const qs = params.toString();
   return qs ? `/?${qs}` : "/";
 }
 
 /**
- * Builds the "Load older" href: keeps category/new/weak from `current`
+ * Builds the "Load older" href: keeps category/new/weak/caveat from `current`
  * and sets `before` to the given cursor (T3.5 — server-side pagination).
  */
 export function buildLoadMoreHref(current: FilterState, beforeIso: string): string {
@@ -44,6 +50,7 @@ export function buildLoadMoreHref(current: FilterState, beforeIso: string): stri
   if (current.category) params.set("category", current.category);
   if (current.new) params.set("new", current.new);
   if (current.weak) params.set("weak", current.weak);
+  if (current.caveat) params.set("caveat", current.caveat);
   params.set("before", beforeIso);
   return `/?${params.toString()}`;
 }
@@ -57,6 +64,7 @@ function chipClass(active: boolean): string {
 export function FilterBar({ current }: { current: FilterState }) {
   const isNew = current.new === "1";
   const isWeak = current.weak === "1";
+  const hideCaveats = current.caveat === "0";
 
   return (
     <nav
@@ -81,6 +89,14 @@ export function FilterBar({ current }: { current: FilterState }) {
           className={chipClass(isNew)}
         >
           🆕 New
+        </Link>
+        {/* Epic 10 (ADR 0011, T10.4): default is "show" (transparency) — the
+            chip lets you hide reels with a caveat instead. */}
+        <Link
+          href={buildFilterHref(current, { caveat: hideCaveats ? undefined : "0" })}
+          className={chipClass(hideCaveats)}
+        >
+          ⚠️ Caveats {hideCaveats ? "show" : "hide"}
         </Link>
         <Link
           href={buildFilterHref(current, { weak: isWeak ? undefined : "1" })}

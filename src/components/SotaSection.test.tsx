@@ -28,6 +28,7 @@ function reel(overrides: Partial<FeedReel> & Pick<FeedReel, "id">): FeedReel {
     lifecycleState: null,
     supersededByClusterId: null,
     supersedeReason: null,
+    caveat: null,
     ...overrides,
   };
 }

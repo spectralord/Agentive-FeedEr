@@ -30,6 +30,14 @@ describe("buildFilterHref", () => {
     const href = buildFilterHref(current, { category: "research", new: "1", weak: "1" });
     expect(href).toBe("/?category=research&new=1&weak=1");
   });
+
+  it("sets caveat=0 to hide reels with a caveat (T10.4)", () => {
+    expect(buildFilterHref({}, { caveat: "0" })).toBe("/?caveat=0");
+  });
+
+  it("toggling caveat back off (undefined override) removes it, back to default (shown)", () => {
+    expect(buildFilterHref({ caveat: "0" }, { caveat: undefined })).toBe("/");
+  });
 });
 
 describe("buildLoadMoreHref", () => {
@@ -63,5 +71,14 @@ describe("FilterBar", () => {
     const html = renderToStaticMarkup(<FilterBar current={{ weak: "1" }} />);
     expect(html).toContain("Weak signal hide");
     expect(html).toMatch(/href="\/\?/);
+  });
+
+  it("shows 'Caveats hide' by default and 'Caveats show' when caveat=0 (T10.4)", () => {
+    const defaultHtml = renderToStaticMarkup(<FilterBar current={{}} />);
+    expect(defaultHtml).toContain("⚠️ Caveats hide");
+
+    const hiddenHtml = renderToStaticMarkup(<FilterBar current={{ caveat: "0" }} />);
+    expect(hiddenHtml).toContain("⚠️ Caveats show");
+    expect(hiddenHtml).toContain('href="/"'); // clicking removes the param, back to default (shown)
   });
 });

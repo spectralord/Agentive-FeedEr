@@ -28,6 +28,7 @@ const baseReel: FeedReel = {
   lifecycleState: null,
   supersededByClusterId: null,
   supersedeReason: null,
+  caveat: null,
 };
 
 describe("ReelCard", () => {
@@ -83,5 +84,20 @@ describe("ReelCard", () => {
     expect(html).not.toContain("🆕 New");
     expect(html).toContain("R 82");
     expect(html).toContain("Q 74");
+  });
+
+  it("shows a subtle caveat notice when set, separate from the score footer (T10.4)", () => {
+    const reel: FeedReel = { ...baseReel, caveat: "Summary overclaims: source says X, not Y." };
+
+    const html = renderToStaticMarkup(<ReelCard reel={reel} />);
+
+    expect(html).toContain("⚠️ Summary overclaims: source says X, not Y.");
+    expect(html).toContain("R 82"); // scores unaffected by the caveat (ADR 0004)
+    expect(html).toContain("Q 74");
+  });
+
+  it("shows no caveat notice when caveat is null", () => {
+    const html = renderToStaticMarkup(<ReelCard reel={baseReel} />);
+    expect(html).not.toContain("⚠️");
   });
 });

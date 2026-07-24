@@ -48,7 +48,7 @@ Glossar: Verifier, caveat, confidence, Korroboration.
 - **Verifikation:** Integrationstest: neuer Reel → nach Lauf `caveat` gesetzt oder `null`;
   zweiter Lauf verarbeitet 0.
 
-### ☐ T10.4 — Anzeige + Filter
+### ☑ T10.4 — Anzeige + Filter
 - `ReelCard`: wenn `caveat` gesetzt, ⚠️-Hinweis anzeigen (dezent, nicht alarmistisch),
   **getrennt** von den Scores.
 - Feed-/Overview-Filter: optionaler Toggle „mit Vorbehalt ausblenden/zeigen" (Default:
@@ -82,6 +82,12 @@ Glossar: Verifier, caveat, confidence, Korroboration.
 ## Abschlusskriterien (Stufe-1-MVP)
 - Reels bekommen im Pipeline-Lauf einen `caveat` (oder `null`); ⚠️ sichtbar + filterbar,
   getrennt von den Scores; Kritiker-Pass gated + idempotent; Build + Tests grün.
+- **Status: erfüllt.** T10.1–T10.4 gebaut & getestet (281 Tests grün, davon 16 neu
+  für dieses Epic). `caveat` in `ReelCardBody` als dezenter ⚠️-Hinweis (eigene Zeile,
+  getrennt von Confidence-Badge und R/Q-Footer), Feed- (`FilterBar`) und Übersicht-Filter
+  (`OverviewFilterBar`) haben je einen "Caveats hide/show"-Toggle (Default: zeigen,
+  URL-Param `caveat=0` blendet aus — gleiches Muster wie `experimental`). Kein Einfluss
+  auf `quality_score` (ADR 0004) — curl-verifiziert gegen `npm run start`.
 
 ## Abweichungen/Fragen
 _(vom ausführenden Modell zu pflegen)_

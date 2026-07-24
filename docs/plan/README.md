@@ -120,7 +120,7 @@ Ein Epic ist fertig, wenn:
 | 7 — Skill-Map | `epic-7-skill-map.md` | Vision | ☐ offen (nach Epic 12; siehe Revidierte Annahmen) |
 | 8 — Agentisches Vertiefen | `epic-8-deep-dive.md` | Vision | ☐ offen |
 | 9 — Erfahrungs-Sektion | `epic-9-experience-reports.md` | Fast-Follow | ✅ fertig (kein echtes Markdown-Rendering ohne neue Dependency — siehe Abweichungen in `epic-9-experience-reports.md`) |
-| 10 — Content Verifier | `epic-10-verifier.md` | Fast-Follow | ✅ gegrillt (ADR 0011); Stufe-1 (Reel-`caveat`) baubar; Stufe 2 → in Epic 11 aufgegangen |
+| 10 — Content Verifier | `epic-10-verifier.md` | Fast-Follow | ✅ Stufe 1 fertig & getestet (ADR 0011; T10.1–T10.4 — Reel-`caveat`, gated + idempotent Kritiker-Pass, in Pipeline eingehängt, ⚠️-Anzeige + Feed-/Übersicht-Filter); Stufe 2 → in Epic 11 aufgegangen |
 | 11 — Topic-Knowledge-Check (Freshness + Korroboration) | `epic-11-sota-recheck.md` | Fast-Follow | ◑ T11.1–T11.6 fertig & getestet (ADR 0012/0013); T11.7 (Erfahrungsberichte-Korroboration, braucht eigenen Cluster-Bezug-Entscheid) und T11.8 (externe Web-Korroboration, eigener ADR nötig) zurückgestellt — siehe Abweichungen in `epic-11-sota-recheck.md` |
 | 12 — SkillTagger | `epic-12-skill-tagger.md` | Fast-Follow (vor Epic 7) | ☐ offen |
 | 13 — Admin-Console | `epic-13-admin-console.md` | Fast-Follow | ✅ fertig (T13.1–T13.7; Cron-Button + Status + Quellen-Liste/Fehler-Retry; `ADMIN_TOKEN` in Railway = Benutzer-Aktion) |

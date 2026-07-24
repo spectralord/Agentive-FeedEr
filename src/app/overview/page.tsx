@@ -50,6 +50,7 @@ export default async function OverviewPage({ searchParams }: OverviewPageProps) 
     minRelevance,
     publishedAfter,
     excludeExperimental: params.experimental === "0",
+    hideCaveats: params.caveat === "0",
     limit: FETCH_LIMIT,
   });
 
