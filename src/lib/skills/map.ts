@@ -32,6 +32,10 @@ export interface SkillMapNode {
    *  assigned to the node, not the feed (see epic-7-skill-map.md Abweichungen). */
   contentCount: number;
   status: DisplayStatus;
+  /** T18.5 (§5.1, experimental-dot): true when a majority (>50%) of this
+   *  node's associated *Reels* are marked `experimental`. Reports have no
+   *  `experimental` field and are excluded from both sides of the ratio. */
+  experimentalDot: boolean;
 }
 
 export interface SkillMapTheme {
@@ -39,12 +43,26 @@ export interface SkillMapTheme {
   nodes: SkillMapNode[];
 }
 
-async function getContentCounts(slugs: string[]): Promise<Map<string, number>> {
+interface ContentCounts {
+  counts: Map<string, number>;
+  /** Slugs where >50% of associated Reels are `experimental` (T18.5's
+   *  experimental-dot). Folded into the reel aggregate below rather than
+   *  issuing a second query — the per-slug reel rows are already being
+   *  scanned/grouped here. */
+  experimentalMajority: Set<string>;
+}
+
+async function getContentCounts(slugs: string[]): Promise<ContentCounts> {
   const counts = new Map<string, number>();
-  if (slugs.length === 0) return counts;
+  const experimentalMajority = new Set<string>();
+  if (slugs.length === 0) return { counts, experimentalMajority };
 
   const reelCounts = await db()
-    .select({ skill: reels.skill, count: sql<number>`count(*)::int` })
+    .select({
+      skill: reels.skill,
+      count: sql<number>`count(*)::int`,
+      experimentalCount: sql<number>`count(*) filter (where ${reels.experimental})::int`,
+    })
     .from(reels)
     .where(inArray(reels.skill, slugs))
     .groupBy(reels.skill);
@@ -58,12 +76,15 @@ async function getContentCounts(slugs: string[]): Promise<Map<string, number>> {
   for (const row of reelCounts) {
     if (!row.skill) continue;
     counts.set(row.skill, (counts.get(row.skill) ?? 0) + row.count);
+    if (row.count > 0 && row.experimentalCount / row.count > 0.5) {
+      experimentalMajority.add(row.skill);
+    }
   }
   for (const row of reportCounts) {
     if (!row.skill) continue;
     counts.set(row.skill, (counts.get(row.skill) ?? 0) + row.count);
   }
-  return counts;
+  return { counts, experimentalMajority };
 }
 
 /** Active nodes grouped by theme, themes in first-seen (alphabetical node
@@ -74,7 +95,7 @@ export async function getSkillMap(): Promise<SkillMapTheme[]> {
   if (activeNodes.length === 0) return [];
 
   const slugs = activeNodes.map((n) => n.slug);
-  const [counts, progressMap] = await Promise.all([
+  const [{ counts, experimentalMajority }, progressMap] = await Promise.all([
     getContentCounts(slugs),
     getProgressMap(activeNodes.map((n) => n.id)),
   ]);
@@ -91,6 +112,7 @@ export async function getSkillMap(): Promise<SkillMapTheme[]> {
       // T18.4 (§9.4): no `user_progress` row is "untouched", not "seen" —
       // stop collapsing the two.
       status: progressMap.get(node.id)?.status ?? UNTOUCHED_STATUS,
+      experimentalDot: experimentalMajority.has(node.slug),
     };
     const bucket = byTheme.get(node.theme);
     if (bucket) bucket.push(mapped);
@@ -170,6 +192,15 @@ export async function getNodeDetail(slug: string): Promise<SkillNodeDetail | und
   };
 }
 
+export interface ProgressChangeResult {
+  row: UserProgress;
+  /** Status before this call — `UNTOUCHED_STATUS` if there was no row yet.
+   *  Lets the route handler tell `SkillRing` (T18.5) whether a real
+   *  transition happened, so the ring-fill animation plays only on an
+   *  actual change, never on an ordinary page view. */
+  previousStatus: DisplayStatus;
+}
+
 /**
  * Slug-addressed wrapper around `setProgress` for the `/skills/[slug]/progress`
  * route handler (routes address nodes by slug, like the rest of the UI;
@@ -181,7 +212,7 @@ export async function setProgressBySlug(
   slug: string,
   status: string,
   note?: string,
-): Promise<UserProgress | undefined> {
+): Promise<ProgressChangeResult | undefined> {
   if (!isProgressStatus(status)) return undefined;
 
   const [node] = await db()
@@ -190,5 +221,11 @@ export async function setProgressBySlug(
     .where(and(eq(skillNodes.slug, slug), eq(skillNodes.status, "active")));
   if (!node) return undefined;
 
-  return setProgress(node.id, status, note);
+  // Read before write — the one place we need to know what the status was
+  // a moment ago, purely so the caller can decide whether to animate.
+  const before = await getProgress(node.id);
+  const previousStatus: DisplayStatus = before?.status ?? UNTOUCHED_STATUS;
+
+  const row = await setProgress(node.id, status, note);
+  return { row, previousStatus };
 }

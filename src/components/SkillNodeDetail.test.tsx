@@ -33,13 +33,14 @@ const baseDetail: SkillNodeDetailData = {
 };
 
 describe("SkillNodeDetail", () => {
-  it("renders title, theme, description, and current status", () => {
+  it("renders title, theme, description, the status ring, and the status label", () => {
     const html = renderToStaticMarkup(<SkillNodeDetail detail={baseDetail} />);
     expect(html).toContain("Sub-Agents");
     expect(html).toContain("Agentic Development");
     expect(html).toContain("Splitting work across parallel agents.");
-    expect(html).toContain("Current status:");
     expect(html).toContain("tried");
+    // The shared SkillRing renders here (T18.5) — a partial --accent arc for "tried".
+    expect(html).toContain("var(--color-accent)");
   });
 
   it("only offers forms for the two reachable (non-current) statuses", () => {
@@ -84,5 +85,20 @@ describe("SkillNodeDetail", () => {
     expect(html).toContain("Mark as seen");
     expect(html).toContain("Mark as tried");
     expect(html).toContain("Mark as mastered");
+  });
+
+  it("T18.5: shows no confirmation line on an ordinary view (no previousStatus)", () => {
+    const html = renderToStaticMarkup(<SkillNodeDetail detail={baseDetail} />);
+    expect(html).not.toContain("Marked as");
+  });
+
+  it("T18.5: shows a plain confirmation line when previousStatus differs from the current status", () => {
+    const html = renderToStaticMarkup(<SkillNodeDetail detail={baseDetail} previousStatus="seen" />);
+    expect(html).toContain("Marked as tried.");
+  });
+
+  it("T18.5: shows no confirmation line when previousStatus equals the current status", () => {
+    const html = renderToStaticMarkup(<SkillNodeDetail detail={baseDetail} previousStatus="tried" />);
+    expect(html).not.toContain("Marked as");
   });
 });

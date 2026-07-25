@@ -10,6 +10,11 @@ interface RouteParams {
  * self-declared `seen -> tried -> mastered`, downgrade allowed, optional
  * note. Plain HTML form POST + redirect, same pattern as the SkillTagger
  * confirm/merge/discard routes and the Experience lifecycle route.
+ *
+ * T18.5: when the status actually changed, the redirect carries `?from=<old
+ * status>` so the destination page can play `SkillRing`'s one-time fill
+ * animation (its `previousStatus` prop) — never on an ordinary page view,
+ * only right after a real transition.
  */
 export async function POST(request: Request, { params }: RouteParams) {
   const { slug } = await params;
@@ -17,10 +22,14 @@ export async function POST(request: Request, { params }: RouteParams) {
   const status = String(form.get("status") ?? "");
   const noteRaw = String(form.get("note") ?? "").trim();
 
-  const updated = await setProgressBySlug(slug, status, noteRaw || undefined);
-  if (!updated) {
+  const result = await setProgressBySlug(slug, status, noteRaw || undefined);
+  if (!result) {
     return NextResponse.json({ error: "invalid slug or status" }, { status: 400 });
   }
 
-  return NextResponse.redirect(new URL(`/skills/${slug}`, request.url), 303);
+  const url = new URL(`/skills/${slug}`, request.url);
+  if (result.previousStatus !== result.row.status) {
+    url.searchParams.set("from", result.previousStatus);
+  }
+  return NextResponse.redirect(url, 303);
 }

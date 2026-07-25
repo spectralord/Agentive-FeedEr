@@ -6,9 +6,9 @@ import { sql } from "drizzle-orm";
 import { db, getPool } from "@/db/client";
 import { experienceReports, rawItems, reels, skillNodes, sources } from "@/db/schema";
 import { setProgress } from "./progress";
-import { getNodeDetail, getSkillMap } from "./map";
+import { getNodeDetail, getSkillMap, setProgressBySlug } from "./map";
 
-async function seedReel(slug: string, skill: string | null) {
+async function seedReel(slug: string, skill: string | null, experimental = false) {
   const [source] = await db()
     .insert(sources)
     .values({ name: `source-${slug}`, type: "rss", url: "https://example.com/feed" })
@@ -30,7 +30,8 @@ async function seedReel(slug: string, skill: string | null) {
       rawItemId: item.id,
       summary: "A reel.",
       category: "tooling",
-      maturity: "established",
+      maturity: experimental ? "experimental" : "established",
+      experimental,
       relevanceScore: 70,
       qualityScore: 70,
       skill,
@@ -151,5 +152,51 @@ describe("skill map (integration)", () => {
 
     expect(await getNodeDetail("pending-one")).toBeUndefined();
     expect(await getNodeDetail("does-not-exist")).toBeUndefined();
+  });
+
+  it("T18.5: sets experimentalDot only when a majority (>50%) of a node's Reels are experimental", async () => {
+    await db()
+      .insert(skillNodes)
+      .values([
+        { slug: "mostly-experimental", title: "Mostly Experimental", theme: "Tooling & Workflow", description: "…", status: "active" },
+        { slug: "half-experimental", title: "Half Experimental", theme: "Tooling & Workflow", description: "…", status: "active" },
+        { slug: "no-experimental", title: "No Experimental", theme: "Tooling & Workflow", description: "…", status: "active" },
+      ]);
+    // 2/3 experimental — above threshold.
+    await seedReel("me1", "mostly-experimental", true);
+    await seedReel("me2", "mostly-experimental", true);
+    await seedReel("me3", "mostly-experimental", false);
+    // exactly 1/2 experimental — NOT above threshold (>50%, not >=50%).
+    await seedReel("he1", "half-experimental", true);
+    await seedReel("he2", "half-experimental", false);
+    // 0/2 experimental.
+    await seedReel("ne1", "no-experimental", false);
+    await seedReel("ne2", "no-experimental", false);
+
+    const map = await getSkillMap();
+    const nodes = map.flatMap((t) => t.nodes);
+    expect(nodes.find((n) => n.slug === "mostly-experimental")).toMatchObject({ experimentalDot: true });
+    expect(nodes.find((n) => n.slug === "half-experimental")).toMatchObject({ experimentalDot: false });
+    expect(nodes.find((n) => n.slug === "no-experimental")).toMatchObject({ experimentalDot: false });
+  });
+
+  it("T18.5: setProgressBySlug reports the previous status (untouched when no row existed) alongside the new row", async () => {
+    await db()
+      .insert(skillNodes)
+      .values({ slug: "sub-agents", title: "Sub-Agents", theme: "Agentic Development", description: "…", status: "active" });
+
+    const first = await setProgressBySlug("sub-agents", "tried");
+    expect(first).toMatchObject({ previousStatus: "untouched", row: { status: "tried" } });
+
+    const second = await setProgressBySlug("sub-agents", "mastered");
+    expect(second).toMatchObject({ previousStatus: "tried", row: { status: "mastered" } });
+
+    // Re-declaring the same status: previousStatus equals the new status —
+    // callers use this to decide not to animate/confirm.
+    const third = await setProgressBySlug("sub-agents", "mastered");
+    expect(third).toMatchObject({ previousStatus: "mastered", row: { status: "mastered" } });
+
+    expect(await setProgressBySlug("does-not-exist", "tried")).toBeUndefined();
+    expect(await setProgressBySlug("sub-agents", "not-a-status")).toBeUndefined();
   });
 });

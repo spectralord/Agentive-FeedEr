@@ -156,7 +156,7 @@ Depends on nothing; do alongside T18.5.
 - **Verification:** integration test — a node with no `user_progress` row reads as untouched; a
   node explicitly set to `seen` reads as seen; the two are distinguishable.
 
-### ☐ T18.5 — Status ring component + `/skills` grid + node detail (§5.1, §7 #7)
+### ☑ T18.5 — Status ring component + `/skills` grid + node detail (§5.1, §7 #7)
 
 Depends on T18.1 + T18.4. **Resolves the two literal `TODO(UX pass)` markers** in
 `SkillMap.tsx:33` and `SkillNodeDetail.tsx:31`.
@@ -450,3 +450,106 @@ _(to be maintained by the executing model)_
   land T18.4 first in isolation. The route handler (`/skills/[slug]/progress/route.ts`) is
   similarly untouched here; its `previousStatus`-carrying redirect is added in T18.5 alongside the
   ring's fill animation, which is the only consumer that needs it.
+
+**T18.5 (completed 2026-07-25):**
+- **Ring component:** `src/components/SkillRing.tsx`, exported as `SkillRing`. API:
+  `{ status: DisplayStatus; previousStatus?: DisplayStatus; size?: number; className?: string }`.
+  `DisplayStatus` (T18.4's `"untouched" | ProgressStatus`) is the prop type, not a separate
+  `RingStatus` — one fewer type for callers to reconcile. `size` defaults to 52 (the prototype's
+  header/skill-tab size); the `/skills` grid tile passes `40`. Used at both call sites in scope
+  (`SkillMap.tsx` grid tile, `SkillNodeDetail.tsx` header) — the third call site (Reel Detail Skill
+  tab) is T18.7, out of this task's scope, but needs no changes to this component's API to slot in.
+- **Geometry/dash math:** copied verbatim from `reel-card-and-detail.html`'s `ringSvg()` at the
+  default size — r=21, dash=2πr≈131.9, 52×52 viewBox, stroke-width 4, `-rotate-90` wrapper so the
+  arc starts at 12 o'clock, tried frac=.55 (dashoffset≈59.4, confirmed via curl below), mastered
+  frac=1 (dashoffset≈0) + `★` glyph. `size` scales radius/stroke-width/dash proportionally for the
+  grid tile's 40px rings.
+- **Fourth-state resolution (untouched vs. seen), and where the two named prototypes disagree:**
+  the task pointed at `reel-card-and-detail.html`'s `ringSvg()` for geometry, but that function only
+  has three states (seen/tried/mastered), with `seen` = frac 0 (empty gray *track*, no arc).
+  `skill-constellation.html`'s `ringSvg()` *does* have all four states, but its `seen` is a frac-.33
+  partial arc in `--ink-muted` — which contradicts this task's own prose ("seen = gray outline",
+  not a partial fill) and would have meant three different "empty-ish" renderings across the two
+  reference files for the same word. Resolution actually used: **untouched and seen are both
+  frac-0 (no progress arc at all)**, matching the reel-card model for "nothing declared yet", and
+  are told apart by how visible the *track* itself is — `--color-hairline` (barely-visible) for
+  untouched vs. `--color-hairline-strong` (a plainly-visible gray ring) for seen. tried/mastered
+  match `reel-card-and-detail.html` exactly (frac/color/glyph). This is flagged here explicitly
+  since it's a genuine synthesis between the two binding prototype files, not a literal copy of
+  either — happy to revise if the strong model reads the intent differently.
+- **Experimental-dot:** computed inside `getContentCounts()`'s existing reel-aggregate query in
+  `map.ts` (added a `count(*) filter (where experimental)` column to the same grouped `SELECT`) —
+  no second query/round-trip. Threshold is strictly `>50%` of a node's **Reels only** (Experience
+  Reports have no `experimental` column and are excluded from both numerator and denominator),
+  matching the badge's existing semantics (`reel.experimental`, not the separate `maturity` enum —
+  confirmed by checking `ReelCard.tsx`'s existing `🧪 experimental` badge, which reads the boolean,
+  not `maturity === "experimental"`). Surfaced as `SkillMapNode.experimentalDot: boolean`, rendered
+  in `SkillMap.tsx` as a small neutral dot (`bg-ink-faint`, not one of the four reserved colors —
+  it isn't one of ADR 0016's four meanings) in the tile's top-right corner. Per the epic prose
+  ("a grid tile"), it is grid-only — not added to the node-detail header, which the task doesn't
+  ask for.
+- **Level-up feel / ring-fill animation — mechanism:** no optimistic-UI infra exists yet (T18.14,
+  unbuilt) — every mutation here is still a full-page POST + 303 redirect. To play the fill
+  animation *only* on the actual transition (never on an ordinary view/reload), the route handler
+  now returns `previousStatus` from `setProgressBySlug` (extended to `ProgressChangeResult { row,
+  previousStatus }`, reading the pre-existing row via `getProgress` before the write — the one
+  place T18.5 adds a genuinely new query, since knowing "what it was a moment ago" has no cheaper
+  source) and appends `?from=<previousStatus>` to the redirect **only when the status actually
+  changed**. `/skills/[slug]/page.tsx` validates that query value with `isDisplayStatus()` before
+  trusting it and drops it if it equals the current status (stale/replayed URL), passing a
+  `previousStatus` prop through to `SkillNodeDetail` → `SkillRing` only when it's a real,
+  different-from-current transition. `SkillRing` renders the *old* status directly in its initial
+  (server-rendered) markup — confirmed via curl below — then, client-side only
+  (`useEffect`/`requestAnimationFrame`), flips its own state to the target status one frame later,
+  letting the `transition-[stroke-dashoffset,stroke] duration-300` class animate the fill; T18.1's
+  global `prefers-reduced-motion` guard neutralizes that transition for users who've asked for it,
+  with no extra code needed here. After ~340ms it strips the `?from=` param via
+  `window.history.replaceState` (plain browser API, not `next/navigation`'s `useRouter` — see
+  below) so a manual refresh of the same URL never replays the animation. The "plain confirmation"
+  is a single `<p>Marked as {status}.</p>` line next to the ring, shown under the same
+  `previousStatus !== status` condition — no confetti, no counter, no popup, per §5.1.
+- **Why `window.history.replaceState` instead of `next/navigation`'s `useRouter`/`usePathname`:**
+  `SkillMap.test.tsx`/`SkillNodeDetail.test.tsx` (and the new `SkillRing.test.tsx`) render these
+  components directly via `renderToStaticMarkup`, outside any Next.js app-router context — calling
+  `useRouter()` in that setting throws (`invariant expected app router to be mounted`), which would
+  have broken every existing unit test touching these components. Vanilla `window.history` needs no
+  provider and gives the same result (URL updated without a navigation/re-render). Confirmed safe
+  under both the SSR path (`renderToStaticMarkup` never flushes `useEffect`, in Node **or** jsdom —
+  it's server-reconciler behavior, not an environment difference) and the real browser path (the
+  project's existing `"use client"` components, e.g. `ReelActions.tsx`, already prove this
+  "use client" + hooks pattern works fine when imported straight into a Vitest unit test).
+- **Retokenized while in these two files:** `SkillMap.tsx`'s tile chrome and `SkillNodeDetail.tsx`'s
+  status/back-link/theme-pill/content-list/note-history sections now use the T18.1 token classes
+  (`bg-surface`, `border-hairline`, `text-ink`/`text-ink-muted`/`text-ink-faint`, `font-mono` for
+  meta/labels per §1) instead of the pre-existing raw `zinc-*` Tailwind classes — not explicitly
+  asked for by T18.5's task text, but these are exactly the two files ADR 0016 point 2 names as
+  ring call sites, and leaving half the same small component on the old gray palette right next to
+  the newly-added ring would have read as inconsistent. Scope still stops at these two files —
+  `src/app/skills/page.tsx`'s pending-proposal list (SkillTagger confirm/merge/discard UI) is
+  untouched, since neither the TODO comments nor this task mention it.
+- **Status label color:** `SkillNodeDetail`'s text status line (`untouched`/`seen`/`tried`/
+  `mastered`) uses the exact per-status text colors from `skill-constellation.html`'s
+  `.p-status.<status>` rule (`ink-faint`/`ink-muted`/`accent`/`gold`) — a detail neither prose nor
+  the ring itself specifies, but directly present in the binding prototype file.
+- **Verification:** `service postgresql start && npm run db:migrate`, then `npm run build` +
+  `npm test` green (302/302, +14 new tests: `SkillRing.test.tsx` new, plus additions to
+  `SkillMap.test.tsx`, `SkillNodeDetail.test.tsx`, `map.integration.test.ts`). Additionally ran
+  `npm run start` against a throwaway seed script (6 nodes: untouched/seen/tried/mastered, plus a
+  2-of-3-experimental and a 1-of-2-experimental node) and curled the real running app:
+  - `/skills`: exactly one `aria-label="Majority experimental"` marker in the rendered DOM (the
+    2/3 node), none for the 1/2 node — confirms the `>50%`, not `>=50%`, threshold.
+  - `/skills/t18-5-{untouched,seen,tried,mastered}`: raw `<circle>` stroke colors confirmed
+    `var(--color-hairline)` only (untouched), `var(--color-hairline-strong)` only (seen),
+    `var(--color-hairline)` + `var(--color-accent)` with `stroke-dasharray="131.9"
+    stroke-dashoffset="59.4"` (tried, frac exactly .55), `var(--color-hairline)` +
+    `var(--color-gold)` + a literal `★` (mastered).
+  - POSTed a real status change (`seen` → `tried`) to `/skills/t18-5-seen/progress`: confirmed the
+    303 redirect's `Location` header carries `?from=seen`; fetching that URL shows the ring's
+    initial server-rendered markup still in the *old* (`seen`) state (`var(--color-hairline-strong)`,
+    no accent arc) plus the literal text "Marked as tried." — proving the animation is a
+    client-side transition layered on top of correct old-state SSR, not a server-side jump; a
+    subsequent plain fetch of the same slug with no query param shows the final `tried` ring and no
+    confirmation text. Also checked `?from=tried` (equal to current status) and `?from=garbage`
+    (invalid) both correctly suppress the confirmation — the guard in `page.tsx` works.
+  - Reset: integration tests truncate their own tables per run (unaffected by this manual seed,
+    same as prior tasks' verification notes); no seed data was committed.

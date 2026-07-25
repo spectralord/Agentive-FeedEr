@@ -7,19 +7,29 @@ const themes: SkillMapTheme[] = [
   {
     theme: "Agentic Development",
     nodes: [
-      { id: 1, slug: "sub-agents", title: "Sub-Agents", theme: "Agentic Development", description: "…", contentCount: 3, status: "tried" },
+      {
+        id: 1,
+        slug: "sub-agents",
+        title: "Sub-Agents",
+        theme: "Agentic Development",
+        description: "…",
+        contentCount: 3,
+        status: "tried",
+        experimentalDot: false,
+      },
     ],
   },
 ];
 
 describe("SkillMap", () => {
-  it("renders theme headings and node tiles with title, content count, and status", () => {
+  it("renders theme headings and node tiles with title, content count, and a status ring", () => {
     const html = renderToStaticMarkup(<SkillMap themes={themes} />);
     expect(html).toContain("Agentic Development");
     expect(html).toContain("Sub-Agents");
     expect(html).toContain("3 items");
-    expect(html).toContain("tried");
     expect(html).toContain('href="/skills/sub-agents"');
+    // "tried" renders as SkillRing's partial --accent arc, not plain text.
+    expect(html).toContain("var(--color-accent)");
   });
 
   it("singularizes the item count for exactly one item", () => {
@@ -28,7 +38,18 @@ describe("SkillMap", () => {
         themes={[
           {
             theme: "Tooling & Workflow",
-            nodes: [{ id: 2, slug: "mcp", title: "MCP", theme: "Tooling & Workflow", description: "…", contentCount: 1, status: "seen" }],
+            nodes: [
+              {
+                id: 2,
+                slug: "mcp",
+                title: "MCP",
+                theme: "Tooling & Workflow",
+                description: "…",
+                contentCount: 1,
+                status: "seen",
+                experimentalDot: false,
+              },
+            ],
           },
         ]}
       />,
@@ -42,19 +63,57 @@ describe("SkillMap", () => {
     expect(html).toContain("No active skill nodes yet");
   });
 
-  it("T18.4: renders the untouched status distinctly from seen", () => {
+  it("T18.4/T18.5: renders untouched (barely-visible track) distinctly from seen (gray track) via the ring, not plain text", () => {
     const html = renderToStaticMarkup(
       <SkillMap
         themes={[
           {
             theme: "Tooling & Workflow",
             nodes: [
-              { id: 3, slug: "never-opened", title: "Never Opened", theme: "Tooling & Workflow", description: "…", contentCount: 0, status: "untouched" },
+              {
+                id: 3,
+                slug: "never-opened",
+                title: "Never Opened",
+                theme: "Tooling & Workflow",
+                description: "…",
+                contentCount: 0,
+                status: "untouched",
+                experimentalDot: false,
+              },
             ],
           },
         ]}
       />,
     );
-    expect(html).toContain("untouched");
+    expect(html).toContain("var(--color-hairline)");
+    expect(html).not.toContain("var(--color-hairline-strong)");
+  });
+
+  it("T18.5: shows the experimental-dot marker only when the node's flag is set", () => {
+    const withDot = renderToStaticMarkup(
+      <SkillMap
+        themes={[
+          {
+            theme: "Tooling & Workflow",
+            nodes: [
+              {
+                id: 4,
+                slug: "mostly-experimental",
+                title: "Mostly Experimental",
+                theme: "Tooling & Workflow",
+                description: "…",
+                contentCount: 5,
+                status: "seen",
+                experimentalDot: true,
+              },
+            ],
+          },
+        ]}
+      />,
+    );
+    expect(withDot).toContain("Majority experimental");
+
+    const withoutDot = renderToStaticMarkup(<SkillMap themes={themes} />);
+    expect(withoutDot).not.toContain("Majority experimental");
   });
 });
