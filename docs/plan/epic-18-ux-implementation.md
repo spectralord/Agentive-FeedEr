@@ -59,7 +59,7 @@ practice most Reels carry a `skill`, so the Skill tab usually populates.
 
 ## Tasks
 
-### ☐ T18.1 — Foundation: font fix + token system (§1, §7 #1–#2)
+### ☑ T18.1 — Foundation: font fix + token system (§1, §7 #1–#2)
 
 - **Font bug, fix first (§1):** `src/app/globals.css` sets `body { font-family: Arial, Helvetica,
   sans-serif; }`, silently overriding the Geist font already loaded via `next/font` in
@@ -211,3 +211,41 @@ _(to be maintained by the executing model)_
 
 - Pre-recorded by the strong model: the two judgment calls above (caveat stays in Compact;
   Detail ships with two tabs and a generic tab system).
+
+**T18.1 (completed 2026-07-25):**
+- Token naming: used Tailwind v4's `--color-*` convention directly in the existing `@theme
+  inline` block (`src/app/globals.css`) — `--color-ground`, `--color-surface`,
+  `--color-surface-raised`, `--color-hairline`, `--color-hairline-strong`, `--color-ink`,
+  `--color-ink-muted`, `--color-ink-faint`, `--color-accent`, `--color-accent-soft`,
+  `--color-action`, `--color-action-soft`, `--color-caution`, `--color-gold`,
+  `--color-gold-soft`. These generate `bg-*`/`text-*`/`border-*` utilities (e.g. `bg-surface`,
+  `text-ink-muted`, `border-hairline`, `text-accent`) for later tasks. Values copied verbatim
+  from `docs/specs/prototypes/reel-card-and-detail.html`'s `:root` block (confirmed byte-for-byte
+  match). `--trust-*` intentionally not ported (out of scope per epic table).
+- The new tokens are fixed hex/rgba literals, not `var(--background)`-style indirection —
+  unlike `--color-background`/`--color-foreground` they have no `prefers-color-scheme` variant,
+  matching the dark-first-only decision in the prototypes README. Existing light/dark
+  `--background`/`--foreground` vars and their media-query override were left untouched.
+- `font-variant-numeric: tabular-nums` support: **no bespoke utility/token added.** Confirmed
+  `tabular-nums` already ships as a Tailwind v4 core utility class (present in
+  `node_modules/tailwindcss/dist/lib.js`) — adding a project-defined `.tabular-nums` rule would
+  have been redundant and risked a conflicting selector. Later tasks should use the Tailwind
+  class directly (typically paired with `font-mono` per §1's mono-for-meta-data rule).
+- Added a global `@media (prefers-reduced-motion: reduce)` guard neutralizing
+  `transition-duration`, `animation-duration`, `animation-iteration-count`, and
+  `scroll-behavior` on `*`/`::before`/`::after` — a superset of the prototype's
+  `transition-duration` only version, since later tasks (e.g. T18.5's ring-fill animation) are
+  animation-based, not just transition-based.
+- Font fix: `body { font-family: var(--font-sans); }` (was hardcoded `Arial, Helvetica,
+  sans-serif`, silently shadowing the Geist font loaded via `next/font`). No fallback chain
+  appended — `next/font`'s generated `--font-geist-sans` value already includes its own
+  fallback stack.
+- Verification: `npm run build` + `npm test` green (281/281) both before and after reverting the
+  temporary proof. Token-resolution proof: temporarily added `bg-surface` to `<body>` in
+  `src/app/layout.tsx`, ran `npm run build` + `npm run start`, confirmed the compiled CSS chunk
+  contained `.bg-surface{background-color:#12171b}` (exact token value) and that `curl` against
+  `/`, `/today`, `/overview`, `/skills`, `/saved`, `/experience` all returned 200 with the class
+  present in the rendered HTML, then reverted `layout.tsx` (git diff after revert shows only
+  `globals.css` changed) and re-ran build + tests green.
+- No component markup changed (confirmed via `git diff --stat`: only `globals.css` in the final
+  diff).
