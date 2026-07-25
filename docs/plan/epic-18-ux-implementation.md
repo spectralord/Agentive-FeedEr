@@ -42,12 +42,19 @@
 
 ### Two judgment calls — deviations from the design doc, made deliberately
 
-**1. `caveat` stays in Compact; Context tab shows it *as well*.** §2.2 places `caveat` in the
-Context tab, and §1's token table still says "(Epic 10, not yet built)" — the design was written
-**before Epic 10 Stage 1 shipped**. It is now built (T10.1–T10.4) and already renders in Compact.
-Demoting a shipped trust warning into a tab the user may never open is a regression, and it
-contradicts the doc's own reasoning for keeping the Action block in Compact ("it must not
-disappear into a tab a user may never open"). So: keep it in Compact, surface it in Context too.
+**1. `caveat`: minimal indicator in Compact, full text in the Context tab.** *(Revised
+2026-07-24 after the phase-2 design update.)* §2.2 places `caveat` in the Context tab, and §1's
+token table still says "(Epic 10, not yet built)" — that part of the design predates Epic 10
+Stage 1 shipping (T10.1–T10.4), which already renders the caveat in Compact. Silently demoting a
+shipped trust warning into a tab is a visibility regression.
+
+But phase 2 also tightened Compact to "meta row, badge row, title, summary. **Nothing else**",
+removing the Action block — so restoring a full caveat *box* would now cut against the design's
+own direction. Resolution, using the design's own pattern language for the action ("Compact
+carries a **minimal indicator only**"): a small `--caution` marker in Compact signals a caveat
+exists; the full text lives in the Context tab. Trust signal stays visible, Compact stays lean.
+Note the freshness/supersession notice is explicitly *kept* in Compact by §2.1, so a
+caution-class element there is consistent, not an exception.
 
 **2. Detail ships with two tabs (Context, Skill), not three.** Write-up is blocked (above). The
 tab system must be built **generically** — an array of tabs plus the §2.2 hiding rule — so
@@ -105,11 +112,21 @@ touched once.
 - **Confidence badge** (Epic 11, already implemented) gets a *subtly different* treatment from the
   plain category/maturity chips — e.g. a small dot-tick rather than plain text — so "how many
   independent sources agree" does not read as just another category.
-- **Action block stays in Compact**, restyled onto `--action`; effort tag as a small pill beside
-  it. It must not move into a tab.
-- **Freshness/supersession notice** restyles onto `--caution`, structurally unchanged (link +
-  "Confirm superseded" form).
-- **`caveat` stays in Compact** on `--caution` (see judgment call 1 above).
+- **⚠️ REMOVE the Action block from Compact.** *(Corrected 2026-07-24 — the design doc was
+  revised in phase 2 and this reversed. An earlier draft said it stays; the doc now states that
+  was wrong and contradicted both the grill decision and the accepted prototype.)* Today's
+  emerald `reel.action` + `effortTag` box **does not survive this redesign**. Compact carries a
+  **minimal indicator only** — the skill badge *is* that indicator, doing double duty as topic tag
+  and "there's something to apply here". `reel.action` resurfaces in the Detail view's Skill tab
+  (T18.7), next to the skill it advances.
+- **Compact is therefore exactly:** meta row (time · scores), badge row, title, summary — plus the
+  freshness notice and caveat marker below. Nothing else. **Verify against
+  `prototypes/reel-card-and-detail.html`, which is correct on this point.** (No trust tag: it is
+  in the prototype's meta row but out of scope for this epic — no source-authority data exists.)
+- **Freshness/supersession notice** stays in Compact, restyled onto `--caution`, structurally
+  unchanged (link + "Confirm superseded" form).
+- **`caveat`: minimal `--caution` marker only** in Compact (see judgment call 1 above); the full
+  text moves to the Context tab in T18.6. Do not keep the current full caveat paragraph.
 - **`ReelStackCard` banner** onto the same tokens, with small source-initial avatars instead of a
   plain bullet list.
 - **Verification:** `curl` against `npm run start` with seeded reels covering: caveat set,
@@ -190,6 +207,10 @@ Depends on T18.5 (ring) + T18.6 (tab system). Genuinely new content, not a resty
   **HARD CONSTRAINT (§8.4, ADR 0016):** this must call the **same** `setProgress` mutation the
   node detail page posts to (`/skills/[slug]/progress`) — never a second implementation. Two
   implementations of "mark as tried" will drift.
+- **`reel.action` + `effortTag` live here now** (moved out of Compact by the phase-2 revision of
+  §2.1 — see T18.2). This is their home: next to the skill they advance, one tap from the card.
+  Sourced-only still applies — no `action`, nothing shown, nothing invented. (As a *checkable*
+  Actionable it also belongs on the node page, but that is ADR 0019 and out of scope.)
 - Deliberately **not** offered here: notes, downgrades, `mastered` confirmation. Those live on the
   real node page, reached via an "Open in Skill Map" link.
 - Up to 2 other associated items (Reels/Reports) as a compact preview, with a "+N more" link.
@@ -197,6 +218,89 @@ Depends on T18.5 (ring) + T18.6 (tab system). Genuinely new content, not a resty
   duplicate path.
 - **Verification:** curl; "Mark as tried" moves the node to `tried` and the ring updates on both
   this tab and `/skills`; the action is absent when status is not `seen`; build + tests green.
+
+---
+
+---
+
+## Phase 2 — app shell, navigation, missing surfaces (design doc §10, added 2026-07-24)
+
+> A second design audit landed on `main` while T18.1 was in flight, adding design doc **§10** and
+> ADRs **0022**/**0023**. §10.10 is its own task list; the tasks below are the ones **not blocked
+> on unbuilt features**. Several are *functional breakage, not polish*.
+>
+> **Excluded from phase 2:**
+> - §10.10 #5 (Today completion moment) — needs §9.5's constellation component (ADR 0020, blocked).
+> - **Retiring the SOTA section** (ADR 0022) — its own text gates it: "Retire SOTA only once
+>   Guides ship" (ADR 0018, blocked). ADR 0022 is also still `proposed`. `/overview` keeps SOTA;
+>   only its navigation placement changes (T18.10).
+> - The **Knowledge Base** entry in the Skills hub (§9.6) — the surface does not exist.
+
+### ☐ T18.8 — Route boundaries: `loading` / `error` / `not-found` (§10.2, §10.10 #1)
+
+**Functional gap, no design decisions needed.** Verified across all 12 pages: no `loading.tsx`,
+no `error.tsx`, no `not-found.tsx` anywhere. Every page is `force-dynamic`, so **every navigation
+is a DB round-trip with zero feedback** — on mobile this reads as a dead app. `/clusters/[id]`
+and `/skills/[slug]` both already call `notFound()` with nothing designed behind it.
+- Route-level `loading.tsx` skeletons **matching each surface's shape** (card outlines for the
+  feed, row outlines for lists) — not one generic spinner.
+- `error.tsx` with a retry affordance; `not-found.tsx`.
+- Use T18.1's tokens. **Verification:** curl each route family; force an error and a 404.
+
+### ☐ T18.9 — Header-height token (§10.9, §10.10 #2)
+
+Header height is currently coupled to layout by magic number (the feed's `-mt-12`/`pt-28` dance).
+Replace with a real token. **Prerequisite for T18.10.** **Verification:** header/feed alignment
+unchanged; no remaining magic offsets.
+
+### ☐ T18.10 — Bottom tab bar + hubs: 7 links → 4 (§10.1, ADR 0023, §10.10 #3)
+
+Depends on T18.9. **Functional breakage today:** `layout.tsx` renders 7 links plus the brand in
+one flex row inside `max-w-xl` — no wrap, no scroll — which **overflows a 375px phone**.
+- **Four destinations** (prototype `prototypes/nav-ia.html`): **Today** · **Feed** ·
+  **Skills** (hub: Map · Adoption Log — *Knowledge Base omitted, does not exist*) ·
+  **Library** (hub: Saved · Archive(`/overview`) · Experience). **⚙ Admin is not a tab.**
+- **Bottom bar on mobile**, not top — one-handed phone product.
+- **BINDING RULE (the actual content of ADR 0023):** new surfaces go into a hub, **never** onto
+  the tab bar. Without this the problem returns every epic.
+- **The feed stays a full-screen snap-scroll reel view — not negotiable.** Card height becomes
+  `calc(100dvh - var(--tabbar-h))`, with `ReelActions` riding just above the tab bar.
+- **Do NOT auto-hide the bar on scroll.** An earlier ADR 0023 draft prescribed it and was
+  corrected: with `scroll-snap-stop: always` every swipe is a discrete page turn, so the bar
+  would toggle on every card advance (ADR 0023 decision 5).
+- **Leave `/` as the Feed.** Making Today the landing route is flagged in §10.1 as "open, worth
+  deciding separately" — a product decision, not a design implementation. Note it, don't do it.
+- **Verification:** curl at 375px-equivalent; no overflow; snap cards still full-bleed above the
+  bar; every previously-reachable route still reachable.
+
+### ☐ T18.11 — Freshness indicator in the app bar (§10.3, §10.10 #4)
+
+`lastPolledAt` / `pipeline_runs.finishedAt` appear **only** under `/admin` — if the pipeline
+fails, a user-facing surface shows nothing. **Data already exists**; surface a compact "updated
+Xh ago" signal in the app bar. Must **not** use `--caution` for the normal case (ADR 0016 — that
+token is caveat/supersession only). **Verification:** curl with a recent and a stale run.
+
+### ☐ T18.12 — Shared empty-state component (§10.7, §10.10 #6)
+
+Empty states are inconsistent and **one is developer-facing** — `src/app/page.tsx`'s empty feed
+tells the user to run `npm run job:daily`. Extract one shared component; drop the dev copy.
+**Verification:** every empty state renders through it; no CLI instructions in user-facing text.
+
+### ☐ T18.13 — Back-affordance rule for non-tab pages (§10.6, §10.10 #7)
+
+Orphan pages with inconsistent back navigation (`/clusters/[id]`, `/skills/[slug]`,
+`/experience/[id]/edit`, …). Define **one** rule for pages that are not tab destinations and
+apply it everywhere. **Verification:** every non-tab page has a consistent, working back path.
+
+### ☐ T18.14 — Optimistic mutations for progress/lifecycle (§10.8, §10.10 #9)
+
+Every mutation is currently a full-page POST + redirect. **The pattern already exists** in
+`ReelActions` (Epic 6) — extend it to progress (`setProgress`) and lifecycle actions.
+- **HARD CONSTRAINT (unchanged from T18.7 / §8.4):** still exactly one `setProgress` mutation
+  path. Optimism is a UI layer over it, never a second write path.
+- Keep the no-JS fallback where it exists today.
+- **Verification:** status change reflects immediately and survives reload; a failed request
+  rolls back visibly.
 
 ---
 
