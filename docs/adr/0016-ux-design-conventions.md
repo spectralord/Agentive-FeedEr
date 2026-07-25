@@ -1,6 +1,9 @@
 # ADR 0016 — UX design conventions: reserved semantic color, shared ring language, design-for-shortest-content
 
-- Status: proposed (design-expert session, ADR 0014 tier 2; user/strong-model override always possible)
+- Status: **accepted** 2026-07-24 (user go-ahead to implement the design; strong-model review
+  found no conflict with ADR 0003/0004/0005/0013). Implemented by **Epic 18**
+  (`docs/plan/epic-18-ux-implementation.md`). Was: proposed (design-expert session, ADR 0014
+  tier 2; user/strong-model override always possible).
 - Date: 2026-07-24
 - Related: `docs/specs/2026-07-24-ux-gamification-design.md` (full rationale + mockup history),
   ADR 0004 (derived labels), ADR 0014 (three-tier design process)
