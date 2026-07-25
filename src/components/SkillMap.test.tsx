@@ -85,8 +85,9 @@ describe("SkillMap", () => {
         ]}
       />,
     );
-    expect(html).toContain("var(--color-hairline)");
-    expect(html).not.toContain("var(--color-hairline-strong)");
+    // untouched is the only frac-0 rung: outline track, no progress arc at all.
+    expect(html).toContain("var(--color-hairline-strong)");
+    expect(html).not.toContain("stroke-dashoffset");
   });
 
   it("T18.5: shows the experimental-dot marker only when the node's flag is set", () => {

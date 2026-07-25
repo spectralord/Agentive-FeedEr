@@ -553,3 +553,18 @@ _(to be maintained by the executing model)_
     (invalid) both correctly suppress the confirmation — the guard in `page.tsx` works.
   - Reset: integration tests truncate their own tables per run (unaffected by this manual seed,
     same as prior tasks' verification notes); no seed data was committed.
+
+**T18.5 ring rungs — corrected by the strong model (2026-07-25):**
+The first implementation took the ring's states from `reel-card-and-detail.html`
+(`seen` at frac 0, `tried` at .55), leaving `untouched` and `seen` both frac-0 and
+distinguishable only by track colour. That defeats the purpose of T18.4/§9.4
+("restores meaning to the bottom rung of the ring"). Per
+`docs/specs/prototypes/README.md`'s file/section table, the binding prototype for §5.1 is
+**`skill-constellation.html`**, whose `ringSvg()` (line ~438) is the only one that knows
+about the fourth state and defines a four-rung progression:
+`untouched 0 · seen .33 (ink-muted) · tried .66 (accent) · mastered 1 (gold + ★)`.
+That is now what `SkillRing` renders. `reel-card-and-detail.html`'s three-rung ring simply
+predates the fourth state; where the two prototypes disagree on the Skills surface, the
+constellation wins and is also the superset. The constellation ships an explicit
+"Untouched — tagged, never opened" legend entry, confirming it is meant to read as its own
+visible state.

@@ -8,19 +8,21 @@ import type { DisplayStatus } from "@/lib/skills/progress";
  * the `/skills` grid tile, the `/skills/[slug]` detail header, and (T18.7,
  * later) the Reel Detail Skill tab. No call site re-invents this.
  *
- * Geometry/dash math match `ringSvg()` in
- * `docs/specs/prototypes/reel-card-and-detail.html` verbatim at the default
- * size: r=21, dash=2πr, 52×52 viewBox, stroke-width 4, tried frac .55,
- * mastered frac 1 + ★. That prototype's ring only has three states
- * (seen/tried/mastered); T18.4 is what makes a fourth, "untouched", exist at
- * all. `skill-constellation.html`'s `ringSvg()` *does* have all four states,
- * but partial-fills "seen" (frac .33) — which contradicts this task's own
- * wording ("seen = gray outline", not a partial fill). Resolution: untouched
- * and seen both render as frac-0 (no progress arc, matching the reel-card
- * model for "not yet tried") and are told apart by how visible the *track*
- * itself is — barely-visible `--color-hairline` for untouched vs. a more
- * visible `--color-hairline-strong` "gray outline" for seen. tried/mastered
- * match reel-card-and-detail.html's frac/color/glyph exactly.
+ * Geometry matches both prototypes: r=21, dash=2πr, 52×52 viewBox,
+ * stroke-width 4, mastered = full arc + ★.
+ *
+ * **Four-rung progression, per `docs/specs/prototypes/skill-constellation.html`'s
+ * `ringSvg()` (line ~438) — that is the binding prototype for §5.1** (see
+ * `docs/specs/prototypes/README.md`'s file/section table), and it is the only
+ * one that knows about a fourth state:
+ *   untouched 0 · seen .33 · tried .66 · mastered 1 (+★)
+ * `reel-card-and-detail.html`'s ring predates the fourth state and has only
+ * three rungs (seen at frac 0); where the two disagree the constellation wins
+ * here, and it is also the superset. Collapsing untouched and seen to both be
+ * frac-0 would defeat the point of T18.4/§9.4 ("restores meaning to the bottom
+ * rung of the ring") — the constellation ships an explicit
+ * "Untouched — tagged, never opened" legend entry precisely because it is meant
+ * to read as its own visible state.
  */
 
 const BASE_SIZE = 52;
@@ -35,9 +37,9 @@ interface RingConfig {
 }
 
 const RING_CONFIG: Record<DisplayStatus, RingConfig> = {
-  untouched: { frac: 0, trackColor: "var(--color-hairline)", fillColor: null, glyph: "" },
-  seen: { frac: 0, trackColor: "var(--color-hairline-strong)", fillColor: null, glyph: "" },
-  tried: { frac: 0.55, trackColor: "var(--color-hairline)", fillColor: "var(--color-accent)", glyph: "" },
+  untouched: { frac: 0, trackColor: "var(--color-hairline-strong)", fillColor: null, glyph: "" },
+  seen: { frac: 0.33, trackColor: "var(--color-hairline)", fillColor: "var(--color-ink-muted)", glyph: "" },
+  tried: { frac: 0.66, trackColor: "var(--color-hairline)", fillColor: "var(--color-accent)", glyph: "" },
   mastered: { frac: 1, trackColor: "var(--color-hairline)", fillColor: "var(--color-gold)", glyph: "★" },
 };
 
