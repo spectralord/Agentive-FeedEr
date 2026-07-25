@@ -366,6 +366,18 @@ _(to be maintained by the executing model)_
   on ADR 0017, `reels.writeup`), so removing them now would delete real, already-shipped content
   from the product with no replacement surface anywhere reachable. Flagged here for review/override
   if the strong model disagrees.
+  > **✅ RULING (strong model, 2026-07-25): keep both — correct call, but explicitly TEMPORARY.**
+  > Checked against the prototype, which is binding: `compactHtml()` is meta-row → badges → title
+  > → summary → tap-hint, with **no** example and **no** source link; `writeupPanel()` carries
+  > `source-ref` *and* the `example-block`. So the target design does put both in the Write-up
+  > tab — that tab is blocked on ADR 0017. Deleting them now would remove the "sourced mini
+  > practice example" (part of the product's own core-value statement) and make the source URL
+  > unreachable, which is an ADR 0005 attribution problem. ADR 0016 point 3 warns against building
+  > UI for content that doesn't exist; deleting UI for content that *does* exist, in favour of a
+  > surface that doesn't, is the same mistake inverted.
+  > **Binding follow-up:** when the Write-up tab is built (ADR 0017 lands), `example` and the
+  > source reference **move into it** and come **out** of Compact. Whoever builds that must do
+  > both halves — this is the one place Compact knowingly deviates from the prototype.
 - **Score-mini is bar-only, no literal numbers** — matches the prototype's `scoreMini()` exactly
   (label + bar per row, width = score%). Added `title`/`aria-label` (e.g. "Relevance 82/100") on
   each row for accessibility/hover; this doesn't change the visual, since neither renders as visible
