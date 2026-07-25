@@ -1,8 +1,8 @@
-# ADR 0022 — Navigation IA: four destinations, hubs, and the rule that keeps it that way
+# ADR 0023 — Navigation IA: four destinations, hubs, and the rule that keeps it that way
 
 - Status: proposed (design-expert session, ADR 0014 tier 2)
 - Date: 2026-07-24
-- Related: ADR 0021 (`/overview` → Archive, which this ADR relocates), design doc §10.1
+- Related: ADR 0022 (`/overview` → Archive, which this ADR relocates), design doc §10.1
 - Prototype: `docs/specs/prototypes/nav-ia.html`
 
 ## Context / Problem
@@ -50,9 +50,17 @@ the overflow alone (scroll the row, shrink the text) treats the symptom.
    returns; with it, growth lands inside Skills or Library where a segmented control absorbs it.
    The tab bar is a fixed four.
 
-5. **The feed's bottom bar auto-hides on scroll-down and reveals on scroll-up.** A persistent bar
-   would eat ~56px of every full-screen snap card and collide with the floating `ReelActions`
-   bar. The action bar rides above the tab bar when both are visible.
+5. **The tab bar is persistent everywhere, including the feed; snap cards are sized to the
+   remaining viewport** — `height: calc(100dvh - var(--tabbar-h))` rather than `100dvh`. The
+   floating `ReelActions` bar sits just above the tab bar.
+
+   **This corrects an earlier draft of this ADR, which prescribed auto-hide-on-scroll.** That is
+   the right pattern for a *continuous* feed (Instagram home, Twitter) and the wrong one for a
+   *snap-paged* feed: with `scroll-snap-stop: always`, every swipe is a discrete page turn that
+   fires a scroll event, so the bar would toggle on every single card advance, and each
+   re-appearance would overlap content laid out for the full height. Sizing the cards to the
+   real visible area instead costs ~56px of card height, keeps navigation permanently reachable,
+   and makes snap points align exactly. Do not reintroduce auto-hide here.
 
 ## Alternatives
 
@@ -76,7 +84,7 @@ the overflow alone (scroll the row, shrink the text) treats the symptom.
 - Two hub pages are new (`/skills` gains a sub-nav; Library is a new route grouping
   `/saved`, `/archive`, `/experience`). Existing routes can stay where they are and simply be
   reached through the hub, keeping the change UI-shaped rather than a routing rewrite.
-- `/overview` → `/archive` per ADR 0021, landing inside Library.
+- `/overview` → `/archive` per ADR 0022, landing inside Library.
 - `/admin` stays routable and simply loses its nav entry.
 - Deep pages not reachable from the tab bar (`/clusters/[id]`, `/skills/[slug]`,
   `/experience/[id]/edit`) need a consistent back affordance — currently only some have one

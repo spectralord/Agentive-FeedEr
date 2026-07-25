@@ -66,8 +66,33 @@
   .subnav button { background: none; border: none; border-bottom: 2px solid transparent; color: var(--ink-faint); font-size: 12px; padding: 6px 3px 9px; cursor: pointer; }
   .subnav button.on { color: var(--accent); border-bottom-color: var(--accent); }
 
-  .body { flex: 1; overflow-y: auto; padding: 14px 16px 18px; scrollbar-width: none; }
+  .body { flex: 1; overflow-y: auto; padding: 14px 16px 18px; scrollbar-width: none; position: relative; }
   .body::-webkit-scrollbar { display: none; }
+
+  /* Feed/Today keep the full-screen snap reel view. The tab bar is persistent,
+     so a card is the remaining viewport — in production
+     height: calc(100dvh - var(--tabbar-h)), here 100% of .body. */
+  .body.reels { padding: 0; scroll-snap-type: y mandatory; }
+  .reel-full {
+    height: 100%; scroll-snap-align: start; scroll-snap-stop: always;
+    display: flex; flex-direction: column; padding: 14px 16px 16px;
+    border-bottom: 1px solid var(--hairline);
+  }
+  .reel-full .sum { flex: 1; overflow-y: auto; }
+  .reel-actions { display: flex; justify-content: flex-end; gap: 6px; padding-top: 10px; }
+  .reel-actions button {
+    width: 30px; height: 30px; border-radius: 50%; font-size: 13px; cursor: pointer;
+    background: var(--surface-raised); border: 1px solid var(--hairline); color: var(--ink-muted);
+  }
+  .reel-actions button.on { background: var(--ink); color: var(--ground); border-color: var(--ink); }
+  .action-box {
+    margin-top: 10px; border-radius: 11px; padding: 10px 11px;
+    border: 1px solid color-mix(in srgb, var(--action) 30%, var(--hairline));
+    background: rgba(63,182,115,.12);
+  }
+  .action-box .lbl { font-family: var(--mono); font-size: 9px; letter-spacing: .07em; text-transform: uppercase; color: var(--action); }
+  .action-box .txt { margin-top: 4px; font-size: 12px; line-height: 1.45; }
+  .srcline { margin-top: auto; padding-top: 10px; font-size: 10.5px; color: var(--ink-faint); }
 
   .tabbar { display: flex; border-top: 1px solid var(--hairline); background: rgba(11,16,21,.96); flex-shrink: 0; padding-bottom: 4px; }
   .tabbar button { flex: 1; background: none; border: none; color: var(--ink-faint); padding: 9px 2px 7px; cursor: pointer; display: flex; flex-direction: column; align-items: center; gap: 3px; font-size: 9.5px; letter-spacing: .02em; }
@@ -196,7 +221,8 @@
 
   <div class="notes">
     <h3>The one real tension</h3>
-    <p>A persistent bottom bar eats ~56px of every full-screen snap card, and it collides with the floating <code>ReelActions</code> bar. Fix: <b>auto-hide on scroll-down, reveal on scroll-up</b> — the pattern people already know from Instagram and Twitter — with the action bar riding above it when shown. Switch to the Feed tab to see the note about this.</p>
+    <p><b>The feed is still the feed.</b> Today and Feed keep the full-screen vertical snap-scroll reel format — one card per screen, <code>scroll-snap-stop: always</code>. Swipe them in the frame. Nothing about the navigation work changes that.</p>
+    <p>A persistent bottom bar does eat ~56px of every card, so the card height becomes <code>calc(100dvh - var(--tabbar-h))</code> rather than <code>100dvh</code>, with <code>ReelActions</code> riding just above the bar. An earlier draft of ADR 0023 said <i>auto-hide on scroll</i> instead — that was wrong: auto-hide suits a <i>continuous</i> feed, but with snap-stop every swipe is a discrete page turn, so the bar would toggle on every card advance and overlap content sized for the full height.</p>
     <p><b>Today as the root.</b> Worth considering separately: <code>/</code> is currently the Feed, but the daily ritual is Today. Making Today the landing route matches how the product is actually used — open it, get your three things, finish. The Feed already has a "To the full feed" path from Today's ending card.</p>
   </div>
 
@@ -223,15 +249,26 @@
   };
   const STATE = { tab: "today", sub: { skills: 0, library: 0 } };
 
+  // One full-screen snap reel — the feed format is unchanged by the nav work.
   function reelCard(o) {
-    return `<div class="card">
-      <div class="meta"><span class="chip" style="border-color:rgba(91,143,214,.4);color:#5b8fd6">Official</span>
-      <span>${esc(o.time)}</span></div>
+    return `<article class="reel-full">
+      <div class="meta">
+        <span class="chip" style="border-color:rgba(91,143,214,.4);color:#5b8fd6">Official</span>
+        <span>${esc(o.time)}</span>
+        <span style="margin-left:auto;font-family:var(--mono);font-size:9px;color:var(--ink-faint)">R ${o.r} · Q ${o.q}</span>
+      </div>
       <div style="margin-top:8px;display:flex;flex-wrap:wrap;gap:5px">
         <span class="chip">${esc(o.cat)}</span><span class="chip skill">${esc(o.skill)}</span></div>
-      <div class="ttl">${esc(o.title)}</div>
+      <div class="ttl" style="font-size:16px">${esc(o.title)}</div>
       <div class="sum">${esc(o.sum)}</div>
-    </div>`;
+      ${o.action ? `<div class="action-box"><div class="lbl">To-Try · ${esc(o.effort)}</div>
+        <div class="txt">${esc(o.action)}</div></div>` : ""}
+      <div class="srcline">${esc(o.src)} · View source</div>
+      <div class="reel-actions">
+        <button type="button" title="Save">🔖</button><button type="button" title="Like">👍</button>
+        <button type="button" title="Dislike">👎</button><button type="button" title="Hide">🙈</button>
+      </div>
+    </article>`;
   }
 
   function miniSky() {
@@ -253,39 +290,61 @@
   }
 
   function viewToday() {
-    return reelCard({ time: "3h ago", cat: "Claude-Feature", skill: "Agent Skills",
+    return reelCard({ time: "3h ago", cat: "Claude-Feature", skill: "Agent Skills", r: 84, q: 77,
+      src: "Anthropic Blog", effort: "5-min-test",
       title: "Claude Skills: capabilities a project remembers",
-      sum: "A folder Claude loads on its own once a task matches its description — conditional context, not another always-on file." })
-    + reelCard({ time: "6h ago", cat: "Claude-Feature", skill: "Prompt Caching",
+      sum: "A Skill is a folder with a SKILL.md that Claude loads on its own once a task matches its description. Unlike CLAUDE.md, which sits in every turn whether relevant or not, a Skill is conditional context — present when useful, invisible otherwise. For a team repeating the same reviews and conventions across every session, that removes a categorically different kind of friction than a bigger context window ever could.",
+      action: "Write a SKILL.md for your review checklist and see whether it loads unprompted." })
+    + reelCard({ time: "6h ago", cat: "Claude-Feature", skill: "Prompt Caching", r: 88, q: 81,
+      src: "Anthropic Changelog", effort: "5-min-test",
       title: "Prompt caching discount now covers tool definitions",
-      sum: "Tool schemas now qualify for the same cache rate as system prompts. No code change needed." })
-    + `<div class="done-card">
-        <div class="done-h">That's it for today ✅</div>
-        <div class="done-s">Two Reels, one To-Try done.</div>
-        ${miniSky()}
-        <div class="mini-cap">Your map today</div>
-        <div class="done-stats">
-          <div class="st"><div class="st-n a">2</div><div class="st-l">skills touched</div></div>
-          <div class="st"><div class="st-n b">1</div><div class="st-l">to-try done</div></div>
-          <div class="st"><div class="st-n c">6d</div><div class="st-l">running</div></div>
+      sum: "Tool definitions were the conspicuous exception to prompt caching: register fifteen tools with detailed schemas and that payload got resent, at full price, on every call. As of today they qualify for the same cache rate as system prompt content — up to 90% cheaper on tool-heavy calls, with no code change required.",
+      action: "Check console usage for the cache-read share on your tool-heavy calls." })
+    + `<div class="reel-full" style="justify-content:center">
+        <div class="done-card">
+          <div class="done-h">That's it for today ✅</div>
+          <div class="done-s">Two Reels, one To-Try done.</div>
+          ${miniSky()}
+          <div class="mini-cap">Your map today</div>
+          <div class="done-stats">
+            <div class="st"><div class="st-n a">2</div><div class="st-l">skills touched</div></div>
+            <div class="st"><div class="st-n b">1</div><div class="st-l">to-try done</div></div>
+            <div class="st"><div class="st-n c">6d</div><div class="st-l">running</div></div>
+          </div>
+          <button class="done-btn" type="button">To the full feed →</button>
         </div>
-        <button class="done-btn" type="button">To the full feed →</button>
       </div>`;
   }
 
   function viewFeed() {
-    return `<div class="filters">
-        <span class="chip on">All</span><span class="chip">Claude-Feature</span><span class="chip">Tooling</span><span class="chip">🆕 New</span>
+    return `<div class="reel-full" style="padding-bottom:0">
+        <div class="filters" style="margin-bottom:10px">
+          <span class="chip on">All</span><span class="chip">Claude-Feature</span><span class="chip">Tooling</span><span class="chip">🆕 New</span>
+        </div>
+        <div style="flex:1;overflow-y:auto">
+          <div class="ttl" style="font-size:16px;margin-top:0">MCP server timing out in Docker? Check the bind address</div>
+          <div class="meta" style="margin-top:8px">
+            <span class="chip" style="border-color:rgba(124,135,144,.4);color:#7c8790">Community</span>
+            <span>1d ago</span>
+            <span style="margin-left:auto;font-family:var(--mono);font-size:9px;color:var(--ink-faint)">R 71 · Q 64</span>
+          </div>
+          <div style="margin-top:8px;display:flex;flex-wrap:wrap;gap:5px">
+            <span class="chip">Tooling</span><span class="chip skill">MCP Debugging</span></div>
+          <div class="sum">The failure mode is frustratingly generic — the client hangs, then dies with ETIMEDOUT, and the server logs show nothing wrong, because from its own point of view nothing is. It's listening; just not on an address the client can reach. In Compose setups the server binds to 127.0.0.1 by default: reachable inside its own container, invisible from a sibling.</div>
+          <div class="action-box"><div class="lbl">To-Try · 5-min-test</div>
+            <div class="txt">Reproduce the 0.0.0.0 bind fix in a Compose setup.</div></div>
+        </div>
+        <div class="srcline">GitHub — Issue #482 · View source</div>
+        <div class="reel-actions">
+          <button type="button" class="on" title="Save">🔖</button><button type="button" title="Like">👍</button>
+          <button type="button" title="Dislike">👎</button><button type="button" title="Hide">🙈</button>
+        </div>
       </div>`
-      + reelCard({ time: "3h ago", cat: "Claude-Feature", skill: "Agent Skills",
-        title: "Claude Skills: capabilities a project remembers",
-        sum: "A folder Claude loads on its own once a task matches its description." })
-      + reelCard({ time: "1d ago", cat: "Tooling", skill: "MCP Debugging",
-        title: "MCP server timing out in Docker? Check the bind address",
-        sum: "Binds to 127.0.0.1 by default — invisible from a sibling container." })
-      + reelCard({ time: "2d ago", cat: "Technique", skill: "Context Engineering",
+      + reelCard({ time: "2d ago", cat: "Technique", skill: "Context Engineering", r: 79, q: 74,
+        src: "Simon Willison", effort: "afternoon",
         title: "Most “the model didn't know X” failures are retrieval problems",
-        sum: "The instinct to add context is usually the wrong fix." });
+        sum: "The instinct to add context is usually the wrong fix. Most cases where a model appears not to know something are retrieval problems wearing a context-window costume — the information was never fetched, not squeezed out.",
+        action: "Take your longest prompt, cut 30%, and measure whether output actually degrades." });
   }
 
   function skyMap() {
@@ -369,10 +428,7 @@
   }
 
   const TITLES = { today: "Today", feed: "Feed", skills: "Skills", library: "Library" };
-  const NOTES = {
-    feed: "bar auto-hides while scrolling the feed",
-    today: "", skills: "", library: ""
-  };
+  const NOTES = { today: "", feed: "", skills: "", library: "" };
 
   function render() {
     document.getElementById("appTitle").textContent = TITLES[STATE.tab];
@@ -388,6 +444,7 @@
     } else { subnav.style.display = "none"; subnav.innerHTML = ""; }
 
     const body = document.getElementById("body");
+    body.classList.toggle("reels", STATE.tab === "today" || STATE.tab === "feed");
     body.innerHTML = STATE.tab === "today" ? viewToday()
       : STATE.tab === "feed" ? viewFeed()
       : STATE.tab === "skills" ? viewSkills() : viewLibrary();

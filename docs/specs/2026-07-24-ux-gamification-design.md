@@ -475,11 +475,11 @@ Don't build 4 before 3 and expect it to feel finished.
 
 > Added 2026-07-24 after a second audit pass. §1–§9 designed the Reel card and the Skills layer;
 > this section covers everything **around** them — the shell they live in, and the screens that
-> were never designed at all. Companion ADRs: **0021** (retire SOTA), **0022** (navigation IA).
+> were never designed at all. Companion ADRs: **0022** (retire SOTA), **0023** (navigation IA).
 >
 > Several items here are **functional breakage, not polish** — §10.1 and §10.2 in particular.
 
-### 10.1 Navigation has outgrown its design → ADR 0022
+### 10.1 Navigation has outgrown its design → ADR 0023
 
 `layout.tsx` renders 7 links plus the brand in one flex row inside `max-w-xl` (576px): Today,
 Feed, Overview, Saved, Experience, Skills, Admin. No wrap, no scroll, no responsive treatment —
@@ -498,12 +498,19 @@ presented as peers when they are four different kinds of thing.
 
 **Bottom bar on mobile**, not top: this is a one-handed phone product and the top bar is the
 wrong ergonomics. **The binding rule that keeps this from recurring: new surfaces go into a hub,
-never onto the tab bar.** That rule is the actual content of ADR 0022 — without it, this problem
+never onto the tab bar.** That rule is the actual content of ADR 0023 — without it, this problem
 returns every epic.
 
-**The real tension, to design rather than gloss:** a persistent bottom bar eats ~56px of every
-full-screen snap card and collides with the floating `ReelActions` bar. Resolve with
-**auto-hide on scroll-down / reveal on scroll-up**, action bar riding above it when shown.
+**The real tension, resolved:** a persistent bottom bar eats ~56px of every full-screen snap
+card and collides with the floating `ReelActions` bar. **The feed stays a full-screen
+snap-scroll reel view — that is not up for negotiation and nothing here changes it.** The card
+height simply becomes `calc(100dvh - var(--tabbar-h))` instead of `100dvh`, with `ReelActions`
+riding just above the tab bar.
+
+An earlier draft of ADR 0023 prescribed auto-hide-on-scroll here. That was wrong: auto-hide suits
+a *continuous* feed, but with `scroll-snap-stop: always` every swipe is a discrete page turn, so
+the bar would toggle on every card advance and overlap content sized for the full height. See ADR
+0023 decision 5.
 
 **Open, worth deciding separately:** `/` is currently the Feed, but the daily ritual is Today.
 Making Today the landing route matches actual use — Today already links onward to the full feed.
@@ -543,7 +550,7 @@ anywhere in the UI.
 No streak-shaming: "6d running" is a rhythm signal, not a counter that punishes a missed day.
 Consistent with §9.7's decay rule — nothing is ever taken away.
 
-### 10.5 `/overview` → Archive, and the SOTA section retires → ADR 0021
+### 10.5 `/overview` → Archive, and the SOTA section retires → ADR 0022
 
 `isSota()` is `maturity === "established" && relevance >= 70 && quality >= 70` — a per-reel
 threshold with **no notion of a topic and no comparison to anything.** State of the art is
@@ -599,7 +606,7 @@ a token before touching the shell.
 |---|---|---|---|
 | 1 | S | `loading.tsx` / `error.tsx` / `not-found.tsx` (§10.2) | No decisions needed; do first |
 | 2 | S | Header-height token (§10.9) | Prerequisite for #3 |
-| 3 | M | Bottom tab bar + hub sub-navs, 7 links → 4 (§10.1, ADR 0022) | Includes auto-hide on the feed |
+| 3 | M | Bottom tab bar + hub sub-navs, 7 links → 4 (§10.1, ADR 0023) | Feed keeps full-screen snap; cards size to `100dvh - tabbar` |
 | 4 | S | Freshness indicator in the app bar (§10.3) | Data already exists |
 | 5 | M | Today completion moment with mini-constellation (§10.4) | Needs §9.5's sky component |
 | 6 | S | Shared empty-state component; drop the dev copy (§10.7) | |

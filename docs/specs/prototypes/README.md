@@ -64,9 +64,11 @@ bottom tab bar — tap through all four destinations; Skills and Library have se
 - **Light theme.** The product is dark-first by decision; no light variant was designed.
 - **Desktop navigation.** `nav-ia.html` shows the mobile bottom bar only. The four-destination
   structure holds on wide viewports, but the rendering (side rail? top bar?) is an open question
-  in ADR 0022 — do not assume "the mobile bar, wider".
-- **Auto-hide on scroll** for the feed's tab bar (ADR 0022) is described, not implemented in the
-  prototype.
+  in ADR 0023 — do not assume "the mobile bar, wider".
+- **Reel dimensions are simulated.** `nav-ia.html` runs inside a fixed 700px frame, so the
+  full-screen snap cards on Today/Feed are 700px-minus-chrome rather than a real
+  `calc(100dvh - tabbar)`. The *behaviour* (one card per screen, snap, persistent tab bar,
+  actions riding above it) is what the prototype demonstrates.
 
 ## Provenance
 

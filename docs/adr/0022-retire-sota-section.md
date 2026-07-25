@@ -1,4 +1,4 @@
-# ADR 0021 — Retire the SOTA section; `/overview` becomes Archive
+# ADR 0022 — Retire the SOTA section; `/overview` becomes Archive
 
 - Status: proposed (needs strong-model grill — removes a shipped Epic 5 feature)
 - Date: 2026-07-24
@@ -45,7 +45,7 @@ moved since you last read. **The Guide is what the SOTA section was trying to be
 
 2. **Keep the History half; it is not superseded.** History is *retrieval* — "find the thing I
    saw three weeks ago" — which Guides do not do at all. It is renamed **Archive**, moves into the
-   Library hub (ADR 0022), and becomes the home for the **search** the app currently lacks
+   Library hub (ADR 0023), and becomes the home for the **search** the app currently lacks
    entirely.
 
 3. **`isSota()` itself is not deleted outright.** It stays available as a *filter* in Archive
