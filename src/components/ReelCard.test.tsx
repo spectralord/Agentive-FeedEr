@@ -32,7 +32,7 @@ const baseReel: FeedReel = {
 };
 
 describe("ReelCard", () => {
-  it("renders a full reel with example, action, effort chip and derived new badge", () => {
+  it("renders a full reel with example and derived new badge; no Action block (T18.2)", () => {
     const reel: FeedReel = {
       ...baseReel,
       experimental: true,
@@ -48,18 +48,44 @@ describe("ReelCard", () => {
     expect(html).toContain("Eine Zusammenfassung.");
     expect(html).toContain("Example (from the source)");
     expect(html).toContain("const x = 42;");
-    expect(html).toContain("➜ For you:");
-    expect(html).toContain("Probiere das Feature");
-    expect(html).toContain("5-min test");
     expect(html).toContain("🧪 experimental");
     expect(html).toContain("🆕 New");
-    expect(html).toContain("R 82");
-    expect(html).toContain("Q 74");
     expect(html).toContain('href="https://example.com/item"');
     expect(html).toContain("🔖");
     expect(html).toContain("👍");
     expect(html).toContain("👎");
     expect(html).toContain("🙈");
+
+    // T18.2: the Action block (reel.action + effortTag) is removed from
+    // Compact — it resurfaces in the Reel Detail's Skill tab in T18.7.
+    expect(html).not.toContain("➜ For you:");
+    expect(html).not.toContain("Probiere das Feature");
+    expect(html).not.toContain("5-min test");
+  });
+
+  it("moves R/Q scores to the header as a bar-only score-mini (T18.2, §7 #3)", () => {
+    const html = renderToStaticMarkup(<ReelCard reel={baseReel} />);
+
+    // No literal "R 82"/"Q 74" text anymore (bar chart only, per the
+    // prototype) — the values are carried in title/aria-label instead.
+    expect(html).not.toContain("R 82");
+    expect(html).not.toContain("Q 74");
+    expect(html).toContain("Relevance 82/100");
+    expect(html).toContain("Quality 74/100");
+    expect(html).toContain("width:82%");
+    expect(html).toContain("width:74%");
+  });
+
+  it("renders reel.skill as the badge row's one colored skill badge (T18.2, §7 #4)", () => {
+    const reel: FeedReel = { ...baseReel, skill: "Agent Skills" };
+    const html = renderToStaticMarkup(<ReelCard reel={reel} />);
+    expect(html).toContain("Agent Skills");
+  });
+
+  it("gives the confidence badge a distinct dot-tick treatment from plain chips (T18.2)", () => {
+    const reel: FeedReel = { ...baseReel, confidence: "strong" };
+    const html = renderToStaticMarkup(<ReelCard reel={reel} />);
+    expect(html).toContain("Strong corroboration");
   });
 
   it("hydrates the action bar from the interactions prop (T6.2)", () => {
@@ -82,22 +108,23 @@ describe("ReelCard", () => {
     expect(html).not.toContain("➜ For you:");
     expect(html).not.toContain("🧪 experimental");
     expect(html).not.toContain("🆕 New");
-    expect(html).toContain("R 82");
-    expect(html).toContain("Q 74");
+    expect(html).toContain("Relevance 82/100");
+    expect(html).toContain("Quality 74/100");
   });
 
-  it("shows a subtle caveat notice when set, separate from the score footer (T10.4)", () => {
+  it("shows a minimal --caution marker only for caveat (T18.2 judgment call 1 — full text moves to the Context tab in T18.6)", () => {
     const reel: FeedReel = { ...baseReel, caveat: "Summary overclaims: source says X, not Y." };
 
     const html = renderToStaticMarkup(<ReelCard reel={reel} />);
 
-    expect(html).toContain("⚠️ Summary overclaims: source says X, not Y.");
-    expect(html).toContain("R 82"); // scores unaffected by the caveat (ADR 0004)
-    expect(html).toContain("Q 74");
+    expect(html).toContain("Caveat noted");
+    expect(html).not.toContain("Summary overclaims: source says X, not Y.");
+    expect(html).toContain("Relevance 82/100"); // scores unaffected by the caveat (ADR 0004)
+    expect(html).toContain("Quality 74/100");
   });
 
-  it("shows no caveat notice when caveat is null", () => {
+  it("shows no caveat marker when caveat is null", () => {
     const html = renderToStaticMarkup(<ReelCard reel={baseReel} />);
-    expect(html).not.toContain("⚠️");
+    expect(html).not.toContain("Caveat noted");
   });
 });

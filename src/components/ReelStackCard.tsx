@@ -16,6 +16,24 @@ export interface ReelStackCardProps {
   interactions?: ReelActionFlags;
 }
 
+/** Same source-initial treatment as the Context tab's source list
+ *  (docs/specs/prototypes/reel-card-and-detail.html `.source-avatar`) — first
+ *  two alphanumeric characters of the source name, uppercased. */
+function initials(sourceName: string): string {
+  return sourceName.replace(/[^A-Za-z0-9]/g, "").slice(0, 2).toUpperCase();
+}
+
+function SourceAvatar({ sourceName }: { sourceName: string }) {
+  return (
+    <span
+      aria-hidden="true"
+      className="flex h-6 w-6 shrink-0 items-center justify-center rounded-lg border border-hairline-strong bg-surface-raised font-mono text-[10.5px] font-semibold text-accent"
+    >
+      {initials(sourceName)}
+    </span>
+  );
+}
+
 /**
  * Epic 15 (T15.4/T15.5): a topic cluster with >= 2 displayed members renders
  * as one stack card instead of N separate cards — the primary member's full
@@ -25,6 +43,10 @@ export interface ReelStackCardProps {
  * 11's `confidence` (few/some/strong) badge, which ReelCardBody renders
  * itself (shared with the solo ReelCard) whenever the primary reel's cluster
  * has a computed confidence — no special-casing needed here.
+ *
+ * T18.2 (§2.1): banner restyled onto the token system, with small
+ * source-initial avatars (matching the Context tab's source list, T18.6)
+ * instead of a plain bullet list.
  *
  * The card-level hide/save/up/down actions apply to the primary reel only,
  * same as a solo card; the other members have no separate action bar here
@@ -38,36 +60,40 @@ export function ReelStackCard({ clusterTitle, primary, others, interactions }: R
   const totalSources = 1 + others.length;
 
   const banner = (
-    <div className="mb-3 rounded-lg border border-zinc-800 bg-zinc-900/60 p-3">
+    <div className="mb-3 rounded-lg border border-hairline bg-surface p-3">
       <div className="flex items-center justify-between gap-2">
         <div>
-          <p className="text-xs font-medium uppercase tracking-wide text-zinc-500">{clusterTitle}</p>
-          <p className="text-sm text-zinc-300">{totalSources} sources on this topic</p>
+          <p className="font-mono text-xs uppercase tracking-wide text-ink-faint">{clusterTitle}</p>
+          <p className="text-sm text-ink-muted">{totalSources} sources on this topic</p>
         </div>
         <button
           type="button"
           onClick={() => setExpanded((v) => !v)}
           aria-expanded={expanded}
-          className="shrink-0 rounded-full border border-zinc-700 px-3 py-1 text-xs text-zinc-300 transition-colors hover:bg-zinc-800"
+          className="shrink-0 rounded-full border border-hairline-strong px-3 py-1 text-xs text-ink-muted transition-colors hover:bg-surface-raised"
         >
           {expanded ? "Hide sources" : "Show sources"}
         </button>
       </div>
       {expanded && (
-        <ul className="mt-2 space-y-1 border-t border-zinc-800 pt-2 text-xs text-zinc-400">
-          <li>
-            <span className="font-medium text-zinc-300">{primary.sourceName}</span> — {primary.title}{" "}
-            <span className="text-zinc-500">(primary)</span>
+        <ul className="mt-2 flex flex-col gap-2 border-t border-hairline pt-2">
+          <li className="flex items-center gap-2.5">
+            <SourceAvatar sourceName={primary.sourceName} />
+            <p className="text-xs text-ink-muted">
+              <span className="font-medium text-ink">{primary.sourceName}</span> — {primary.title}{" "}
+              <span className="text-ink-faint">(primary)</span>
+            </p>
           </li>
           {others.map((member) => (
-            <li key={member.id}>
+            <li key={member.id} className="flex items-center gap-2.5">
+              <SourceAvatar sourceName={member.sourceName} />
               <a
                 href={member.url}
                 target="_blank"
                 rel="noreferrer"
-                className="hover:text-zinc-200"
+                className="text-xs text-ink-muted hover:text-ink"
               >
-                <span className="font-medium text-zinc-300">{member.sourceName}</span> — {member.title}
+                <span className="font-medium text-ink">{member.sourceName}</span> — {member.title}
               </a>
             </li>
           ))}
