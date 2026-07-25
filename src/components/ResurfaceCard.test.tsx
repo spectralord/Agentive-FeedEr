@@ -37,6 +37,12 @@ describe("ResurfaceCard", () => {
     expect(html).toContain("some-source");
   });
 
+  it("gives each entry a compact meta row with source + category badge (T18.3, §4)", () => {
+    const html = renderToStaticMarkup(<ResurfaceCard reels={[baseSavedReel]} now={NOW} />);
+    expect(html).toContain("some-source");
+    expect(html).toContain("Tooling"); // CATEGORY_LABELS["tooling"]
+  });
+
   it("has no 'erledigt' checkbox — items just age out (revised scope, epic-6)", () => {
     const html = renderToStaticMarkup(<ResurfaceCard reels={[baseSavedReel]} now={NOW} />);
     expect(html).not.toContain("erledigt");

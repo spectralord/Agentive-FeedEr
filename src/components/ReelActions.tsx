@@ -25,9 +25,12 @@ async function postInteraction(reelId: number, type: InteractionType): Promise<b
   }
 }
 
+// T18.3 (§3): restyled onto the token system — inactive = surface-raised/
+// ink-muted, active = ink/ground. Semantics unchanged; this bar's job is
+// small and already right, so this is styling only, no functional change.
 function actionButtonClass(active: boolean): string {
   return `rounded-full px-2.5 py-1.5 text-sm leading-none transition-colors ${
-    active ? "bg-zinc-100 text-zinc-900" : "bg-zinc-800/80 text-zinc-400 hover:bg-zinc-700"
+    active ? "bg-ink text-ground" : "bg-surface-raised text-ink-muted hover:bg-hairline-strong"
   }`;
 }
 
