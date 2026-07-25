@@ -50,7 +50,7 @@ describe("skill map (integration)", () => {
     await getPool().end();
   });
 
-  it("groups active nodes by theme, counts content, defaults status to seen, and excludes pending nodes", async () => {
+  it("groups active nodes by theme, counts content, defaults status to untouched (T18.4), and excludes pending nodes", async () => {
     await db()
       .insert(skillNodes)
       .values([
@@ -67,7 +67,7 @@ describe("skill map (integration)", () => {
 
     const agentic = map.find((t) => t.theme === "Agentic Development")!;
     expect(agentic.nodes).toHaveLength(1);
-    expect(agentic.nodes[0]).toMatchObject({ slug: "sub-agents", contentCount: 2, status: "seen" });
+    expect(agentic.nodes[0]).toMatchObject({ slug: "sub-agents", contentCount: 2, status: "untouched" });
 
     const tooling = map.find((t) => t.theme === "Tooling & Workflow")!;
     expect(tooling.nodes.map((n) => n.slug)).toEqual(["mcp"]); // "not-yet" (pending) excluded
@@ -83,6 +83,27 @@ describe("skill map (integration)", () => {
 
     const map = await getSkillMap();
     expect(map[0].nodes[0].status).toBe("mastered");
+  });
+
+  it("T18.4: distinguishes a node with no user_progress row (untouched) from one explicitly declared seen", async () => {
+    const [untouchedNode, seenNode] = await db()
+      .insert(skillNodes)
+      .values([
+        { slug: "never-opened", title: "Never Opened", theme: "Agentic Development", description: "…", status: "active" },
+        { slug: "explicitly-seen", title: "Explicitly Seen", theme: "Agentic Development", description: "…", status: "active" },
+      ])
+      .returning();
+    // untouchedNode: no user_progress row at all — never call setProgress for it.
+    await setProgress(seenNode.id, "seen");
+
+    const map = await getSkillMap();
+    const nodes = map.flatMap((t) => t.nodes);
+    expect(nodes.find((n) => n.slug === "never-opened")).toMatchObject({ status: "untouched" });
+    expect(nodes.find((n) => n.slug === "explicitly-seen")).toMatchObject({ status: "seen" });
+
+    // Same distinction on the node-detail read path.
+    expect((await getNodeDetail(untouchedNode.slug))?.status).toBe("untouched");
+    expect((await getNodeDetail(seenNode.slug))?.status).toBe("seen");
   });
 
   it("getNodeDetail returns the node, labeled Reels + active Experience Reports, status, and note history", async () => {

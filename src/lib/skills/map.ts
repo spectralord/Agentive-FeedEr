@@ -4,13 +4,13 @@ import { experienceReports, rawItems, reels, skillNodes } from "@/db/schema";
 import type { SkillNode, UserProgress, UserProgressNote } from "@/db/schema";
 import { listActiveNodes } from "@/lib/skilltagger/nodes";
 import {
-  DEFAULT_PROGRESS_STATUS,
+  UNTOUCHED_STATUS,
   getProgress,
   getProgressMap,
   isProgressStatus,
   listNotesForNode,
   setProgress,
-  type ProgressStatus,
+  type DisplayStatus,
 } from "@/lib/skills/progress";
 
 /**
@@ -31,7 +31,7 @@ export interface SkillMapNode {
    *  quality/experimental-filtered — this is an index of everything
    *  assigned to the node, not the feed (see epic-7-skill-map.md Abweichungen). */
   contentCount: number;
-  status: ProgressStatus;
+  status: DisplayStatus;
 }
 
 export interface SkillMapTheme {
@@ -88,7 +88,9 @@ export async function getSkillMap(): Promise<SkillMapTheme[]> {
       theme: node.theme,
       description: node.description,
       contentCount: counts.get(node.slug) ?? 0,
-      status: progressMap.get(node.id)?.status ?? DEFAULT_PROGRESS_STATUS,
+      // T18.4 (§9.4): no `user_progress` row is "untouched", not "seen" —
+      // stop collapsing the two.
+      status: progressMap.get(node.id)?.status ?? UNTOUCHED_STATUS,
     };
     const bucket = byTheme.get(node.theme);
     if (bucket) bucket.push(mapped);
@@ -119,7 +121,7 @@ export type AssociatedContent = AssociatedReel | AssociatedReport;
 export interface SkillNodeDetail {
   node: SkillNode;
   content: AssociatedContent[];
-  status: ProgressStatus;
+  status: DisplayStatus;
   notes: UserProgressNote[];
 }
 
@@ -162,7 +164,8 @@ export async function getNodeDetail(slug: string): Promise<SkillNodeDetail | und
   return {
     node,
     content,
-    status: status?.status ?? DEFAULT_PROGRESS_STATUS,
+    // T18.4 (§9.4): no `user_progress` row is "untouched", not "seen".
+    status: status?.status ?? UNTOUCHED_STATUS,
     notes,
   };
 }

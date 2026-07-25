@@ -75,4 +75,14 @@ describe("SkillNodeDetail", () => {
     const html = renderToStaticMarkup(<SkillNodeDetail detail={{ ...baseDetail, notes: [] }} />);
     expect(html).toContain("No notes yet.");
   });
+
+  it("T18.4: renders the untouched status (no user_progress row) and offers all three declarable statuses", () => {
+    const html = renderToStaticMarkup(
+      <SkillNodeDetail detail={{ ...baseDetail, status: "untouched", notes: [] }} />,
+    );
+    expect(html).toContain("untouched");
+    expect(html).toContain("Mark as seen");
+    expect(html).toContain("Mark as tried");
+    expect(html).toContain("Mark as mastered");
+  });
 });

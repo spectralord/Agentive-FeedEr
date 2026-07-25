@@ -41,4 +41,20 @@ describe("SkillMap", () => {
     const html = renderToStaticMarkup(<SkillMap themes={[]} />);
     expect(html).toContain("No active skill nodes yet");
   });
+
+  it("T18.4: renders the untouched status distinctly from seen", () => {
+    const html = renderToStaticMarkup(
+      <SkillMap
+        themes={[
+          {
+            theme: "Tooling & Workflow",
+            nodes: [
+              { id: 3, slug: "never-opened", title: "Never Opened", theme: "Tooling & Workflow", description: "…", contentCount: 0, status: "untouched" },
+            ],
+          },
+        ]}
+      />,
+    );
+    expect(html).toContain("untouched");
+  });
 });

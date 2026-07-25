@@ -143,7 +143,7 @@ Depends on T18.1. **Styling only — no functional change.**
   decision documented in the component; items age out of the 7–21 day window on their own.
 - **Verification:** curl; build + tests green.
 
-### ☐ T18.4 — Four honest states (§9.4)
+### ☑ T18.4 — Four honest states (§9.4)
 
 Depends on nothing; do alongside T18.5.
 - `getSkillMap()` (`src/lib/skills/map.ts:91`, and `:165` for node detail) does
@@ -413,3 +413,40 @@ _(to be maintained by the executing model)_
   category badge, and the exact "Saved 10 days ago — take another look?" wording is intact (split
   across React text nodes in the raw HTML, as expected for JSX with an interpolated expression).
   Build + tests green (285/285, +1 new `ResurfaceCard` assertion).
+
+**T18.4 (completed 2026-07-25):**
+- Modeled the fourth state as an added string literal (`"untouched"`) unioned with the existing
+  `ProgressStatus`, not a `declared: boolean` flag: `UNTOUCHED_STATUS = "untouched" as const` +
+  `type DisplayStatus = "untouched" | ProgressStatus` in `src/lib/skills/progress.ts`, plus
+  `isDisplayStatus()`. Chosen over the boolean because every call site (`SkillMap.tsx`,
+  `SkillNodeDetail.tsx`, and later `SkillRing`) already switches on a status *string* — a fourth
+  string value slots into that exact shape everywhere, whereas `declared: boolean` would need a
+  second field threaded through both interfaces and re-derived at every render site. `ProgressStatus`
+  (the three *declarable* statuses) is intentionally left untouched as its own type — form/mutation
+  code (`PROGRESS_STATUSES`, `setProgress`, `isProgressStatus`) still only ever writes one of the
+  original three; "untouched" is a read-only, DB-absent value, never a write target.
+- `getSkillMap()` and `getNodeDetail()` (`src/lib/skills/map.ts`) now default to `UNTOUCHED_STATUS`
+  instead of `DEFAULT_PROGRESS_STATUS` ("seen") when `progressMap`/`getProgress` returns nothing.
+  `SkillMapNode.status` and `SkillNodeDetail.status` retyped `DisplayStatus`. `DEFAULT_PROGRESS_STATUS`
+  itself is kept (still `"seen"`, still exported) since it may still be meaningful as a *write-side*
+  default in future code — updated its doc-comment to stop describing a read-layer defaulting role
+  it no longer has. No migration; `user_progress` schema/writes are untouched.
+- Consumers checked via `grep -rn "DEFAULT_PROGRESS_STATUS\|ProgressStatus"`: only `map.ts`'s two
+  read functions defaulted off it for display; the route handler, `SkillNodeDetail.tsx`'s
+  `otherStatuses = PROGRESS_STATUSES.filter((s) => s !== status)`, and `AdoptionLog.tsx` all
+  continue to compile and behave correctly unchanged (`PROGRESS_STATUSES` — the 3 declarable
+  values — was never mixed with the read-side default, so the untouched addition doesn't touch the
+  set of statuses a user can pick).
+- Verification: added an integration test in `map.integration.test.ts` — a node with no
+  `user_progress` row reads `status: "untouched"` from both `getSkillMap()` and `getNodeDetail()`,
+  a sibling node with `setProgress(id, "seen")` reads `status: "seen"`, both asserted side by side
+  in the same test so the distinction is provably not accidental. Updated the pre-existing
+  "defaults status to seen" test (now "defaults status to untouched") and added light component
+  tests (`SkillMap.test.tsx`, `SkillNodeDetail.test.tsx`) rendering the `"untouched"` status.
+  `npm run build` + `npm test` green (288/288, +3 new tests) after `service postgresql start &&
+  npm run db:migrate`.
+- This commit deliberately does **not** touch `SkillMap.tsx`/`SkillNodeDetail.tsx` markup, the ring,
+  or the experimental-dot — those are T18.5, committed separately per the epic's instruction to
+  land T18.4 first in isolation. The route handler (`/skills/[slug]/progress/route.ts`) is
+  similarly untouched here; its `previousStatus`-carrying redirect is added in T18.5 alongside the
+  ring's fill animation, which is the only consumer that needs it.
