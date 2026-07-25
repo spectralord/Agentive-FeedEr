@@ -94,7 +94,7 @@ practice most Reels carry a `skill`, so the Skill tab usually populates.
   regression beyond the corrected font; confirm the token utilities resolve (use one in a
   throwaway spot, verify, revert).
 
-### ☐ T18.2 — Reel Compact: scores, skill badge, restyle (§2.1, §7 #3–#5)
+### ☑ T18.2 — Reel Compact: scores, skill badge, restyle (§2.1, §7 #3–#5)
 
 Depends on T18.1. All of this is `ReelCardBody`/`ReelStackCard` — one task so the file is
 touched once.
@@ -133,7 +133,7 @@ touched once.
   confidence set, supersession set, skill set, and a bare reel. Scores visible without scrolling.
   Build + tests green.
 
-### ☐ T18.3 — Restyle `ReelActions` + `ResurfaceCard` (§3, §4, §7 #9)
+### ☑ T18.3 — Restyle `ReelActions` + `ResurfaceCard` (§3, §4, §7 #9)
 
 Depends on T18.1. **Styling only — no functional change.**
 - `ReelActions`: inactive `--surface-raised`/`--ink-muted`, active `--ink`/`--ground`. Semantics
@@ -353,3 +353,51 @@ _(to be maintained by the executing model)_
   `globals.css` changed) and re-ran build + tests green.
 - No component markup changed (confirmed via `git diff --stat`: only `globals.css` in the final
   diff).
+
+**T18.2 (completed 2026-07-25):**
+- **Interpreted "Compact is therefore exactly: meta row, badge row, title, summary — plus the
+  freshness notice and a caveat marker below. Nothing else" as naming the *significant*
+  restructuring (remove the Action block; add scores + skill badge), not a literal ban on every
+  other existing element.** Kept `reel.example` and the "View source" link, restyled onto tokens
+  only — neither is called out for removal anywhere (only the Action block gets an explicit
+  removal instruction), and design doc §8.1 explicitly values `summary` + `example` fitting inside
+  Compact without a Detail view. Their natural destination in the target design — the Write-up
+  tab's source-ref + example block (§2.2) — is itself out of scope for the *whole* epic (blocked
+  on ADR 0017, `reels.writeup`), so removing them now would delete real, already-shipped content
+  from the product with no replacement surface anywhere reachable. Flagged here for review/override
+  if the strong model disagrees.
+- **Score-mini is bar-only, no literal numbers** — matches the prototype's `scoreMini()` exactly
+  (label + bar per row, width = score%). Added `title`/`aria-label` (e.g. "Relevance 82/100") on
+  each row for accessibility/hover; this doesn't change the visual, since neither renders as visible
+  text.
+- **Confidence badge "dot-tick":** implemented as a single leading dot + outline-only pill
+  (`border-hairline-strong`, no fill), distinct from the plain chips' filled `bg-surface-raised` +
+  `border-hairline`. Read the design doc's "small dot-tick instead of plain text" as one decorative
+  dot marking the badge as a different *kind* of chip, not a 3-dot proportional scale (nothing in
+  the design doc or prototype specifies the latter, and the prototype file itself predates the
+  confidence badge — it's Epic 11, restyled here, not newly designed). Stays neutral ink-muted, not
+  one of the four reserved colors.
+- **Freshness notice / caveat marker order:** kept freshness notice and caveat marker in the same
+  relative order as the pre-existing code (caveat marker before the freshness notice), since neither
+  doc specifies an order between the two.
+- `EFFORT_LABELS` (in `src/components/labels.ts`) is now unused by `ReelCard.tsx` but left exported
+  — needed again by T18.7 when `effortTag` resurfaces in the Skill tab.
+- Verification: seeded reels covering the caveat/confidence/supersession/skill/bare-reel sets (via a
+  throwaway `tsx` script against the dev DB, not committed), `npm run build` + `npm run start`,
+  curled `/`; confirmed score bars render in the meta row (no scrolling needed), the skill badge
+  renders with `--action` tokens, the caveat marker shows only "Caveat noted" (not the full text),
+  the freshness notice renders on `--caution`, and no "For you:"/Action-block markup exists anywhere
+  in the response. Build + tests green (284/284, +3 new `ReelCard` assertions) both before and after
+  the dev-DB check (integration tests truncate tables between runs, so the seed data doesn't
+  persist — expected, not a bug).
+
+**T18.3 (completed 2026-07-25):**
+- Straightforward per spec: `ReelActions` inactive/active classes swapped to
+  `surface-raised`/`ink-muted` and `ink`/`ground` 1:1, no logic touched. `ResurfaceCard` entries
+  gained a meta row (source name + `CATEGORY_LABELS` badge) above the existing "Saved N days ago —
+  take another look?" line and title link; the "done" checkbox stays absent.
+- Verification: seeded a 10-day-old `save` interaction on a bare reel, curled `/today`; confirmed
+  the action bar's inactive buttons render the new token classes, the resurface entry shows the
+  category badge, and the exact "Saved 10 days ago — take another look?" wording is intact (split
+  across React text nodes in the raw HTML, as expected for JSX with an interpolated expression).
+  Build + tests green (285/285, +1 new `ResurfaceCard` assertion).
