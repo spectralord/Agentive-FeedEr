@@ -85,13 +85,13 @@
     background: var(--surface-raised); border: 1px solid var(--hairline); color: var(--ink-muted);
   }
   .reel-actions button.on { background: var(--ink); color: var(--ground); border-color: var(--ink); }
-  .action-box {
-    margin-top: 10px; border-radius: 11px; padding: 10px 11px;
-    border: 1px solid color-mix(in srgb, var(--action) 30%, var(--hairline));
-    background: rgba(63,182,115,.12);
-  }
-  .action-box .lbl { font-family: var(--mono); font-size: 9px; letter-spacing: .07em; text-transform: uppercase; color: var(--action); }
-  .action-box .txt { margin-top: 4px; font-size: 12px; line-height: 1.45; }
+  /* Scores as bars, top-right — same treatment as the accepted reel prototype. */
+  .score-mini { display: flex; flex-direction: column; gap: 4px; margin-left: auto; align-items: flex-end; flex-shrink: 0; }
+  .score-mini-item { display: flex; align-items: center; gap: 5px; }
+  .score-mini-label { font-family: var(--mono); font-size: 9px; color: var(--ink-faint); width: 8px; text-align: right; }
+  .score-bar { width: 34px; height: 3px; border-radius: 2px; background: var(--hairline); overflow: hidden; }
+  .score-bar span { display: block; height: 100%; background: var(--accent); }
+  .score-bar.q span { background: var(--ink-muted); }
   .srcline { margin-top: auto; padding-top: 10px; font-size: 10.5px; color: var(--ink-faint); }
 
   .tabbar { display: flex; border-top: 1px solid var(--hairline); background: rgba(11,16,21,.96); flex-shrink: 0; padding-bottom: 4px; }
@@ -255,14 +255,15 @@
       <div class="meta">
         <span class="chip" style="border-color:rgba(91,143,214,.4);color:#5b8fd6">Official</span>
         <span>${esc(o.time)}</span>
-        <span style="margin-left:auto;font-family:var(--mono);font-size:9px;color:var(--ink-faint)">R ${o.r} · Q ${o.q}</span>
+        <span class="score-mini">
+          <span class="score-mini-item"><span class="score-mini-label">R</span><span class="score-bar"><span style="width:${o.r}%"></span></span></span>
+          <span class="score-mini-item"><span class="score-mini-label">Q</span><span class="score-bar q"><span style="width:${o.q}%"></span></span></span>
+        </span>
       </div>
       <div style="margin-top:8px;display:flex;flex-wrap:wrap;gap:5px">
         <span class="chip">${esc(o.cat)}</span><span class="chip skill">${esc(o.skill)}</span></div>
       <div class="ttl" style="font-size:16px">${esc(o.title)}</div>
       <div class="sum">${esc(o.sum)}</div>
-      ${o.action ? `<div class="action-box"><div class="lbl">To-Try · ${esc(o.effort)}</div>
-        <div class="txt">${esc(o.action)}</div></div>` : ""}
       <div class="srcline">${esc(o.src)} · View source</div>
       <div class="reel-actions">
         <button type="button" title="Save">🔖</button><button type="button" title="Like">👍</button>
@@ -291,15 +292,13 @@
 
   function viewToday() {
     return reelCard({ time: "3h ago", cat: "Claude-Feature", skill: "Agent Skills", r: 84, q: 77,
-      src: "Anthropic Blog", effort: "5-min-test",
+      src: "Anthropic Blog",
       title: "Claude Skills: capabilities a project remembers",
-      sum: "A Skill is a folder with a SKILL.md that Claude loads on its own once a task matches its description. Unlike CLAUDE.md, which sits in every turn whether relevant or not, a Skill is conditional context — present when useful, invisible otherwise. For a team repeating the same reviews and conventions across every session, that removes a categorically different kind of friction than a bigger context window ever could.",
-      action: "Write a SKILL.md for your review checklist and see whether it loads unprompted." })
+      sum: "A Skill is a folder with a SKILL.md that Claude loads on its own once a task matches its description. Unlike CLAUDE.md, which sits in every turn whether relevant or not, a Skill is conditional context — present when useful, invisible otherwise. For a team repeating the same reviews and conventions across every session, that removes a categorically different kind of friction than a bigger context window ever could." })
     + reelCard({ time: "6h ago", cat: "Claude-Feature", skill: "Prompt Caching", r: 88, q: 81,
-      src: "Anthropic Changelog", effort: "5-min-test",
+      src: "Anthropic Changelog",
       title: "Prompt caching discount now covers tool definitions",
-      sum: "Tool definitions were the conspicuous exception to prompt caching: register fifteen tools with detailed schemas and that payload got resent, at full price, on every call. As of today they qualify for the same cache rate as system prompt content — up to 90% cheaper on tool-heavy calls, with no code change required.",
-      action: "Check console usage for the cache-read share on your tool-heavy calls." })
+      sum: "Tool definitions were the conspicuous exception to prompt caching: register fifteen tools with detailed schemas and that payload got resent, at full price, on every call. As of today they qualify for the same cache rate as system prompt content — up to 90% cheaper on tool-heavy calls, with no code change required." })
     + `<div class="reel-full" style="justify-content:center">
         <div class="done-card">
           <div class="done-h">That's it for today ✅</div>
@@ -326,13 +325,14 @@
           <div class="meta" style="margin-top:8px">
             <span class="chip" style="border-color:rgba(124,135,144,.4);color:#7c8790">Community</span>
             <span>1d ago</span>
-            <span style="margin-left:auto;font-family:var(--mono);font-size:9px;color:var(--ink-faint)">R 71 · Q 64</span>
+            <span class="score-mini">
+              <span class="score-mini-item"><span class="score-mini-label">R</span><span class="score-bar"><span style="width:71%"></span></span></span>
+              <span class="score-mini-item"><span class="score-mini-label">Q</span><span class="score-bar q"><span style="width:64%"></span></span></span>
+            </span>
           </div>
           <div style="margin-top:8px;display:flex;flex-wrap:wrap;gap:5px">
             <span class="chip">Tooling</span><span class="chip skill">MCP Debugging</span></div>
           <div class="sum">The failure mode is frustratingly generic — the client hangs, then dies with ETIMEDOUT, and the server logs show nothing wrong, because from its own point of view nothing is. It's listening; just not on an address the client can reach. In Compose setups the server binds to 127.0.0.1 by default: reachable inside its own container, invisible from a sibling.</div>
-          <div class="action-box"><div class="lbl">To-Try · 5-min-test</div>
-            <div class="txt">Reproduce the 0.0.0.0 bind fix in a Compose setup.</div></div>
         </div>
         <div class="srcline">GitHub — Issue #482 · View source</div>
         <div class="reel-actions">
@@ -341,10 +341,9 @@
         </div>
       </div>`
       + reelCard({ time: "2d ago", cat: "Technique", skill: "Context Engineering", r: 79, q: 74,
-        src: "Simon Willison", effort: "afternoon",
+        src: "Simon Willison",
         title: "Most “the model didn't know X” failures are retrieval problems",
-        sum: "The instinct to add context is usually the wrong fix. Most cases where a model appears not to know something are retrieval problems wearing a context-window costume — the information was never fetched, not squeezed out.",
-        action: "Take your longest prompt, cut 30%, and measure whether output actually degrades." });
+        sum: "The instinct to add context is usually the wrong fix. Most cases where a model appears not to know something are retrieval problems wearing a context-window costume — the information was never fetched, not squeezed out." });
   }
 
   function skyMap() {

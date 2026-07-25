@@ -99,10 +99,19 @@ subtly different treatment from the plain category/maturity chips, e.g. a small 
 of plain text, so "how many independent sources agree" doesn't read as just another category),
 skill (new, colored, see above).
 
-The **Action block** (`reel.action` + `effortTag`, today's emerald box) **stays in Compact**,
-restyled with `--action` tokens. This is the actual sourced "what does this mean for you" line —
-it must not disappear into a tab a user may never open. Effort tag as a small pill next to it, as
-today.
+**The Action block is removed from Compact.** Today's emerald `reel.action` + `effortTag` box does
+not survive this redesign — **corrected 2026-07-24**, an earlier draft of this section wrongly said
+it stays, contradicting both the grill decision and the accepted prototype.
+
+The decision, from the grill: Compact carries a **minimal indicator only**, and the concrete To-Try
+moves **closer to the skill**. The skill badge in the badge row *is* that indicator — one small
+element doing double duty as topic tag and "there's something to apply here" signal, rather than a
+second element competing for the same sliver of space. `reel.action` itself surfaces in the Detail
+view's **Skill tab** (§5.2) and, as a checkable Actionable, on the skill node page (ADR 0019) —
+which is exactly where progress is tracked, so the action lives next to the thing it advances.
+
+Compact is therefore: meta row (trust tag · time · scores), badge row, title, summary. Nothing
+else. Verify against `prototypes/reel-card-and-detail.html`, which is correct on this point.
 
 The **freshness/supersession notice** (today's amber box, "🕓 Newer available") restyles onto
 `--caution`, structurally unchanged (link to the newer cluster + "Confirm superseded" form).
@@ -213,6 +222,10 @@ encounters relevant content, with a clear door to the full page for anything dee
 
 - Status ring (5.1's component) + skill name + theme + status label.
 - Node description (existing `skillNodes.description`).
+- **This Reel's `reel.action` + `effortTag`**, if present — the sourced To-Try that §2.1 removed
+  from Compact. This is its home: next to the skill it advances, one tap from the card, and the
+  same text that becomes a checkable Actionable on the node page (ADR 0019). Sourced-only still
+  applies — no action, nothing shown, nothing invented.
 - **One quick action, only when status is `seen`:** "Mark as tried" — a single tap, no note
   field. This *must* call the same `setProgress` mutation the node detail page's form posts to
   (`/skills/[slug]/progress`), not a second implementation of the same state change. Anything
