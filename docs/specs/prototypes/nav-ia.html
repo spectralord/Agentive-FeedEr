@@ -1,0 +1,468 @@
+<title>Agentive-FeedEr — Navigation IA</title>
+<style>
+  :root {
+    --ground: #0a0d10;
+    --ground-2: #0b1015;
+    --surface: #12171b;
+    --surface-raised: #171d22;
+    --hairline: #232b31;
+    --hairline-strong: #2e373e;
+    --ink: #eef1f2;
+    --ink-muted: #9aa7ac;
+    --ink-faint: #5e6a6f;
+    --accent: #45b8ab;
+    --action: #3fb673;
+    --gold: #d1a13c;
+    --caution: #c98a3a;
+    --mono: ui-monospace, "SF Mono", "Cascadia Mono", Consolas, monospace;
+    --sans: -apple-system, "SF Pro Text", "Segoe UI", system-ui, sans-serif;
+    accent-color: var(--accent);
+  }
+  * { box-sizing: border-box; -webkit-tap-highlight-color: transparent; }
+  html, body { margin: 0; padding: 0; }
+  body { background: var(--ground); color: var(--ink); font-family: var(--sans); overflow-x: hidden; }
+  button { font-family: inherit; }
+  @media (prefers-reduced-motion: reduce) { * { animation: none !important; transition-duration: .001ms !important; } }
+
+  .page { max-width: 1180px; margin: 0 auto; padding: 44px 22px 100px; }
+  .eyebrow { font-family: var(--mono); font-size: 12px; letter-spacing: .09em; text-transform: uppercase; color: var(--accent); }
+  h1 { font-size: clamp(24px, 3.2vw, 33px); font-weight: 650; letter-spacing: -.015em; line-height: 1.16; margin: 10px 0 0; text-wrap: balance; }
+  .lede { max-width: 74ch; color: var(--ink-muted); font-size: 15px; line-height: 1.62; margin: 13px 0 0; }
+  .lede b { color: var(--ink); }
+
+  .cols { display: grid; grid-template-columns: 1fr 380px; gap: 34px; align-items: start; margin-top: 34px; }
+  @media (max-width: 900px) { .cols { grid-template-columns: 1fr; } }
+
+  /* ---- before/after ---- */
+  .ba { display: grid; gap: 16px; }
+  .ba-card { border: 1px solid var(--hairline); border-radius: 14px; background: var(--surface); padding: 15px 17px; }
+  .ba-tag { font-family: var(--mono); font-size: 10px; letter-spacing: .07em; text-transform: uppercase; color: var(--ink-faint); }
+  .ba-card.after .ba-tag { color: var(--accent); }
+  .navstrip { margin-top: 11px; display: flex; flex-wrap: wrap; gap: 5px; }
+  .navstrip span { font-size: 11.5px; padding: 4px 9px; border-radius: 999px; background: var(--surface-raised); border: 1px solid var(--hairline); color: var(--ink-muted); }
+  .navstrip span.gone { text-decoration: line-through; opacity: .42; }
+  .navstrip span.keep { border-color: color-mix(in srgb, var(--accent) 40%, var(--hairline)); color: var(--accent); }
+  .ba-note { margin-top: 10px; font-size: 12px; line-height: 1.55; color: var(--ink-faint); }
+  .ba-note b { color: var(--ink-muted); }
+
+  .grouping { margin-top: 12px; display: flex; flex-direction: column; gap: 7px; }
+  .grp { display: flex; align-items: baseline; gap: 9px; font-size: 12.5px; }
+  .grp .g-name { font-family: var(--mono); font-size: 10.5px; text-transform: uppercase; letter-spacing: .06em; color: var(--accent); width: 76px; flex-shrink: 0; }
+  .grp .g-items { color: var(--ink-muted); }
+
+  /* ---- phone ---- */
+  .phone-wrap { position: sticky; top: 22px; }
+  .phone { width: 100%; max-width: 380px; margin: 0 auto; border: 1px solid var(--hairline); border-radius: 34px; padding: 10px; background: linear-gradient(180deg, #0d1114, #0a0d10); box-shadow: 0 30px 70px -30px rgba(0,0,0,.75); }
+  .screen { position: relative; background: var(--ground); border-radius: 26px; height: 700px; overflow: hidden; display: flex; flex-direction: column; }
+
+  .appbar { display: flex; align-items: center; gap: 10px; padding: 14px 16px 10px; border-bottom: 1px solid var(--hairline); flex-shrink: 0; }
+  .appbar .t { font-size: 16px; font-weight: 650; letter-spacing: -.01em; }
+  .appbar .fresh { margin-left: auto; font-family: var(--mono); font-size: 9.5px; color: var(--ink-faint); display: flex; align-items: center; gap: 5px; }
+  .appbar .fresh .led { width: 5px; height: 5px; border-radius: 50%; background: var(--action); }
+  .gear { width: 28px; height: 28px; border-radius: 50%; border: 1px solid var(--hairline); background: var(--surface-raised); color: var(--ink-faint); cursor: pointer; font-size: 12px; flex-shrink: 0; }
+  .gear:hover { color: var(--ink); }
+
+  .subnav { display: flex; gap: 3px; padding: 9px 16px 0; border-bottom: 1px solid var(--hairline); flex-shrink: 0; }
+  .subnav button { background: none; border: none; border-bottom: 2px solid transparent; color: var(--ink-faint); font-size: 12px; padding: 6px 3px 9px; cursor: pointer; }
+  .subnav button.on { color: var(--accent); border-bottom-color: var(--accent); }
+
+  .body { flex: 1; overflow-y: auto; padding: 14px 16px 18px; scrollbar-width: none; position: relative; }
+  .body::-webkit-scrollbar { display: none; }
+
+  /* Feed/Today keep the full-screen snap reel view. The tab bar is persistent,
+     so a card is the remaining viewport — in production
+     height: calc(100dvh - var(--tabbar-h)), here 100% of .body. */
+  .body.reels { padding: 0; scroll-snap-type: y mandatory; }
+  .reel-full {
+    height: 100%; scroll-snap-align: start; scroll-snap-stop: always;
+    display: flex; flex-direction: column; padding: 14px 16px 16px;
+    border-bottom: 1px solid var(--hairline);
+  }
+  .reel-full .sum { flex: 1; overflow-y: auto; }
+  .reel-actions { display: flex; justify-content: flex-end; gap: 6px; padding-top: 10px; }
+  .reel-actions button {
+    width: 30px; height: 30px; border-radius: 50%; font-size: 13px; cursor: pointer;
+    background: var(--surface-raised); border: 1px solid var(--hairline); color: var(--ink-muted);
+  }
+  .reel-actions button.on { background: var(--ink); color: var(--ground); border-color: var(--ink); }
+  /* Scores as bars, top-right — same treatment as the accepted reel prototype. */
+  .score-mini { display: flex; flex-direction: column; gap: 4px; margin-left: auto; align-items: flex-end; flex-shrink: 0; }
+  .score-mini-item { display: flex; align-items: center; gap: 5px; }
+  .score-mini-label { font-family: var(--mono); font-size: 9px; color: var(--ink-faint); width: 8px; text-align: right; }
+  .score-bar { width: 34px; height: 3px; border-radius: 2px; background: var(--hairline); overflow: hidden; }
+  .score-bar span { display: block; height: 100%; background: var(--accent); }
+  .score-bar.q span { background: var(--ink-muted); }
+  .srcline { margin-top: auto; padding-top: 10px; font-size: 10.5px; color: var(--ink-faint); }
+
+  .tabbar { display: flex; border-top: 1px solid var(--hairline); background: rgba(11,16,21,.96); flex-shrink: 0; padding-bottom: 4px; }
+  .tabbar button { flex: 1; background: none; border: none; color: var(--ink-faint); padding: 9px 2px 7px; cursor: pointer; display: flex; flex-direction: column; align-items: center; gap: 3px; font-size: 9.5px; letter-spacing: .02em; }
+  .tabbar button .ico { font-size: 15px; line-height: 1; }
+  .tabbar button.on { color: var(--accent); }
+  .tabbar-note { position: absolute; bottom: 62px; left: 0; right: 0; text-align: center; font-family: var(--mono); font-size: 8.5px; color: var(--ink-faint); pointer-events: none; opacity: .8; }
+
+  /* ---- generic content bits ---- */
+  .card { border: 1px solid var(--hairline); border-radius: 13px; background: var(--surface); padding: 12px 13px; margin-bottom: 10px; }
+  .meta { display: flex; align-items: center; gap: 7px; font-size: 10.5px; color: var(--ink-muted); }
+  .chip { font-size: 9.5px; padding: 2px 7px; border-radius: 999px; background: var(--surface-raised); border: 1px solid var(--hairline); color: var(--ink-muted); }
+  .chip.skill { background: rgba(63,182,115,.14); color: var(--action); border-color: color-mix(in srgb, var(--action) 35%, var(--hairline)); }
+  .ttl { margin-top: 8px; font-size: 14px; font-weight: 640; line-height: 1.32; }
+  .sum { margin-top: 6px; font-size: 12px; line-height: 1.55; color: var(--ink-muted); }
+  .rowlist { display: flex; flex-direction: column; }
+  .row { padding: 11px 0; border-top: 1px solid var(--hairline); }
+  .row:first-child { border-top: none; padding-top: 2px; }
+  .row-t { font-size: 12.5px; font-weight: 560; line-height: 1.4; }
+  .row-m { margin-top: 4px; font-size: 10.5px; color: var(--ink-faint); display: flex; gap: 7px; flex-wrap: wrap; }
+
+  .search { width: 100%; border: 1px solid var(--hairline); background: var(--ground-2); border-radius: 999px; padding: 8px 13px; color: var(--ink); font-size: 12.5px; font-family: inherit; margin-bottom: 11px; }
+  .search::placeholder { color: var(--ink-faint); }
+  .search:focus-visible { outline: 2px solid var(--accent); outline-offset: 1px; }
+  .filters { display: flex; gap: 5px; flex-wrap: wrap; margin-bottom: 12px; }
+  .filters .chip { cursor: pointer; }
+  .filters .chip.on { background: var(--ink); color: var(--ground); border-color: var(--ink); }
+
+  /* ---- completion card ---- */
+  .done-card { border: 1px solid color-mix(in srgb, var(--accent) 26%, var(--hairline)); border-radius: 16px; background: linear-gradient(180deg, rgba(69,184,171,.07), rgba(69,184,171,.02)); padding: 18px 16px 16px; text-align: center; }
+  .done-h { font-size: 16px; font-weight: 650; }
+  .done-s { margin-top: 5px; font-size: 12px; color: var(--ink-muted); }
+  .mini-sky { margin: 14px auto 0; display: block; }
+  .mini-cap { margin-top: 9px; font-family: var(--mono); font-size: 9.5px; letter-spacing: .05em; color: var(--ink-faint); text-transform: uppercase; }
+  .done-stats { margin-top: 13px; display: flex; justify-content: center; gap: 16px; }
+  .st { text-align: center; }
+  .st-n { font-family: var(--mono); font-size: 16px; font-weight: 600; font-variant-numeric: tabular-nums; }
+  .st-n.a { color: var(--accent); } .st-n.b { color: var(--action); } .st-n.c { color: var(--ink-muted); }
+  .st-l { margin-top: 2px; font-size: 9.5px; color: var(--ink-faint); }
+  .done-btn { margin-top: 15px; width: 100%; border: 1px solid var(--hairline-strong); background: none; color: var(--ink-muted); border-radius: 999px; padding: 9px; font-size: 12px; cursor: pointer; }
+  .done-btn:hover { border-color: var(--accent); color: var(--accent); }
+
+  /* ---- skills mini map ---- */
+  .sky { display: block; width: 100%; height: auto; border: 1px solid var(--hairline); border-radius: 13px; background: radial-gradient(circle at 30% 25%, rgba(69,184,171,.05), transparent 45%), var(--ground-2); }
+
+  .kbrow { border: 1px solid var(--hairline); border-radius: 11px; background: var(--surface); padding: 10px 12px; margin-bottom: 8px; }
+  .kbrow-h { display: flex; align-items: flex-start; justify-content: space-between; gap: 8px; }
+  .kbrow-t { font-size: 12.5px; font-weight: 600; }
+  .dot { width: 8px; height: 8px; border-radius: 50%; flex-shrink: 0; margin-top: 4px; }
+  .dot.untouched { background: rgba(94,106,111,.25); border: 1px solid var(--hairline-strong); }
+  .dot.seen { background: var(--ink-muted); }
+  .dot.tried { background: var(--accent); }
+  .dot.mastered { background: var(--gold); }
+
+  .notes { margin-top: 34px; border: 1px solid var(--hairline); border-radius: 14px; background: var(--surface); padding: 17px 19px; }
+  .notes h3 { margin: 0 0 9px; font-size: 13px; font-weight: 650; }
+  .notes p { margin: 0 0 9px; font-size: 13px; line-height: 1.62; color: var(--ink-muted); }
+  .notes p:last-child { margin-bottom: 0; }
+  .notes b { color: var(--ink); }
+
+  footer.pf { margin-top: 52px; padding-top: 17px; border-top: 1px solid var(--hairline); font-size: 12px; color: var(--ink-faint); display: flex; justify-content: space-between; gap: 16px; flex-wrap: wrap; }
+</style>
+
+<div class="page">
+  <div class="eyebrow">Prototype · Navigation IA</div>
+  <h1>Seven flat links become four destinations</h1>
+  <p class="lede">
+    The nav was never redesigned as the app grew from 3 screens to 12. Seven links plus the brand
+    currently sit in one flex row inside <code>max-w-xl</code> — that overflows a phone, and
+    Knowledge Base would make eight. They also aren't peers: they're <b>consume</b>,
+    <b>retrieve</b>, <b>grow</b>, and <b>ops</b>. Tap the bottom bar.
+  </p>
+
+  <div class="cols">
+    <div class="ba">
+      <div class="ba-card">
+        <span class="ba-tag">Today — 7 flat links</span>
+        <div class="navstrip">
+          <span>Today</span><span>Feed</span><span>Overview</span><span>Saved</span>
+          <span>Experience</span><span>Skills</span><span>Admin</span>
+        </div>
+        <p class="ba-note">All rendered as equal peers in a top bar, in a <b>576px</b> container, with no wrap or scroll. On a 375px phone this overflows today — before Knowledge Base is added.</p>
+      </div>
+
+      <div class="ba-card after">
+        <span class="ba-tag">Proposed — 4 destinations + a gear</span>
+        <div class="navstrip">
+          <span class="keep">Today</span><span class="keep">Feed</span><span class="keep">Skills</span><span class="keep">Library</span><span>⚙</span>
+        </div>
+        <div class="grouping">
+          <div class="grp"><span class="g-name">Today</span><span class="g-items">the daily ritual — Top-N, then a real ending</span></div>
+          <div class="grp"><span class="g-name">Feed</span><span class="g-items">browse everything, filters</span></div>
+          <div class="grp"><span class="g-name">Skills</span><span class="g-items">Map · Knowledge Base · Adoption Log</span></div>
+          <div class="grp"><span class="g-name">Library</span><span class="g-items">Saved · Archive · Experience</span></div>
+          <div class="grp"><span class="g-name">⚙ Admin</span><span class="g-items">out of primary nav entirely</span></div>
+        </div>
+        <p class="ba-note">Two <b>hub</b> tabs each hold three sub-views behind a segmented control. New surfaces go <b>into a hub</b>, not onto the top bar — so this stops being a problem that returns every epic.</p>
+      </div>
+
+      <div class="ba-card">
+        <span class="ba-tag">What moved and why</span>
+        <p class="ba-note" style="margin-top:9px">
+          <b>Overview → Archive</b>, inside Library. Its SOTA half is superseded by Skill Guides
+          (see the note below); its History half is retrieval, which Guides don't do — so it
+          survives, and it's where the missing <b>search</b> belongs.<br><br>
+          <b>Saved + Experience</b> were never top-level concerns — they're things you go
+          <i>looking</i> for, which is what a Library is.<br><br>
+          <b>Admin</b> is an ops surface in a single-user app. A gear, not a tab.
+        </p>
+      </div>
+    </div>
+
+    <div class="phone-wrap">
+      <div class="phone"><div class="screen">
+        <div class="appbar">
+          <span class="t" id="appTitle">Today</span>
+          <span class="fresh" id="fresh"><span class="led"></span>updated 3h ago</span>
+          <button class="gear" type="button" title="Admin">⚙</button>
+        </div>
+        <div class="subnav" id="subnav"></div>
+        <div class="body" id="body"></div>
+        <div class="tabbar-note" id="tabnote"></div>
+        <div class="tabbar" id="tabbar"></div>
+      </div></div>
+    </div>
+  </div>
+
+  <div class="notes">
+    <h3>The one real tension</h3>
+    <p><b>The feed is still the feed.</b> Today and Feed keep the full-screen vertical snap-scroll reel format — one card per screen, <code>scroll-snap-stop: always</code>. Swipe them in the frame. Nothing about the navigation work changes that.</p>
+    <p>A persistent bottom bar does eat ~56px of every card, so the card height becomes <code>calc(100dvh - var(--tabbar-h))</code> rather than <code>100dvh</code>, with <code>ReelActions</code> riding just above the bar. An earlier draft of ADR 0023 said <i>auto-hide on scroll</i> instead — that was wrong: auto-hide suits a <i>continuous</i> feed, but with snap-stop every swipe is a discrete page turn, so the bar would toggle on every card advance and overlap content sized for the full height.</p>
+    <p><b>Today as the root.</b> Worth considering separately: <code>/</code> is currently the Feed, but the daily ritual is Today. Making Today the landing route matches how the product is actually used — open it, get your three things, finish. The Feed already has a "To the full feed" path from Today's ending card.</p>
+  </div>
+
+  <footer class="pf">
+    <span>Discussion draft — not production code.</span>
+    <span>Next.js · Tailwind · no new dependencies</span>
+  </footer>
+</div>
+
+<script>
+(function () {
+  "use strict";
+  const esc = (s) => String(s == null ? "" : s).replace(/&/g, "&amp;").replace(/</g, "&lt;").replace(/>/g, "&gt;");
+
+  const TABS = [
+    { id: "today",   label: "Today",   ico: "◎" },
+    { id: "feed",    label: "Feed",    ico: "▤" },
+    { id: "skills",  label: "Skills",  ico: "✦" },
+    { id: "library", label: "Library", ico: "▣" }
+  ];
+  const SUBS = {
+    skills:  ["Map", "Knowledge Base", "Log"],
+    library: ["Saved", "Archive", "Experience"]
+  };
+  const STATE = { tab: "today", sub: { skills: 0, library: 0 } };
+
+  // One full-screen snap reel — the feed format is unchanged by the nav work.
+  function reelCard(o) {
+    return `<article class="reel-full">
+      <div class="meta">
+        <span class="chip" style="border-color:rgba(91,143,214,.4);color:#5b8fd6">Official</span>
+        <span>${esc(o.time)}</span>
+        <span class="score-mini">
+          <span class="score-mini-item"><span class="score-mini-label">R</span><span class="score-bar"><span style="width:${o.r}%"></span></span></span>
+          <span class="score-mini-item"><span class="score-mini-label">Q</span><span class="score-bar q"><span style="width:${o.q}%"></span></span></span>
+        </span>
+      </div>
+      <div style="margin-top:8px;display:flex;flex-wrap:wrap;gap:5px">
+        <span class="chip">${esc(o.cat)}</span><span class="chip skill">${esc(o.skill)}</span></div>
+      <div class="ttl" style="font-size:16px">${esc(o.title)}</div>
+      <div class="sum">${esc(o.sum)}</div>
+      <div class="srcline">${esc(o.src)} · View source</div>
+      <div class="reel-actions">
+        <button type="button" title="Save">🔖</button><button type="button" title="Like">👍</button>
+        <button type="button" title="Dislike">👎</button><button type="button" title="Hide">🙈</button>
+      </div>
+    </article>`;
+  }
+
+  function miniSky() {
+    // Eight theme regions in miniature; today's touched nodes are the lit ones.
+    const regions = [[26,20],[62,14],[96,24],[16,50],[48,52],[80,46],[104,58],[34,74]];
+    let dots = "";
+    regions.forEach(([cx, cy], i) => {
+      dots += `<circle cx="${cx}" cy="${cy}" r="13" fill="none" stroke="#232b31" stroke-dasharray="1.5 3.5" opacity=".55"/>`;
+      for (let k = 0; k < 3; k++) {
+        const a = (i * 2.4 + k * 2.1), x = cx + Math.cos(a) * 6.5, y = cy + Math.sin(a) * 6.5;
+        const lit = (i === 1 && k === 0) || (i === 4 && k === 2) || (i === 2 && k === 1);
+        const gold = (i === 2 && k === 1);
+        dots += `<circle cx="${x.toFixed(1)}" cy="${y.toFixed(1)}" r="${lit ? 2.6 : 1.5}"
+          fill="${gold ? "#d1a13c" : lit ? "#45b8ab" : "rgba(94,106,111,.32)"}"/>`;
+        if (lit) dots += `<circle cx="${x.toFixed(1)}" cy="${y.toFixed(1)}" r="6" fill="${gold ? "#d1a13c" : "#45b8ab"}" opacity=".16"/>`;
+      }
+    });
+    return `<svg class="mini-sky" width="124" height="92" viewBox="0 0 124 92">${dots}</svg>`;
+  }
+
+  function viewToday() {
+    return reelCard({ time: "3h ago", cat: "Claude-Feature", skill: "Agent Skills", r: 84, q: 77,
+      src: "Anthropic Blog",
+      title: "Claude Skills: capabilities a project remembers",
+      sum: "A Skill is a folder with a SKILL.md that Claude loads on its own once a task matches its description. Unlike CLAUDE.md, which sits in every turn whether relevant or not, a Skill is conditional context — present when useful, invisible otherwise. For a team repeating the same reviews and conventions across every session, that removes a categorically different kind of friction than a bigger context window ever could." })
+    + reelCard({ time: "6h ago", cat: "Claude-Feature", skill: "Prompt Caching", r: 88, q: 81,
+      src: "Anthropic Changelog",
+      title: "Prompt caching discount now covers tool definitions",
+      sum: "Tool definitions were the conspicuous exception to prompt caching: register fifteen tools with detailed schemas and that payload got resent, at full price, on every call. As of today they qualify for the same cache rate as system prompt content — up to 90% cheaper on tool-heavy calls, with no code change required." })
+    + `<div class="reel-full" style="justify-content:center">
+        <div class="done-card">
+          <div class="done-h">That's it for today ✅</div>
+          <div class="done-s">Two Reels, one To-Try done.</div>
+          ${miniSky()}
+          <div class="mini-cap">Your map today</div>
+          <div class="done-stats">
+            <div class="st"><div class="st-n a">2</div><div class="st-l">skills touched</div></div>
+            <div class="st"><div class="st-n b">1</div><div class="st-l">to-try done</div></div>
+            <div class="st"><div class="st-n c">6d</div><div class="st-l">running</div></div>
+          </div>
+          <button class="done-btn" type="button">To the full feed →</button>
+        </div>
+      </div>`;
+  }
+
+  function viewFeed() {
+    return `<div class="reel-full" style="padding-bottom:0">
+        <div class="filters" style="margin-bottom:10px">
+          <span class="chip on">All</span><span class="chip">Claude-Feature</span><span class="chip">Tooling</span><span class="chip">🆕 New</span>
+        </div>
+        <div style="flex:1;overflow-y:auto">
+          <div class="ttl" style="font-size:16px;margin-top:0">MCP server timing out in Docker? Check the bind address</div>
+          <div class="meta" style="margin-top:8px">
+            <span class="chip" style="border-color:rgba(124,135,144,.4);color:#7c8790">Community</span>
+            <span>1d ago</span>
+            <span class="score-mini">
+              <span class="score-mini-item"><span class="score-mini-label">R</span><span class="score-bar"><span style="width:71%"></span></span></span>
+              <span class="score-mini-item"><span class="score-mini-label">Q</span><span class="score-bar q"><span style="width:64%"></span></span></span>
+            </span>
+          </div>
+          <div style="margin-top:8px;display:flex;flex-wrap:wrap;gap:5px">
+            <span class="chip">Tooling</span><span class="chip skill">MCP Debugging</span></div>
+          <div class="sum">The failure mode is frustratingly generic — the client hangs, then dies with ETIMEDOUT, and the server logs show nothing wrong, because from its own point of view nothing is. It's listening; just not on an address the client can reach. In Compose setups the server binds to 127.0.0.1 by default: reachable inside its own container, invisible from a sibling.</div>
+        </div>
+        <div class="srcline">GitHub — Issue #482 · View source</div>
+        <div class="reel-actions">
+          <button type="button" class="on" title="Save">🔖</button><button type="button" title="Like">👍</button>
+          <button type="button" title="Dislike">👎</button><button type="button" title="Hide">🙈</button>
+        </div>
+      </div>`
+      + reelCard({ time: "2d ago", cat: "Technique", skill: "Context Engineering", r: 79, q: 74,
+        src: "Simon Willison",
+        title: "Most “the model didn't know X” failures are retrieval problems",
+        sum: "The instinct to add context is usually the wrong fix. Most cases where a model appears not to know something are retrieval problems wearing a context-window costume — the information was never fetched, not squeezed out." });
+  }
+
+  function skyMap() {
+    const regions = [
+      [56,42,"Agents"],[132,30,"Prompting"],[210,50,"Tooling"],
+      [40,104,"Parallel"],[118,112,"Integration"],[196,100,"Models"],
+      [246,146,"Eval"],[74,168,"Industry"]
+    ];
+    let s = "";
+    regions.forEach(([cx, cy, name], i) => {
+      s += `<circle cx="${cx}" cy="${cy}" r="26" fill="none" stroke="#232b31" stroke-dasharray="2 5" opacity=".6"/>`;
+      s += `<text x="${cx}" y="${cy - 31}" text-anchor="middle" font-family="ui-monospace,monospace" font-size="6.5" letter-spacing="1" fill="#5e6a6f">${name.toUpperCase()}</text>`;
+      for (let k = 0; k < 4; k++) {
+        const a = i * 1.9 + k * 1.7, r = 8 + ((i * 7 + k * 5) % 11);
+        const x = cx + Math.cos(a) * r, y = cy + Math.sin(a) * r;
+        const st = (i + k) % 4;
+        const col = st === 3 ? "#d1a13c" : st === 2 ? "#45b8ab" : st === 1 ? "#9aa7ac" : "rgba(94,106,111,.28)";
+        const rad = st === 3 ? 4 : st === 2 ? 3.6 : st === 1 ? 2.8 : 2;
+        if (st >= 2) s += `<circle cx="${x.toFixed(1)}" cy="${y.toFixed(1)}" r="${rad + 4}" fill="${col}" opacity=".15"/>`;
+        s += `<circle cx="${x.toFixed(1)}" cy="${y.toFixed(1)}" r="${rad}" fill="${col}"/>`;
+      }
+    });
+    return `<svg class="sky" viewBox="0 0 290 200">${s}</svg>`;
+  }
+
+  function viewSkills() {
+    const i = STATE.sub.skills;
+    if (i === 0) {
+      return skyMap() + `<p style="margin-top:11px;font-size:11px;color:var(--ink-faint);text-align:center">
+        Pinch to zoom · tap a constellation to focus it</p>`;
+    }
+    if (i === 1) {
+      const rows = [
+        ["Agent Skills", "tried", "Guide · 640w", "1 to-try"],
+        ["Prompt Caching", "mastered", "Guide · 700w", ""],
+        ["MCP Debugging", "mastered", "Guide · 690w", ""],
+        ["Context Engineering", "tried", "Guide · 580w", ""],
+        ["Tool-use Loops", "untouched", "No guide yet", "1 to-try"]
+      ];
+      return `<input class="search" placeholder="Search guides…">` + rows.map(([t, st, g, td]) =>
+        `<div class="kbrow"><div class="kbrow-h"><span class="kbrow-t">${esc(t)}</span><span class="dot ${st}"></span></div>
+        <div class="row-m" style="margin-top:7px"><span class="chip">${esc(g)}</span>${td ? `<span class="chip skill">${esc(td)}</span>` : ""}</div></div>`).join("");
+    }
+    return `<div class="rowlist">` + [
+      ["Agent Skills", "tried", "Wrote a SKILL.md for review — it loaded unprompted on the next PR.", "2d ago"],
+      ["Prompt Caching", "mastered", "Audited the system prompt, found a per-request user id killing the cache.", "5d ago"],
+      ["Sub-agent Orchestration", "tried", "Split the migration across two agents on separate branches.", "6d ago"]
+    ].map(([n, st, note, t]) => `<div class="row">
+      <div class="row-t">${esc(note)}</div>
+      <div class="row-m"><span class="chip ${st === "mastered" ? "" : "skill"}">${esc(n)}</span><span>${esc(st)}</span><span>${esc(t)}</span></div>
+    </div>`).join("") + `</div>`;
+  }
+
+  function viewLibrary() {
+    const i = STATE.sub.library;
+    if (i === 0) {
+      return `<div class="rowlist">` + [
+        ["Claude Skills: capabilities a project remembers", "Anthropic Blog", "saved 2d ago"],
+        ["MCP server timing out in Docker?", "GitHub", "saved 5d ago"],
+        ["Extended thinking with tool calls", "Anthropic Blog", "saved 1w ago"]
+      ].map(([t, s, m]) => `<div class="row"><div class="row-t">${esc(t)}</div>
+        <div class="row-m"><span>${esc(s)}</span><span>·</span><span>${esc(m)}</span></div></div>`).join("") + `</div>`;
+    }
+    if (i === 1) {
+      return `<input class="search" placeholder="Search everything…">
+        <div class="filters"><span class="chip on">All time</span><span class="chip">30d</span><span class="chip">Has to-try</span><span class="chip">Established</span></div>`
+        + `<div class="rowlist">` + [
+          ["Prompt caching discount now covers tool definitions", "Anthropic Changelog", "6h ago"],
+          ["Claude Skills: capabilities a project remembers", "Anthropic Blog", "3h ago"],
+          ["Most “didn't know X” failures are retrieval problems", "Simon Willison", "2d ago"],
+          ["Smaller models are more reliable at tool use than assumed", "arXiv", "2d ago"],
+          ["MCP server timing out in Docker?", "GitHub", "1d ago"]
+        ].map(([t, s, m]) => `<div class="row"><div class="row-t">${esc(t)}</div>
+          <div class="row-m"><span>${esc(s)}</span><span>·</span><span>${esc(m)}</span></div></div>`).join("") + `</div>`;
+    }
+    return `<div class="rowlist">` + [
+      ["How long I keep a session open", "own", "1w ago"],
+      ["When I reach for a sub-agent vs. just doing it", "own", "3w ago"]
+    ].map(([t, a, m]) => `<div class="row"><div class="row-t">${esc(t)}</div>
+      <div class="row-m"><span class="chip">${esc(a)}</span><span>${esc(m)}</span></div></div>`).join("") + `</div>`;
+  }
+
+  const TITLES = { today: "Today", feed: "Feed", skills: "Skills", library: "Library" };
+  const NOTES = { today: "", feed: "", skills: "", library: "" };
+
+  function render() {
+    document.getElementById("appTitle").textContent = TITLES[STATE.tab];
+    document.getElementById("fresh").style.display = STATE.tab === "today" || STATE.tab === "feed" ? "" : "none";
+    document.getElementById("tabnote").textContent = NOTES[STATE.tab] || "";
+
+    const subnav = document.getElementById("subnav");
+    const subs = SUBS[STATE.tab];
+    if (subs) {
+      subnav.style.display = "";
+      subnav.innerHTML = subs.map((s, i) =>
+        `<button type="button" data-sub="${i}" class="${STATE.sub[STATE.tab] === i ? "on" : ""}">${esc(s)}</button>`).join("");
+    } else { subnav.style.display = "none"; subnav.innerHTML = ""; }
+
+    const body = document.getElementById("body");
+    body.classList.toggle("reels", STATE.tab === "today" || STATE.tab === "feed");
+    body.innerHTML = STATE.tab === "today" ? viewToday()
+      : STATE.tab === "feed" ? viewFeed()
+      : STATE.tab === "skills" ? viewSkills() : viewLibrary();
+    body.scrollTop = 0;
+
+    document.getElementById("tabbar").innerHTML = TABS.map((t) =>
+      `<button type="button" data-tab="${t.id}" class="${STATE.tab === t.id ? "on" : ""}">
+        <span class="ico">${t.ico}</span>${esc(t.label)}</button>`).join("");
+  }
+
+  document.getElementById("tabbar").addEventListener("click", (e) => {
+    const b = e.target.closest("button[data-tab]"); if (!b) return;
+    STATE.tab = b.dataset.tab; render();
+  });
+  document.getElementById("subnav").addEventListener("click", (e) => {
+    const b = e.target.closest("button[data-sub]"); if (!b) return;
+    STATE.sub[STATE.tab] = Number(b.dataset.sub); render();
+  });
+
+  render();
+})();
+</script>
