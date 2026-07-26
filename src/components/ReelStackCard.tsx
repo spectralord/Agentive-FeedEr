@@ -3,8 +3,8 @@
 import { useState } from "react";
 import type { FeedReel } from "@/lib/feed";
 import type { ReelActionFlags } from "@/lib/interactions";
-import { buildReelDetailData } from "./reelDetailData";
-import { ReelCardBody } from "./ReelCard";
+import type { ReelDetailData } from "./reelDetailData";
+import { ReelCardBody } from "./ReelCardBody";
 import { ReelCardShell } from "./ReelCardShell";
 import { SourceAvatar } from "./SourceAvatar";
 
@@ -16,6 +16,20 @@ export interface ReelStackCardProps {
   others: FeedReel[];
   /** Save/up/down state for the primary reel (T6.2 hydration), same as ReelCard. */
   interactions?: ReelActionFlags;
+  /**
+   * Built by the caller via `buildReelDetailData` (see reelDetailData.ts)
+   * and passed down pre-built, rather than computed inside this component.
+   * `ReelStackCard` is a Client Component (`"use client"`, for the
+   * show/hide-sources toggle below) — `buildReelDetailData` transitively
+   * pulls in `src/lib/skills/reelSkillTab.ts` (a DB-touching module, for
+   * T18.7's Skill tab data) via `pickSkillTabPreview`, which is only safe
+   * to import from a Server Component. Building `detail` one level up (in
+   * `page.tsx`/`today/page.tsx`, both Server Components) and passing the
+   * plain, already-serializable result down avoids dragging `pg` into the
+   * browser bundle — `next build` fails loudly (`Can't resolve 'tls'`) if
+   * this boundary isn't respected.
+   */
+  detail: ReelDetailData;
 }
 
 /**
@@ -39,14 +53,9 @@ export interface ReelStackCardProps {
  * the remaining member(s) — as a solo card if only one is left (see
  * groupReelsForFeed in src/lib/feed.ts).
  */
-export function ReelStackCard({ clusterTitle, primary, others, interactions }: ReelStackCardProps) {
+export function ReelStackCard({ clusterTitle, primary, others, interactions, detail }: ReelStackCardProps) {
   const [expanded, setExpanded] = useState(false);
   const totalSources = 1 + others.length;
-  // T18.6 (§2.2 Context tab): the stack's own "other members" list is
-  // exactly the Context tab's "cluster members beyond the primary" data —
-  // already fetched as part of the same getReels() call that built this
-  // stack, so no second query is needed here.
-  const detail = buildReelDetailData(primary, others);
 
   const banner = (
     // T18.6 (§2.3): data-no-open — the "Show/Hide sources" toggle and the

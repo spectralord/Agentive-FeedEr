@@ -49,10 +49,11 @@ export function ReelCardShell({ reelId, initial, children, detail }: ReelCardShe
 
   // §2.3: tap anywhere on Compact's content opens Detail on its first tab
   // (always Write-up — never hidden). `data-no-open` marks Compact's own
-  // interactive elements (currently: the "Confirm superseded" form) that
-  // must keep working unmolested rather than also triggering this; T18.7's
-  // `data-open-skill` (the skill badge) will add the "jump straight to the
-  // Skill tab" branch below.
+  // interactive elements (the "Confirm superseded" form, ReelStackCard's
+  // "Show sources" banner) that must keep working unmolested rather than
+  // also triggering this. `data-open-skill` (T18.7: the Compact skill
+  // badge) jumps straight to the Skill tab instead of Write-up — a
+  // shortcut, not a duplicate path.
   function handleCompactClick(e: React.MouseEvent<HTMLDivElement>) {
     if (open) return;
     const target = e.target as HTMLElement;

@@ -1,16 +1,16 @@
 "use client";
 
+import { EFFORT_LABELS } from "./labels";
+import { SkillRing } from "./SkillRing";
 import { SourceAvatar } from "./SourceAvatar";
 import type { ReelDetailData } from "./reelDetailData";
 
 /**
- * T18.6 (§2.2, §7 #6): the Detail overlay's tab system. Genuinely generic —
- * `TAB_DEFS` + `isTabEmpty` is an array of descriptors each carrying a
- * "would this tab render only its empty state?" predicate; the visible set
- * is just `TAB_DEFS` filtered by that predicate (Write-up is exempted, per
- * the rule that governs Context and Skill only). T18.7 adds a third
- * `"skill"` entry to `TAB_DEFS` plus its `isTabEmpty` case and panel — no
- * restructuring needed here, which is the seam T18.6 is required to leave.
+ * T18.6/T18.7 (§2.2, §7 #6/#8): the Detail overlay's tab system. Genuinely
+ * generic — `TAB_DEFS` + `isTabEmpty` is an array of descriptors each
+ * carrying a "would this tab render only its empty state?" predicate; the
+ * visible set is just `TAB_DEFS` filtered by that predicate (Write-up is
+ * exempted, per the rule that governs Context and Skill only).
  *
  * Rendered inside the client `ReelCardShell`, which owns the open/tab state
  * and the tap/swipe gesture handlers (§2.3) — this component is presentational
@@ -27,7 +27,7 @@ interface TabDef {
 const TAB_DEFS: TabDef[] = [
   { id: "writeup", label: "Write-up" },
   { id: "context", label: "Context" },
-  // T18.7 appends { id: "skill", label: "Skill" } here.
+  { id: "skill", label: "Skill" },
 ];
 
 /** §2.2's hiding rule: "hide a tab entirely if it would render only its
@@ -40,11 +40,17 @@ function isTabEmpty(id: TabId, data: ReelDetailData): boolean {
     case "context":
       return data.clusterMembers.length === 0 && data.caveat === null;
     case "skill":
-      // T18.7 will replace this with `data.skill === undefined`. Until then
-      // "skill" never appears in TAB_DEFS, so this branch is unreachable —
-      // kept exhaustive so TypeScript catches a future TAB_DEFS/switch drift.
-      return true;
+      // T18.7 (§7 #8): no `reel.skill` (or the matched node couldn't be
+      // resolved) -> nothing to show -> hide, same rule as Context.
+      return data.skill === undefined;
   }
+}
+
+function skillStatusTextClass(status: string): string {
+  if (status === "tried") return "text-accent";
+  if (status === "mastered") return "text-gold";
+  if (status === "seen") return "text-ink-muted";
+  return "text-ink-faint"; // untouched
 }
 
 function WriteupPanel({ data }: { data: ReelDetailData }) {
@@ -149,6 +155,102 @@ function ContextPanel({ data }: { data: ReelDetailData }) {
   );
 }
 
+/**
+ * T18.7 (§5.2, §8.4): status ring (SkillRing — T18.5's ONE ring component,
+ * ADR 0016 point 2 — reused, not reinvented) + skill name/theme/status +
+ * node description; `reel.action`/`effortTag` (moved here from Compact by
+ * T18.2); the "Mark as tried" quick action ONLY when `status === "seen"`,
+ * a plain `<form method="post" action="/skills/[slug]/progress">` —
+ * literally the same route + `setProgressBySlug` mutation the node detail
+ * page's own status form posts to (§8.4's hard constraint: never a second
+ * implementation). No optimistic UI layered on top here (T18.14, which
+ * would generalize `ReelActions`' optimistic pattern to progress, is
+ * out of scope for this epic's phase 1) — a real POST + redirect, same as
+ * the freshness "Confirm superseded" form already does in `ReelCard.tsx`.
+ */
+function SkillPanel({ data }: { data: ReelDetailData }) {
+  const skill = data.skill;
+  if (!skill) return null;
+
+  return (
+    <>
+      <div className="flex items-center gap-3.5">
+        <SkillRing status={skill.status} size={52} />
+        <div>
+          <p className="text-[15.5px] font-semibold text-ink">{skill.title}</p>
+          <p className="mt-0.5 text-[11px] text-ink-faint">{skill.theme}</p>
+          <p
+            className={`mt-0.5 font-mono text-[10.5px] uppercase tracking-wide ${skillStatusTextClass(skill.status)}`}
+          >
+            {skill.status}
+          </p>
+        </div>
+      </div>
+
+      <p className="mt-4 text-[12.5px] leading-relaxed text-ink-muted">{skill.description}</p>
+
+      {/* Sourced-only (ADR 0005): reel.action/effortTag are this REEL's own
+          fields — no action means nothing renders, nothing invented. */}
+      {skill.action && (
+        <div className="mt-4 rounded-xl border border-action/30 bg-action-soft p-3">
+          <p className="font-mono text-[9.5px] uppercase tracking-wide text-action">Action</p>
+          <p className="mt-1 text-xs text-ink">{skill.action}</p>
+          {skill.effortTag && <p className="mt-1 text-[10.5px] text-ink-faint">{EFFORT_LABELS[skill.effortTag]}</p>}
+        </div>
+      )}
+
+      {skill.status === "seen" && (
+        <form
+          method="post"
+          action={`/skills/${skill.slug}/progress`}
+          data-no-open
+          className="mt-4 flex items-center justify-between gap-2.5 rounded-xl border border-action/30 bg-action-soft p-3"
+        >
+          <input type="hidden" name="status" value="tried" />
+          <span className="text-xs text-ink">Tried this already?</span>
+          <button
+            type="submit"
+            className="shrink-0 rounded-full bg-action px-3.5 py-1.5 text-[11.5px] font-semibold text-ground"
+          >
+            Mark as tried
+          </button>
+        </form>
+      )}
+      {skill.status === "mastered" && (
+        <p className="mt-4 rounded-xl border border-gold/30 bg-gold-soft p-3 text-xs text-gold">
+          ★ Mastered — confirmed through the Adoption Log.
+        </p>
+      )}
+
+      <p className="mt-5 font-mono text-[10px] uppercase tracking-wide text-ink-faint">Also under this skill</p>
+      {skill.otherItems.length > 0 ? (
+        <div className="mt-2 flex flex-col gap-0.5">
+          {skill.otherItems.map((it) => (
+            <div
+              key={it.key}
+              className="flex items-center justify-between gap-2 border-t border-hairline py-2.5 text-xs first:border-t-0 first:pt-0"
+            >
+              <span className="text-ink">{it.title}</span>
+              <span className="shrink-0 text-[11px] text-ink-faint">{it.timeLabel}</span>
+            </div>
+          ))}
+        </div>
+      ) : (
+        <p className="mt-2 text-[11.5px] text-ink-faint">Nothing else yet.</p>
+      )}
+      {skill.moreCount > 0 && <p className="mt-1 text-[11.5px] text-ink-faint">+ {skill.moreCount} more</p>}
+
+      <a
+        href={`/skills/${skill.slug}`}
+        data-no-open
+        className="mt-4 block w-full rounded-full border border-hairline-strong py-2.5 text-center text-xs font-semibold text-ink-muted transition-colors hover:border-accent hover:text-accent"
+      >
+        Open in Skill Map →
+      </a>
+    </>
+  );
+}
+
 export interface ReelDetailProps {
   data: ReelDetailData;
   open: boolean;
@@ -214,6 +316,7 @@ export function ReelDetail({ data, open, activeTab, onSelectTab, onClose }: Reel
           >
             {t.id === "writeup" && <WriteupPanel data={data} />}
             {t.id === "context" && <ContextPanel data={data} />}
+            {t.id === "skill" && <SkillPanel data={data} />}
           </div>
         ))}
       </div>

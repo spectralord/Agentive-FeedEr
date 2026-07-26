@@ -1,8 +1,10 @@
 import Link from "next/link";
 import { DEFAULT_FEED_LIMIT, getReels, groupReelsForFeed } from "@/lib/feed";
 import { getInteractionFlags } from "@/lib/interactions";
+import { getSkillTabInfoForSlugs } from "@/lib/skills/reelSkillTab";
 import { ReelCard } from "@/components/ReelCard";
 import { ReelStackCard } from "@/components/ReelStackCard";
+import { buildReelDetailData } from "@/components/reelDetailData";
 import { buildLoadMoreHref, FilterBar, type FilterState } from "@/components/FilterBar";
 
 export type FeedSearchParams = FilterState;
@@ -47,6 +49,12 @@ export default async function FeedPage({ searchParams }: FeedPageProps) {
     before: params.before ? new Date(params.before) : undefined,
   });
   const interactionFlags = await getInteractionFlags(reels.map((r) => r.id));
+  // T18.7: one batch lookup for every distinct skill slug present in this
+  // page's reels, instead of a per-card query — same batching pattern as
+  // getInteractionFlags above.
+  const skillTabMap = await getSkillTabInfoForSlugs(
+    reels.map((r) => r.skill).filter((s): s is string => s !== null),
+  );
   // Epic 15 (T15.4): topic clusters with >= 2 displayed members bundle into
   // one stack card; everything else renders as a plain solo card, unchanged.
   const feedItems = groupReelsForFeed(reels);
@@ -66,12 +74,18 @@ export default async function FeedPage({ searchParams }: FeedPageProps) {
                 primary={item.primary}
                 others={item.others}
                 interactions={interactionFlags.get(item.primary.id)}
+                detail={buildReelDetailData(
+                  item.primary,
+                  item.others,
+                  item.primary.skill ? skillTabMap.get(item.primary.skill) : undefined,
+                )}
               />
             ) : (
               <ReelCard
                 key={item.reel.id}
                 reel={item.reel}
                 interactions={interactionFlags.get(item.reel.id)}
+                skillTabInfo={item.reel.skill ? skillTabMap.get(item.reel.skill) : undefined}
               />
             ),
           )}

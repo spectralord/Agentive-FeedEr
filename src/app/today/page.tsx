@@ -2,6 +2,7 @@ import Link from "next/link";
 import { ReelCard } from "@/components/ReelCard";
 import { ResurfaceCard } from "@/components/ResurfaceCard";
 import { getInteractionFlags, getResurfacingCandidates } from "@/lib/interactions";
+import { getSkillTabInfoForSlugs } from "@/lib/skills/reelSkillTab";
 import { getTodayTopReels } from "@/lib/today";
 
 // The 24h/48h ingestion window and the ranking both depend on "now" — this
@@ -33,6 +34,10 @@ export default async function TodayPage() {
 
   const interactionFlags = await getInteractionFlags(reels.map((r) => r.id));
   const resurfacing = await getResurfacingCandidates(now);
+  // T18.7: same batch skill-tab lookup as the main feed (src/app/page.tsx).
+  const skillTabMap = await getSkillTabInfoForSlugs(
+    reels.map((r) => r.skill).filter((s): s is string => s !== null),
+  );
 
   return (
     <>
@@ -51,7 +56,12 @@ export default async function TodayPage() {
 
       <div className="feed -mt-12 h-dvh snap-y snap-mandatory overflow-y-auto overflow-x-hidden">
         {reels.map((reel) => (
-          <ReelCard key={reel.id} reel={reel} interactions={interactionFlags.get(reel.id)} />
+          <ReelCard
+            key={reel.id}
+            reel={reel}
+            interactions={interactionFlags.get(reel.id)}
+            skillTabInfo={reel.skill ? skillTabMap.get(reel.skill) : undefined}
+          />
         ))}
 
         <ResurfaceCard reels={resurfacing} now={now} />

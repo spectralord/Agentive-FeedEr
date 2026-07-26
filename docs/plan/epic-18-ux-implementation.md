@@ -231,7 +231,7 @@ Depends on T18.1–T18.2. Build the **generic** tab system here; T18.7 adds the 
 - **Verification:** curl; a reel with no cluster siblings, no caveat and no skill opens **no**
   Detail; a reel with a caveat opens Detail on Context; reduced-motion disables the transition.
 
-### ☐ T18.7 — Skill tab in Reel Detail (§5.2, §8.4, §7 #8)
+### ☑ T18.7 — Skill tab in Reel Detail (§5.2, §8.4, §7 #8)
 
 Depends on T18.5 (ring) + T18.6 (tab system). Genuinely new content, not a restyle.
 - Status ring (T18.5's component — **not** a second implementation) + skill name + theme + status
@@ -702,3 +702,82 @@ visible state.
   Also confirmed via raw HTML inspection that all four Detail overlays are server-rendered
   off-screen by default (`pointer-events-none translate-x-full` present, no `open`/active state) —
   the push-in only happens client-side once the JS gesture/tap handlers run.
+
+**T18.7 (completed 2026-07-26):**
+- **Data access:** `src/lib/skills/reelSkillTab.ts` — `getSkillTabInfoForSlugs(slugs)` batch-fetches
+  (one query per table, not per reel) the active skill node + its `getProgressMap` status + every
+  Reel/active Experience Report tagged with each distinct slug present on the current feed page,
+  mirroring `getInteractionFlags`'s existing batching pattern (`src/lib/interactions.ts`). The
+  page-level batch map is built once in `src/app/page.tsx` and `src/app/today/page.tsx` from
+  `reels.map(r => r.skill).filter(...)`, then looked up per-card by slug — no per-card query. A
+  separate pure helper, `pickSkillTabPreview(info, excludeReelId, max=2)`, excludes the *calling*
+  reel's own row (type-scoped: a report sharing the reel's numeric id is not excluded — covered by
+  a dedicated test) and caps the remainder at 2, keeping the batch query itself reel-agnostic.
+- **A real, non-obvious build break, found and fixed:** `reelDetailData.ts`'s `buildReelDetailData`
+  now needs `pickSkillTabPreview` from `reelSkillTab.ts` (DB-touching, via `@/db/client` -> `pg`).
+  `ReelStackCard.tsx` is a Client Component (`"use client"`, pre-existing, for its show/hide-sources
+  toggle) that previously called `buildReelDetailData` itself — once that function's own import
+  graph reached `pg`, `next build` failed trying to resolve `tls`/`util/types` (Node builtins) *in
+  the browser bundle*, because Next.js bundles a plain (no "use client") module's entire import
+  graph into the client bundle once any Client Component reaches it, even via just one named export.
+  **Two-part fix:** (1) `ReelStackCard`'s `detail: ReelDetailData` prop is now built by its caller
+  (`page.tsx`, a Server Component) and passed down pre-built, rather than computed inside the client
+  component; (2) `ReelCardBody` (previously living inside `ReelCard.tsx`, which itself now imports
+  `buildReelDetailData`) was extracted into its own `src/components/ReelCardBody.tsx` with zero
+  DB-reaching imports, specifically so `ReelStackCard.tsx` can import *just* the presentational
+  Compact body without dragging in `ReelCard.tsx`'s now-heavier import graph. `ReelCard.tsx`
+  re-exports `ReelCardBody` for backward compatibility with existing imports (tests, `ReelCard.test.tsx`).
+  Caught by `npm run build` (Turbopack's `Module not found: Can't resolve 'tls'` error names the
+  exact import chain), not by `npm test` (Vitest's Node environment has no such client/server
+  bundling boundary, so the unit tests all passed while the production build was broken) — worth
+  recording since it's the kind of break `npm test` alone cannot catch in this codebase.
+- **Skill tab UI** (`ReelDetail.tsx`'s new `SkillPanel`): `SkillRing` (T18.5's ONE ring component,
+  reused via `size={52}`, not reinvented — ADR 0016 point 2) + title/theme/status-colored label +
+  the node's `description`; `reel.action`/`effortTag` (this REEL's own fields, moved here from
+  Compact by T18.2) rendered only when present — sourced-only (ADR 0005), nothing invented; up to 2
+  "also under this skill" items (using `pickSkillTabPreview`) + a "+N more" link; "Open in Skill Map"
+  link to `/skills/[slug]`.
+- **"Mark as tried" — the §8.4 hard constraint:** a plain `<form method="post"
+  action="/skills/[slug]/progress">` with a hidden `status=tried` input, shown ONLY when
+  `status === "seen"` — this is not a re-implementation, it is *the same HTML form pattern already
+  used* by the freshness "Confirm superseded" block in `ReelCard.tsx` and (per the node detail page)
+  posts to the exact same route (`src/app/skills/[slug]/progress/route.ts`) which calls the exact
+  same `setProgressBySlug`/`setProgress` (`src/lib/skills/progress.ts`) the node page's own status
+  form posts to. **Deliberately not layered with optimistic UI** — T18.14 (generalizing
+  `ReelActions`' existing optimistic pattern to progress mutations) is explicitly out of scope for
+  this epic's phase 1; adding a second, ad hoc optimistic layer here now would risk exactly the kind
+  of drift §8.4 warns against. A real POST means submitting it navigates away from the feed to
+  `/skills/[slug]` (the same destination "Open in Skill Map" already goes to) — noted as a
+  deliberate, conservative choice for review: an optimistic-feeling "stay in the feed" version was
+  considered and rejected as scope creep into T18.14.
+- **Compact skill badge wired to the Skill tab:** `SkillBadge` (`ReelCardBody.tsx`) now carries
+  `data-open-skill`, matching the prototype's `data-action="open-skill"`. `ReelCardShell`'s tap
+  handler (whose `data-open-skill` branch was pre-wired, inert, in T18.6) now has a live target —
+  tapping the badge opens Detail directly on the Skill tab instead of Write-up.
+- **Hiding rule:** `ReelDetail.tsx`'s `TAB_DEFS` gained its third entry (`{ id: "skill", label:
+  "Skill" }`) and `isTabEmpty("skill", data)` now reads `data.skill === undefined` — `skill` is
+  `undefined` both when the reel has no `skill` at all, and (defensively) when `reel.skill` is set
+  but no matching *active* node was resolved in the batch map (e.g. a node that existed when tagged
+  but is no longer active) — both cases hide the tab per "no skill on the reel -> this tab hides".
+  Verified as two separate test cases since they're reached through different code paths.
+- **Verification:** `service postgresql start && npm run db:migrate`, then `npm run build` + `npm test`
+  green (326/326, +12 net new: 7 `ReelCard.test.tsx` cases covering hide/show, sourced-only
+  action/effortTag, the seen-only quick action + its exact form action/hidden-input/status
+  transitions, the mastered note, and the 2-item-cap-plus-more-count preview; a new
+  `reelSkillTab.integration.test.ts` against real Postgres covering the batch query's
+  node/status/newest-first-items resolution, the active-report-only filter, the empty-slug-list
+  no-op case, and the pure `pickSkillTabPreview` helper's exclusion/cap logic in isolation).
+  Additionally ran a throwaway seed script (not committed) against the dev DB: one skill node with
+  two tagged reels (one carrying `action`+`effortTag`, one not), confirmed via `npm run start` +
+  curl that (a) with no `user_progress` row the ring/status read `untouched` (bare hairline-strong
+  track, no fill) and no quick action shows, matching T18.4's fourth state — not "seen" as an
+  earlier, now-superseded draft of this note assumed; (b) after setting the node to `seen` directly,
+  both reels' Skill tabs show the `seen` ring, the `action`/`effortTag` block appears only on the
+  reel that has them, and the "Mark as tried" form's `action`/hidden-input are exactly
+  `/skills/t187-skill/progress` / `status=tried`; (c) **the full mutation round-trip**: `curl -X
+  POST -d "status=tried" localhost:3000/skills/t187-skill/progress` returned a 303 with `Location:
+  .../skills/t187-skill?from=seen` (proving the real route/handler ran), after which both
+  `/skills/t187-skill` (the node page) AND both reels' Skill tabs independently re-rendered the
+  `tried` state (`--accent` ring, "tried" status text) and the "Mark as tried" action correctly
+  disappeared from both — direct proof the Skill tab writes through the exact same path the node
+  page does, not a second implementation.

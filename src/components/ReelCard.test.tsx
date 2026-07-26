@@ -1,6 +1,7 @@
 import { renderToStaticMarkup } from "react-dom/server";
 import { describe, expect, it } from "vitest";
 import type { FeedReel } from "@/lib/feed";
+import type { SkillTabInfo } from "@/lib/skills/reelSkillTab";
 import { ReelCard, ReelCardBody } from "./ReelCard";
 
 const baseReel: FeedReel = {
@@ -201,5 +202,103 @@ describe("ReelCard (Compact + Detail assembly)", () => {
     const reel: FeedReel = { ...baseReel, caveat: "Something to flag." };
     const html = renderToStaticMarkup(<ReelCard reel={reel} />);
     expect(html).toContain("Context");
+  });
+});
+
+describe("ReelCard Skill tab (T18.7, §5.2/§8.4)", () => {
+  const skillInfo: SkillTabInfo = {
+    slug: "agent-skills",
+    title: "Agent Skills",
+    theme: "Agentic Development",
+    description: "Building and structuring reusable Skills for Claude Code.",
+    status: "seen",
+    items: [
+      // Same id as baseReel.id (1) — must be excluded from its own preview.
+      { type: "reel", id: 1, title: "This reel itself", date: new Date(2026, 0, 4) },
+      { type: "reel", id: 10, title: "Other reel A", date: new Date(2026, 0, 3) },
+      { type: "report", id: 20, title: "Other report B", date: new Date(2026, 0, 2) },
+      { type: "reel", id: 30, title: "Other reel C", date: new Date(2026, 0, 1) },
+    ],
+  };
+
+  it("hides the Skill tab when the reel has no skill at all", () => {
+    const html = renderToStaticMarkup(<ReelCard reel={baseReel} skillTabInfo={skillInfo} />);
+    expect(html).not.toContain("Skill");
+    expect(html).not.toContain("data-open-skill");
+  });
+
+  it("hides the Skill tab when reel.skill is set but no matching skillTabInfo was resolved", () => {
+    const reel: FeedReel = { ...baseReel, skill: "agent-skills" };
+    const html = renderToStaticMarkup(<ReelCard reel={reel} />);
+    // The badge itself still renders (it's a Compact-level concern), but
+    // the Skill tab in Detail must not appear without resolvable node data.
+    expect(html).toContain("data-open-skill");
+    expect(html).not.toContain(">Skill<");
+  });
+
+  it("shows the Skill tab with ring/name/theme/status/description when resolved, and wires the Compact badge to jump to it", () => {
+    const reel: FeedReel = { ...baseReel, skill: "agent-skills" };
+    const html = renderToStaticMarkup(<ReelCard reel={reel} skillTabInfo={skillInfo} />);
+
+    expect(html).toContain("data-open-skill");
+    expect(html).toContain(">Skill<");
+    expect(html).toContain("Agent Skills");
+    expect(html).toContain("Agentic Development");
+    expect(html).toContain("Building and structuring reusable Skills for Claude Code.");
+    // SkillRing (T18.5's ONE ring component) is reused, not reinvented.
+    expect(html).toContain("var(--color-ink-muted)"); // "seen" rung
+  });
+
+  it("Sourced-only (ADR 0005): reel.action/effortTag show only when the reel actually has them", () => {
+    const withAction: FeedReel = {
+      ...baseReel,
+      skill: "agent-skills",
+      action: "Try writing one Skill for your own repeated review checklist.",
+      effortTag: "afternoon",
+    };
+    const withActionHtml = renderToStaticMarkup(<ReelCard reel={withAction} skillTabInfo={skillInfo} />);
+    expect(withActionHtml).toContain("Try writing one Skill for your own repeated review checklist.");
+    expect(withActionHtml).toContain("Afternoon");
+
+    const withoutAction: FeedReel = { ...baseReel, skill: "agent-skills" };
+    const withoutActionHtml = renderToStaticMarkup(<ReelCard reel={withoutAction} skillTabInfo={skillInfo} />);
+    expect(withoutActionHtml).not.toContain("Afternoon");
+  });
+
+  it("'Mark as tried' is offered ONLY when status is seen, and posts through the exact same /skills/[slug]/progress route+status the node page uses (§8.4 hard constraint)", () => {
+    const reel: FeedReel = { ...baseReel, skill: "agent-skills" };
+
+    const seenHtml = renderToStaticMarkup(<ReelCard reel={reel} skillTabInfo={{ ...skillInfo, status: "seen" }} />);
+    expect(seenHtml).toContain('action="/skills/agent-skills/progress"');
+    expect(seenHtml).toContain('method="post"');
+    expect(seenHtml).toContain('name="status" value="tried"');
+    expect(seenHtml).toContain("Mark as tried");
+
+    for (const status of ["untouched", "tried", "mastered"] as const) {
+      const html = renderToStaticMarkup(<ReelCard reel={reel} skillTabInfo={{ ...skillInfo, status }} />);
+      expect(html).not.toContain("Mark as tried");
+    }
+  });
+
+  it("shows a mastered note instead of the quick action once mastered", () => {
+    const reel: FeedReel = { ...baseReel, skill: "agent-skills" };
+    const html = renderToStaticMarkup(
+      <ReelCard reel={reel} skillTabInfo={{ ...skillInfo, status: "mastered" }} />,
+    );
+    expect(html).toContain("Mastered");
+    expect(html).not.toContain("Mark as tried");
+  });
+
+  it("shows up to 2 other associated items (excluding the reel's own row) plus a +N more link, and an Open in Skill Map link", () => {
+    const reel: FeedReel = { ...baseReel, skill: "agent-skills" };
+    const html = renderToStaticMarkup(<ReelCard reel={reel} skillTabInfo={skillInfo} />);
+
+    expect(html).not.toContain("This reel itself"); // excluded (own row)
+    expect(html).toContain("Other reel A");
+    expect(html).toContain("Other report B");
+    expect(html).not.toContain("Other reel C"); // beyond the cap of 2
+    expect(html).toContain("+ 1 more");
+    expect(html).toContain('href="/skills/agent-skills"');
+    expect(html).toContain("Open in Skill Map");
   });
 });
