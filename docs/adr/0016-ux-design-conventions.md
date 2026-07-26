@@ -41,6 +41,20 @@ built UI against invented long-form content that doesn't match what enrichment a
    gracefully if the content ever grows, never require growth that hasn't been committed to as a
    separate product decision.
 
+   > **AMENDED 2026-07-25 (user decision) — the last clause is the operative one.** This point was
+   > being read as "never build a surface before its content exists", which is stricter than
+   > intended and was blocking the Write-up tab. The actual rule is about *unbacked assumptions*:
+   > don't design a layout that silently **requires** content the pipeline doesn't produce.
+   > It does **not** forbid building a surface whose content has been **committed to as a separate
+   > product decision** — that is exactly the escape hatch the final clause names, and
+   > ADR 0017's `reels.writeup` is exactly such a commitment.
+   > **Corollary, deliberately chosen:** when a committed-to field is not yet populated, ship the
+   > surface with **explicitly-labelled placeholder content** rather than hiding it. A front end
+   > you cannot walk through is a front end you cannot evaluate, and flow between surfaces is the
+   > thing least visible in a static prototype. Placeholders must be obvious as placeholders —
+   > never real-looking invented content, and never silently reused text passed off as new
+   > (ADR 0003's "null over hallucination" applies to the UI layer too: be honest that it's empty).
+
 ## Alternatives
 
 - **Leave color usage implicit / per-component judgment call:** what the project already had;

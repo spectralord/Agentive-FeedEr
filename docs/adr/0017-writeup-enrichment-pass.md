@@ -1,7 +1,11 @@
 # ADR 0017 — Write-up: a second enrichment pass for long-form Reel content
 
-- Status: proposed (needs strong-model grill before implementation — see Open questions)
-- Date: 2026-07-24
+- Status: **partially accepted** 2026-07-25 (user go-ahead). **Decision 1 (the `reels.writeup`
+  field) and the Write-up tab are accepted and built now** — Epic 18 T18.6. **Decisions 2–4 (the
+  second enrichment pass that fills the field) remain proposed** and still want a grill; until
+  then `writeup` stays `NULL` and the tab renders an explicit placeholder. See the amendment
+  below.
+- Date: 2026-07-24 (amended 2026-07-25)
 - Related: `docs/specs/2026-07-24-ux-gamification-design.md` §2.2/§8.1 (the Detail view's
   Write-up tab this backs), ADR 0002 (decoupled ingestion/enrichment), ADR 0003 (structured
   single-pass enrichment), ADR 0005 (sourced-only), ADR 0015 (executor seam, binding)
@@ -25,6 +29,19 @@ this ADR is that change, proposed for grill/review rather than assumed.
    cap, written by a second LLM pass. Nullable because not every Reel need get one immediately (or
    ever — see the generation-scope question below); Compact and the rest of Detail work correctly
    with it absent (the Write-up tab simply isn't shown, per the design doc's tab-hiding rule).
+
+   > **AMENDED 2026-07-25 (user decision) — the Write-up tab is never hidden.** The original
+   > wording above made the tab conditional on content existing, which would have left it
+   > invisible until the enrichment pass ships. The product owner's requirement is the opposite:
+   > **the tab must be present now, before any content exists**, because the point of building
+   > the redesign is to *feel how the surfaces flow together* in a real front end — which cannot
+   > be evaluated from a static prototype, and cannot be evaluated at all for a tab that isn't
+   > rendered. So: when `writeup IS NULL`, the tab still renders, showing **explicitly-marked
+   > placeholder content** (clearly labelled as such — not silently duplicated `summary` text
+   > passed off as real). The §2.2 tab-hiding rule continues to apply to **Context and Skill**,
+   > and Write-up remains the one tab that is always shown, exactly as §2.2 already states.
+   > This also supersedes §8.1's "adds a navigation step for zero new information" objection for
+   > the interim period: the navigation step is the thing being evaluated.
 
 2. **A second, decoupled pass, not a change to the core enrichment call.** Consistent with the
    existing pattern (SkillTagger, Clustering, Topic-Knowledge-Check all run as their own passes

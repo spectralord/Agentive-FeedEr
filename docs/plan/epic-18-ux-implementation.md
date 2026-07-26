@@ -33,7 +33,7 @@
 ### Out of scope — blocked on unbuilt/ungrilled work
 | Item | Blocked by |
 |---|---|
-| §7 #10 Write-up tab + `reels.writeup` enrichment pass | **ADR 0017 is `proposed`** — needs a strong-model grill, a new column and a new pipeline pass |
+| ~~§7 #10 Write-up tab~~ → **NOW IN SCOPE** (T18.6, user decision 2026-07-25) | The *tab* and the `reels.writeup` **field** are built now, with an explicit placeholder while the field is null (ADR 0017 amended, ADR 0016 point 3 amended). Only the **enrichment pass that fills it** stays deferred |
 | §9.2 Guides | **ADR 0018 `proposed`** — schema + new pipeline pass |
 | §9.2/§9.3 Actionables (To-Try), evidenced track | **ADR 0019 `proposed`** — schema change, revisits an Epic 6 decision |
 | §9.5 Constellation view | **ADR 0020 `proposed`** — schema addition; and §9.9 warns it is "a beautiful shell over thin content" before Guides exist |
@@ -56,11 +56,27 @@ exists; the full text lives in the Context tab. Trust signal stays visible, Comp
 Note the freshness/supersession notice is explicitly *kept* in Compact by §2.1, so a
 caution-class element there is consistent, not an exception.
 
-**2. Detail ships with two tabs (Context, Skill), not three.** Write-up is blocked (above). The
-tab system must be built **generically** — an array of tabs plus the §2.2 hiding rule — so
-Write-up slots in later with no rework. Consequence to handle explicitly: if *every* tab would be
-hidden, the card must not open a Detail view at all (no empty shell, no dead tap target). In
-practice most Reels carry a `skill`, so the Skill tab usually populates.
+**2. ~~Detail ships with two tabs~~ → REVERSED 2026-07-25 (user decision): all three tabs ship.**
+The original call deferred Write-up because no field backed it. The product owner overrode this:
+the tab must exist **now**, with placeholder content, because the entire reason for implementing
+the redesign is to feel how the surfaces flow together in a real front end — which a static
+prototype cannot show and a missing tab cannot show at all.
+
+Consequences, all folded into T18.6:
+- `reels.writeup` (text, nullable) is added now (ADR 0017 decision 1, accepted). The pass that
+  fills it is still deferred, so it is `NULL` everywhere for the moment.
+- The Write-up tab renders `writeup` when present and an **explicitly-labelled placeholder** when
+  null. Placeholder must be obviously a placeholder — never invented realistic prose, never
+  silently re-showing `summary` as if it were new (ADR 0016 point 3, as amended).
+- Write-up is **never hidden**; the §2.2 hiding rule still governs Context and Skill.
+- The "if every tab would be hidden, don't open Detail" edge case is therefore **moot** — every
+  Reel always has at least the Write-up tab, so Detail always opens.
+
+**Standing instruction from the user (2026-07-25):** where the design session contradicts an
+earlier decision of ours, that is expected — the session deliberately challenged existing
+preconceptions. Do **not** block a design change merely because it conflicts with a prior ADR;
+change the ADR, recording the amendment and the reasoning. Missing data is not a blocker either:
+ship explicit dummy/placeholder content and wire the real source later.
 
 ---
 
@@ -177,9 +193,26 @@ Depends on T18.1 + T18.4. **Resolves the two literal `TODO(UX pass)` markers** i
   ring renders correctly per state; experimental-dot appears only above the threshold; build +
   tests green.
 
-### ☐ T18.6 — Reel Detail: push navigation + Context tab (§2.2, §2.3, §7 #6)
+### ☐ T18.6 — Reel Detail: push navigation + Write-up & Context tabs (§2.2, §2.3, §7 #6)
 
 Depends on T18.1–T18.2. Build the **generic** tab system here; T18.7 adds the Skill tab.
+
+**Write-up tab (added to scope 2026-07-25 — see judgment call 2):**
+- Add `reels.writeup` (text, nullable) + migration. **No enrichment pass** — the field stays
+  `NULL` for now (ADR 0017 decisions 2–4 still deferred). Add it to `FeedReel`/`getReels`.
+- Tab content per §2.2 and the prototype's `writeupPanel()`: a lightweight **source reference**
+  (source name) on top, then the write-up prose, then `example` if present.
+- **When `writeup` is null → an explicitly-labelled placeholder.** It must read unmistakably as a
+  placeholder (e.g. a muted "Long-form write-up not generated yet" note plus clearly-marked
+  filler so the tab's scroll/flow can actually be felt). **Never** invent realistic-looking prose
+  and **never** silently re-render `summary` as if it were new content (ADR 0016 point 3 as
+  amended; ADR 0003's honesty principle applies to the UI too).
+- **Write-up is never hidden** — it is always the first tab. The hiding rule governs Context and
+  Skill only, so Detail always has at least one tab and always opens.
+- **Move `example` and the source reference OUT of `ReelCardBody`** and into this tab — this
+  discharges the T18.2 deviation recorded in Abweichungen/Fragen. Compact ends up exactly as the
+  prototype's `compactHtml()`: meta row → badge row → title → summary, plus the caveat marker and
+  freshness notice.
 - **Push transition** (§2.2): Detail slides in from the right, Compact slides slightly out beneath
   it. Confirmed across two iterations — **not** a swipeable filmstrip. CSS transforms only, no new
   dependency. See the prototype for the exact feel.
@@ -378,6 +411,10 @@ _(to be maintained by the executing model)_
   > **Binding follow-up:** when the Write-up tab is built (ADR 0017 lands), `example` and the
   > source reference **move into it** and come **out** of Compact. Whoever builds that must do
   > both halves — this is the one place Compact knowingly deviates from the prototype.
+  > **➜ THIS FOLLOW-UP IS NOW DUE (2026-07-25):** the Write-up tab ships in T18.6, so the
+  > deviation ends there — T18.6 must move `example` + the source reference into the Write-up
+  > tab and delete them from `ReelCardBody`, leaving Compact exactly as `compactHtml()` has it:
+  > meta row → badge row → title → summary (+ caveat marker and freshness notice).
 - **Score-mini is bar-only, no literal numbers** — matches the prototype's `scoreMini()` exactly
   (label + bar per row, width = score%). Added `title`/`aria-label` (e.g. "Relevance 82/100") on
   each row for accessibility/hover; this doesn't change the visual, since neither renders as visible
