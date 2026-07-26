@@ -2,6 +2,7 @@ import type { FeedReel } from "@/lib/feed";
 import { isNew } from "@/lib/labels";
 import type { ReelActionFlags } from "@/lib/interactions";
 import { formatRelativeTime } from "@/lib/relativeTime";
+import { buildReelDetailData } from "./reelDetailData";
 import { ReelCardShell } from "./ReelCardShell";
 import { CATEGORY_LABELS, CONFIDENCE_LABELS, MATURITY_LABELS } from "./labels";
 
@@ -85,26 +86,29 @@ export interface ReelCardProps {
 }
 
 /**
- * The reel's content — meta row/badges/title/summary/example/footer. Shared
- * between a plain solo card (ReelCard below) and the "N sources on this
- * topic" stack card (ReelStackCard, Epic 15 T15.4/T15.5), which renders this
- * unchanged for the cluster's primary reel plus its own banner slot on top.
+ * The reel's Compact content — meta row/badges/title/summary. Shared between
+ * a plain solo card (ReelCard below) and the "N sources on this topic" stack
+ * card (ReelStackCard, Epic 15 T15.4/T15.5), which renders this unchanged for
+ * the cluster's primary reel plus its own banner slot on top.
  *
  * T18.2 (§2.1, ADR 0016 tokens): restyled onto the token system; scores moved
  * here from the footer; reel.skill now rendered as the badge row's one
  * colored badge; the Action block (reel.action + effortTag) is REMOVED —
  * it resurfaces in the Reel Detail's Skill tab in T18.7, next to the skill it
- * advances, not here. `example` and the "View source" link are kept
- * (restyled only) — the epic's "Compact is exactly X, nothing else" line
- * names the significant removal (Action block) and the two additions
- * (scores, skill); it doesn't call out `example`/"View source" for removal,
- * and design doc §8.1 explicitly values summary+example fitting in Compact
- * without a Detail view. Since the Write-up tab that would otherwise carry
- * this content is itself out of scope for the whole epic (blocked on ADR
- * 0017), removing them here would delete real, already-shipped content with
- * no replacement surface anywhere in the app. See
- * docs/plan/epic-18-ux-implementation.md "Abweichungen/Fragen" for this
- * interpretation, flagged for review.
+ * advances, not here.
+ *
+ * T18.6: `example` and the "View source" footer link — kept here as a
+ * deliberate temporary deviation by T18.2, see that task's Abweichungen —
+ * are now REMOVED and moved into the Reel Detail's Write-up tab
+ * (`ReelDetail.tsx`'s `WriteupPanel`), discharging that deviation. Compact is
+ * now exactly `docs/specs/prototypes/reel-card-and-detail.html`'s
+ * `compactHtml()`: meta row -> badge row -> title -> summary, plus the
+ * caveat marker and freshness notice (neither of which compactHtml() has,
+ * both pre-date this file and are explicitly kept per §2.1/Epic 10/11). The
+ * `tap-hint` line is new in T18.6 — compactHtml() has one too, and since
+ * tap-to-open is brand-new behaviour as of this task, a discoverability
+ * affordance earns its keep (flagged for review, since the epic's own
+ * enumerated Compact composition doesn't explicitly list it).
  */
 export function ReelCardBody({ reel, stackBanner }: { reel: FeedReel; stackBanner?: React.ReactNode }) {
   const showNewBadge = isNew(reel);
@@ -140,17 +144,6 @@ export function ReelCardBody({ reel, stackBanner }: { reel: FeedReel; stackBanne
       </h2>
       <p className="mt-2 text-[13.5px] leading-relaxed text-ink">{reel.summary}</p>
 
-      {reel.example && (
-        <div className="mt-4">
-          <p className="font-mono text-[9.5px] uppercase tracking-wide text-ink-faint">
-            Example (from the source)
-          </p>
-          <pre className="mt-1.5 overflow-x-auto rounded-lg border border-hairline bg-surface p-3 font-mono text-xs whitespace-pre-wrap text-ink-muted">
-            {reel.example}
-          </pre>
-        </div>
-      )}
-
       {/* Epic 10 (ADR 0011, T10.4) caveat — T18.2 judgment call 1: minimal
           --caution marker only in Compact. The full text moves to the
           Context tab (T18.6, not yet built). Never affects quality_score
@@ -166,8 +159,12 @@ export function ReelCardBody({ reel, stackBanner }: { reel: FeedReel; stackBanne
           restyled onto --caution, structurally unchanged (link + "Confirm
           superseded" form). Only visible while lifecycleState is still
           "active". */}
+      {/* T18.6 (§2.3): data-no-open — this block's link/form must keep
+          working untouched by the new tap-to-open-Detail handler in
+          ReelCardShell, which otherwise treats any click on Compact's
+          content as "open Detail". */}
       {reel.supersededByClusterId !== null && reel.lifecycleState === "active" && (
-        <div className="mt-3 rounded-lg border border-caution/30 bg-caution/10 p-3">
+        <div className="mt-3 rounded-lg border border-caution/30 bg-caution/10 p-3" data-no-open>
           <p className="text-sm text-caution">
             🕓 Newer available{reel.supersedeReason ? `: ${reel.supersedeReason}` : ""}
           </p>
@@ -190,24 +187,24 @@ export function ReelCardBody({ reel, stackBanner }: { reel: FeedReel; stackBanne
         </div>
       )}
 
-      <footer className="mt-auto pt-6 text-xs">
-        <a
-          href={reel.url}
-          target="_blank"
-          rel="noreferrer"
-          className="text-ink-faint underline decoration-hairline-strong underline-offset-2 hover:text-ink-muted"
-        >
-          View source
-        </a>
-      </footer>
+      {/* T18.6 (§2.3): tap-anywhere-on-Compact-opens-Detail is new as of this
+          task — a discoverability hint, matching compactHtml()'s own
+          `.tap-hint` line (see the doc comment above). */}
+      <p className="mt-auto pt-6 text-center font-mono text-[10px] tracking-wide text-ink-faint">
+        tap for details →
+      </p>
     </div>
   );
 }
 
 /** One reel card, sized to fill the viewport (see .reel/.feed scroll-snap in page.tsx). */
 export function ReelCard({ reel, interactions }: ReelCardProps) {
+  // T18.6: a solo card has nothing beyond the primary by definition (no
+  // cluster, or a cluster reduced to one visible member) — the Context
+  // tab's cluster-members list is always empty here.
+  const detail = buildReelDetailData(reel, []);
   return (
-    <ReelCardShell reelId={reel.id} initial={interactions ?? NO_INTERACTIONS}>
+    <ReelCardShell reelId={reel.id} initial={interactions ?? NO_INTERACTIONS} detail={detail}>
       <ReelCardBody reel={reel} />
     </ReelCardShell>
   );

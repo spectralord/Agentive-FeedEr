@@ -82,6 +82,11 @@ export interface FeedReel {
   /** Epic 10 (ADR 0011): the Stage-1 Reel-Verifier's caveat, or null if the
    *  critic pass found nothing to flag (the normal case) or hasn't run yet. */
   caveat: string | null;
+  /** Epic 18 (ADR 0017, T18.6): longer-form prose for the Reel Detail Write-up
+   *  tab. NULL everywhere for now — the enrichment pass that fills it is
+   *  still deferred (ADR 0017 decisions 2-4). The tab renders an explicit
+   *  placeholder while this is null; never hidden either way. */
+  writeup: string | null;
 }
 
 /** One topic cluster with >= 2 displayed members, bundled for the "N sources
@@ -246,6 +251,7 @@ export async function getReels(opts: GetReelsOptions = {}): Promise<FeedReel[]> 
       supersededByClusterId: topicClusters.supersededByClusterId,
       supersedeReason: topicClusters.supersedeReason,
       caveat: reels.caveat,
+      writeup: reels.writeup,
     })
     .from(reels)
     .innerJoin(rawItems, eq(reels.rawItemId, rawItems.id))

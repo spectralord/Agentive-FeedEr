@@ -3,8 +3,10 @@
 import { useState } from "react";
 import type { FeedReel } from "@/lib/feed";
 import type { ReelActionFlags } from "@/lib/interactions";
+import { buildReelDetailData } from "./reelDetailData";
 import { ReelCardBody } from "./ReelCard";
 import { ReelCardShell } from "./ReelCardShell";
+import { SourceAvatar } from "./SourceAvatar";
 
 const NO_INTERACTIONS: ReelActionFlags = { save: false, up: false, down: false };
 
@@ -14,24 +16,6 @@ export interface ReelStackCardProps {
   others: FeedReel[];
   /** Save/up/down state for the primary reel (T6.2 hydration), same as ReelCard. */
   interactions?: ReelActionFlags;
-}
-
-/** Same source-initial treatment as the Context tab's source list
- *  (docs/specs/prototypes/reel-card-and-detail.html `.source-avatar`) — first
- *  two alphanumeric characters of the source name, uppercased. */
-function initials(sourceName: string): string {
-  return sourceName.replace(/[^A-Za-z0-9]/g, "").slice(0, 2).toUpperCase();
-}
-
-function SourceAvatar({ sourceName }: { sourceName: string }) {
-  return (
-    <span
-      aria-hidden="true"
-      className="flex h-6 w-6 shrink-0 items-center justify-center rounded-lg border border-hairline-strong bg-surface-raised font-mono text-[10.5px] font-semibold text-accent"
-    >
-      {initials(sourceName)}
-    </span>
-  );
 }
 
 /**
@@ -58,9 +42,17 @@ function SourceAvatar({ sourceName }: { sourceName: string }) {
 export function ReelStackCard({ clusterTitle, primary, others, interactions }: ReelStackCardProps) {
   const [expanded, setExpanded] = useState(false);
   const totalSources = 1 + others.length;
+  // T18.6 (§2.2 Context tab): the stack's own "other members" list is
+  // exactly the Context tab's "cluster members beyond the primary" data —
+  // already fetched as part of the same getReels() call that built this
+  // stack, so no second query is needed here.
+  const detail = buildReelDetailData(primary, others);
 
   const banner = (
-    <div className="mb-3 rounded-lg border border-hairline bg-surface p-3">
+    // T18.6 (§2.3): data-no-open — the "Show/Hide sources" toggle and the
+    // other members' links must keep working; without this the Detail
+    // tap-open handler in ReelCardShell would swallow their clicks too.
+    <div className="mb-3 rounded-lg border border-hairline bg-surface p-3" data-no-open>
       <div className="flex items-center justify-between gap-2">
         <div>
           <p className="font-mono text-xs uppercase tracking-wide text-ink-faint">{clusterTitle}</p>
@@ -103,7 +95,7 @@ export function ReelStackCard({ clusterTitle, primary, others, interactions }: R
   );
 
   return (
-    <ReelCardShell reelId={primary.id} initial={interactions ?? NO_INTERACTIONS}>
+    <ReelCardShell reelId={primary.id} initial={interactions ?? NO_INTERACTIONS} detail={detail}>
       <ReelCardBody reel={primary} stackBanner={banner} />
     </ReelCardShell>
   );

@@ -30,6 +30,7 @@ function reel(overrides: Partial<FeedReel> & Pick<FeedReel, "id">): FeedReel {
     supersededByClusterId: null,
     supersedeReason: null,
     caveat: null,
+    writeup: null,
     ...overrides,
   };
 }

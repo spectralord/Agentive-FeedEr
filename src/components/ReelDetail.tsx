@@ -1,0 +1,222 @@
+"use client";
+
+import { SourceAvatar } from "./SourceAvatar";
+import type { ReelDetailData } from "./reelDetailData";
+
+/**
+ * T18.6 (§2.2, §7 #6): the Detail overlay's tab system. Genuinely generic —
+ * `TAB_DEFS` + `isTabEmpty` is an array of descriptors each carrying a
+ * "would this tab render only its empty state?" predicate; the visible set
+ * is just `TAB_DEFS` filtered by that predicate (Write-up is exempted, per
+ * the rule that governs Context and Skill only). T18.7 adds a third
+ * `"skill"` entry to `TAB_DEFS` plus its `isTabEmpty` case and panel — no
+ * restructuring needed here, which is the seam T18.6 is required to leave.
+ *
+ * Rendered inside the client `ReelCardShell`, which owns the open/tab state
+ * and the tap/swipe gesture handlers (§2.3) — this component is presentational
+ * only (props in, `onSelectTab`/`onClose` callbacks out).
+ */
+
+export type TabId = "writeup" | "context" | "skill";
+
+interface TabDef {
+  id: TabId;
+  label: string;
+}
+
+const TAB_DEFS: TabDef[] = [
+  { id: "writeup", label: "Write-up" },
+  { id: "context", label: "Context" },
+  // T18.7 appends { id: "skill", label: "Skill" } here.
+];
+
+/** §2.2's hiding rule: "hide a tab entirely if it would render only its
+ *  empty state" — Write-up is short-circuited to `false` (never hidden;
+ *  see judgment call 2 in the epic file) before this is ever consulted. */
+function isTabEmpty(id: TabId, data: ReelDetailData): boolean {
+  switch (id) {
+    case "writeup":
+      return false;
+    case "context":
+      return data.clusterMembers.length === 0 && data.caveat === null;
+    case "skill":
+      // T18.7 will replace this with `data.skill === undefined`. Until then
+      // "skill" never appears in TAB_DEFS, so this branch is unreachable —
+      // kept exhaustive so TypeScript catches a future TAB_DEFS/switch drift.
+      return true;
+  }
+}
+
+function WriteupPanel({ data }: { data: ReelDetailData }) {
+  return (
+    <>
+      <div className="flex items-center gap-2 border-b border-hairline pb-3.5 text-xs text-ink-muted">
+        <span aria-hidden="true" className="h-1.5 w-1.5 shrink-0 rounded-full bg-accent" />
+        <span>
+          From <b className="font-semibold text-ink">{data.sourceName}</b>
+        </span>
+      </div>
+
+      {data.writeup ? (
+        <div className="mt-3.5 space-y-3.5">
+          {data.writeup.split(/\n{2,}/).map((para, i) => (
+            <p key={i} className="text-[13px] leading-relaxed text-ink">
+              {para}
+            </p>
+          ))}
+        </div>
+      ) : (
+        <div className="mt-3.5">
+          {/* ADR 0017 (T18.6): writeup stays NULL until the enrichment pass
+              ships. Explicit, unmistakable placeholder — never invented
+              prose, never a silent re-show of `summary` (ADR 0016 point 3
+              as amended). The italic bordered lines below exist only so the
+              tab's scroll/flow can be felt on a real phone screen. */}
+          <p className="text-xs italic text-ink-faint">
+            Long-form write-up not generated yet — the enrichment pass that fills this tab hasn&apos;t
+            run yet (ADR 0017). What follows is placeholder filler, not real content.
+          </p>
+          <div aria-label="Placeholder filler, not real content" className="mt-3.5 space-y-3.5 opacity-50">
+            {[0, 1, 2].map((i) => (
+              <p
+                key={i}
+                className="border-l-2 border-hairline-strong pl-3 text-[13px] italic leading-relaxed text-ink-faint"
+              >
+                [Placeholder paragraph — no write-up has been generated for this Reel yet. This line
+                repeats only to preview how the tab scrolls, and is not derived from the source.]
+              </p>
+            ))}
+          </div>
+        </div>
+      )}
+
+      {data.example && (
+        <div className="mt-4">
+          <p className="font-mono text-[9.5px] uppercase tracking-wide text-ink-faint">
+            Example (from the source)
+          </p>
+          <pre className="mt-1.5 overflow-x-auto rounded-lg border border-hairline bg-surface p-3 font-mono text-xs whitespace-pre-wrap text-ink-muted">
+            {data.example}
+          </pre>
+        </div>
+      )}
+    </>
+  );
+}
+
+function ContextPanel({ data }: { data: ReelDetailData }) {
+  return (
+    <>
+      <span className="mb-2.5 block font-mono text-[10px] uppercase tracking-wide text-ink-faint">
+        Related / similar sources
+      </span>
+      {data.clusterMembers.length === 0 ? (
+        <div className="py-1">
+          <p className="text-[12.5px] text-ink-muted">Single-sourced.</p>
+          <p className="mt-1 text-[11.5px] leading-relaxed text-ink-faint">
+            No related coverage found (yet) — most Reels look like this. When several sources
+            converge on the same thing, they&apos;ll be listed here.
+          </p>
+        </div>
+      ) : (
+        <div className="flex flex-col gap-0.5">
+          {data.clusterMembers.map((m) => (
+            <a
+              key={m.id}
+              href={m.url}
+              target="_blank"
+              rel="noreferrer"
+              data-no-open
+              className="flex items-start gap-2.5 border-t border-hairline py-2.5 first:border-t-0 first:pt-0"
+            >
+              <SourceAvatar sourceName={m.sourceName} />
+              <span className="min-w-0 flex-1">
+                <span className="block text-xs font-semibold text-ink">{m.sourceName}</span>
+                <span className="mt-0.5 block truncate text-xs text-ink-muted">{m.title}</span>
+              </span>
+              <span className="shrink-0 text-[11px] text-ink-faint">{m.timeLabel}</span>
+            </a>
+          ))}
+        </div>
+      )}
+
+      {data.caveat && (
+        <div className="mt-4 rounded-lg border border-caution/30 bg-caution/10 p-3 text-xs leading-relaxed text-caution">
+          <span aria-hidden="true">⚠</span> {data.caveat}
+        </div>
+      )}
+    </>
+  );
+}
+
+export interface ReelDetailProps {
+  data: ReelDetailData;
+  open: boolean;
+  activeTab: TabId;
+  onSelectTab: (tab: TabId) => void;
+  onClose: () => void;
+}
+
+/**
+ * T18.6 (§2.2): the push-transition Detail overlay. Always mounted (never
+ * conditionally rendered) — Write-up being un-hideable means Detail always
+ * has at least one tab, so the "don't open Detail if every tab would be
+ * hidden" edge case from the pre-2026-07-25 spec is moot (see the epic
+ * file's judgment call 2). Off-screen via `translate-x-full` when closed so
+ * the slide-in transition has something to animate from; `duration-300`
+ * (300ms) sits inside the binding 250-340ms window, and the project's global
+ * `prefers-reduced-motion` guard (globals.css) neutralizes it for users who
+ * asked for that, with no extra code needed here.
+ */
+export function ReelDetail({ data, open, activeTab, onSelectTab, onClose }: ReelDetailProps) {
+  const visibleTabs = TAB_DEFS.filter((t) => t.id === "writeup" || !isTabEmpty(t.id, data));
+
+  return (
+    <div
+      className={`absolute inset-0 flex flex-col border-l border-hairline bg-ground transition-transform duration-300 ease-out ${
+        open ? "translate-x-0" : "pointer-events-none translate-x-full"
+      }`}
+      aria-hidden={!open}
+    >
+      <div className="flex shrink-0 items-center gap-2.5 px-4 pt-4">
+        <button
+          type="button"
+          onClick={onClose}
+          className="flex items-center gap-1 py-1 pr-1 text-xs text-ink-muted hover:text-ink"
+        >
+          <span aria-hidden="true">‹</span> Back
+        </button>
+        <span className="truncate text-[11.5px] text-ink-faint">{data.title}</span>
+      </div>
+
+      <div className="flex shrink-0 gap-1 border-b border-hairline px-4 pt-3">
+        {visibleTabs.map((t) => (
+          <button
+            key={t.id}
+            type="button"
+            onClick={() => onSelectTab(t.id)}
+            className={`border-b-2 px-1 pb-2.5 pt-2 text-[12.5px] font-semibold ${
+              activeTab === t.id
+                ? "border-accent text-accent"
+                : "border-transparent text-ink-faint hover:text-ink-muted"
+            }`}
+          >
+            {t.label}
+          </button>
+        ))}
+      </div>
+
+      <div className="relative flex-1 overflow-hidden">
+        {visibleTabs.map((t) => (
+          <div
+            key={t.id}
+            className={`absolute inset-0 overflow-y-auto px-4 py-4 ${activeTab === t.id ? "block" : "hidden"}`}
+          >
+            {t.id === "writeup" && <WriteupPanel data={data} />}
+            {t.id === "context" && <ContextPanel data={data} />}
+          </div>
+        ))}
+      </div>
+    </div>
+  );
+}

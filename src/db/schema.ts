@@ -111,6 +111,13 @@ export const reels = pgTable("reels", {
   // see src/lib/verifier/run.ts.
   caveat: text("caveat"),
   caveatCheckedAt: timestamp("caveat_checked_at", { withTimezone: true }),
+  // Epic 18 (ADR 0017 decision 1, accepted; T18.6): longer-form prose for the
+  // Reel Detail view's Write-up tab. Nullable — the second enrichment pass
+  // that fills it (ADR 0017 decisions 2-4) is still deferred/proposed, so
+  // this stays NULL everywhere for now. The Write-up tab renders an
+  // explicit placeholder while null; it is never hidden either way (see
+  // docs/plan/epic-18-ux-implementation.md, judgment call 2).
+  writeup: text("writeup"),
   metadata: jsonb("metadata").notNull().default({}),
   createdAt: timestamp("created_at", { withTimezone: true }).notNull().defaultNow(),
 });

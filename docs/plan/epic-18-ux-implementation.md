@@ -193,7 +193,7 @@ Depends on T18.1 + T18.4. **Resolves the two literal `TODO(UX pass)` markers** i
   ring renders correctly per state; experimental-dot appears only above the threshold; build +
   tests green.
 
-### ☐ T18.6 — Reel Detail: push navigation + Write-up & Context tabs (§2.2, §2.3, §7 #6)
+### ☑ T18.6 — Reel Detail: push navigation + Write-up & Context tabs (§2.2, §2.3, §7 #6)
 
 Depends on T18.1–T18.2. Build the **generic** tab system here; T18.7 adds the Skill tab.
 
@@ -605,3 +605,100 @@ predates the fourth state; where the two prototypes disagree on the Skills surfa
 constellation wins and is also the superset. The constellation ships an explicit
 "Untouched — tagged, never opened" legend entry, confirming it is meant to read as its own
 visible state.
+
+**T18.6 (completed 2026-07-26):**
+- **Schema:** `reels.writeup` (`text`, nullable) added via migration `drizzle/0010_neat_the_stranger.sql`
+  (generated with `npm run db:generate`, applied with `npm run db:migrate`). Surfaced on `FeedReel`
+  and selected in `getReels` (`src/lib/feed.ts`) — stays `NULL` everywhere, no enrichment pass
+  (ADR 0017 decisions 2-4 still deferred).
+- **Generic tab system:** `src/components/ReelDetail.tsx` holds a `TAB_DEFS: { id, label }[]` array
+  plus an `isTabEmpty(id, data)` switch implementing §2.2's rule — the visible set is
+  `TAB_DEFS.filter(t => t.id === "writeup" || !isTabEmpty(t.id, data))`. Write-up short-circuits to
+  "never empty" before the switch is consulted, matching judgment call 2. T18.6 ships `TAB_DEFS`
+  with exactly `writeup` + `context` (2 entries) — deliberately not adding a `skill` entry yet, per
+  the task text ("Build the generic tab system here; T18.7 adds the Skill tab"); the `isTabEmpty`
+  switch already has an (unreachable, defensively-typed) `"skill"` case returning `true` so
+  `TabId`'s exhaustiveness check doesn't silently pass if T18.7 forgets to update it. This is the
+  "seam so it slots in later without rework" the task asks for: T18.7 adds one array entry + one
+  switch branch + one panel component, nothing else in the tab machinery changes.
+- **Data plumbing, chosen to add zero new queries for Context:** `src/components/reelDetailData.ts`'s
+  `buildReelDetailData(reel, clusterMembers)` is a plain (non-component) function, run server-side in
+  `ReelCard`/`ReelStackCard`, that turns a `FeedReel` (+ Epic 15 cluster members) into a fully
+  primitive-typed `ReelDetailData` (`Date`s pre-formatted via `formatRelativeTime` into strings) —
+  this crosses the server/client boundary into `ReelCardShell` (`"use client"`) as an ordinary
+  serializable prop, sidestepping any question about whether `Date` objects are safe to pass to a
+  Client Component. `ReelStackCard` already receives `others: FeedReel[]` (Epic 15's cluster members
+  beyond the primary) as a plain prop with no query of its own — that is *exactly* the Context tab's
+  "cluster members beyond the primary" data, so `ReelStackCard` passes `others` straight through
+  and **no `getClusterWithMembers` call was added** (the task said it "may help", not that it's
+  required — reusing already-fetched data beat a second query). A solo `ReelCard` passes `[]`
+  (nothing beyond the primary, by definition of "solo").
+- **Push transition:** implemented in `ReelCardShell.tsx` (now the stateful open/tab owner, previously
+  only hide-state) — the Compact wrapper and the `ReelDetail` overlay are sibling `absolute inset-0`
+  divs inside the same `relative` `<article>`; `ReelDetail` is the later sibling in the DOM so it
+  paints on top with no `z-index` needed (matches the prototype's own stacking, which relies on the
+  same DOM-order-wins behavior). Both use `transition-transform duration-300 ease-out` (300ms, inside
+  the 250-340ms window); Compact moves `translate-x-0 -> -translate-x-[28%]`, Detail moves
+  `translate-x-full -> translate-x-0`. The project's existing global
+  `@media (prefers-reduced-motion: reduce)` guard (`globals.css`, from T18.1) already neutralizes any
+  `transition-duration` on `*`, so no extra reduced-motion handling was needed here.
+- **Gesture model:** tap-to-open and the edge-dead-zone swipe are both implemented in
+  `ReelCardShell.tsx`, copied faithfully from the prototype's own numbers (`EDGE_DEAD_ZONE = 24`,
+  `SWIPE_MIN_DISTANCE = 50`, direction ratio `1.4`). `data-no-open` marks Compact's own interactive
+  elements so the tap-handler's `e.target.closest("[data-no-open]")` check lets them keep working
+  unmolested: the freshness/supersession block's link + "Confirm superseded" form (`ReelCard.tsx`),
+  and — not explicitly named by the task but found while implementing it — `ReelStackCard`'s
+  "Show/Hide sources" banner and its member links, which live inside the same clickable Compact
+  region and would otherwise have also opened Detail on every click. **Pre-wired ahead of schedule:**
+  `ReelCardShell`'s click handler already has an `if (target.closest("[data-open-skill]")) { openDetail("skill"); return; }`
+  branch, even though no element carries that attribute until T18.7 adds it to the skill badge — the
+  branch is dead code today (unreachable) but avoids touching `ReelCardShell` a second time for what
+  is otherwise a one-line addition in T18.7. Flagged for review since the epic's T18.2 note says
+  "wire the target in T18.7, not here" — read narrowly as being about the *badge's `data-open-skill`
+  attribute and the Skill tab existing at all*, not about this already-generic click-routing
+  function having an extra (currently-inert) branch.
+- **Write-up placeholder:** an italic, explicitly-labelled note ("Long-form write-up not generated
+  yet — the enrichment pass that fills this tab hasn't run yet (ADR 0017)") followed by three
+  `opacity-50`, left-bordered, italic filler paragraphs, each literally reading
+  "[Placeholder paragraph — no write-up has been generated for this Reel yet. This line repeats only
+  to preview how the tab scrolls, and is not derived from the source.]" — repeated rather than
+  varied, so it cannot be mistaken for real, generated prose, while still giving the tab enough
+  height to scroll on a real phone screen. Verified (test + manual curl, see below) that this never
+  duplicates `reel.summary` anywhere in the Write-up tab.
+- **`example` + the source reference moved out of `ReelCardBody` into `ReelDetail.tsx`'s
+  `WriteupPanel`,** discharging the T18.2-recorded deviation. `ReelCardBody` is now exactly
+  `compactHtml()`: meta row -> badge row -> title -> summary, plus the pre-existing caveat marker and
+  freshness notice (both correctly kept, matching T18.2's own note that compactHtml() predates
+  Epic 10/11's caveat/freshness features). **One interpretation beyond the letter of the task:**
+  added a `tap for details →` hint line (`compactHtml()`'s own `.tap-hint`) — not explicitly listed
+  in the epic's "Compact is exactly meta/badge/title/summary + caveat + freshness" enumeration, but
+  tap-to-open is brand-new behavior as of this task and the prototype itself has this exact
+  affordance; flagged for review/removal if the strong model reads the enumeration as exhaustive.
+- **Context tab:** cluster members (Epic 15, see above) rendered as a source-avatar list (reusing a
+  newly-extracted `src/components/SourceAvatar.tsx`, pulled out of `ReelStackCard.tsx` where it was
+  previously a private component, since the Context tab needed the identical treatment — no
+  duplicate implementation) plus the full `caveat` text. Per §2.2, the "no related sources" empty
+  state renders explicitly (independent of whether a caveat is also present) rather than the whole
+  tab being reduced to just the caveat block.
+- **"If every tab would be hidden, don't open Detail" is correctly NOT implemented** — Write-up's
+  unconditional visibility makes it moot, exactly as the epic's judgment call 2 says; `ReelDetail` is
+  unconditionally mounted (off-screen via `translate-x-full` when closed) rather than conditionally
+  rendered.
+- **Verification:** `service postgresql start && npm run db:migrate`, then `npm run build` + `npm test`
+  green (314/314, +11 net new: `ReelCard.test.tsx` restructured into `ReelCardBody` (Compact-only)
+  and `ReelCard` (Compact+Detail assembly) describe blocks so Compact-absence and Detail-presence of
+  moved content (`example`, full `caveat` text) can both be asserted precisely against the same
+  reel — a plain substring check against the full `ReelCard` render can't tell "not in Compact" from
+  "in Detail instead" without this split; new `ReelStackCard.test.tsx` covering the Context tab's
+  cluster-members list and the stack banner's `data-no-open`). Additionally ran a throwaway seed
+  script (not committed) against the dev DB covering exactly the four cases named in the task's own
+  verification bullet plus the writeup-present case: a bare reel (no cluster/caveat/skill) → curled
+  and confirmed its Detail overlay has **no** Context tab button in the markup, Write-up tab present
+  with the placeholder, `tap for details` hint present; a caveat-only reel → confirmed Context tab
+  IS present with **both** "Single-sourced." (empty state) and the full caveat text together; a
+  cluster (2 members) → confirmed the stack's Context tab lists the other member's source/title and
+  the banner carries `data-no-open`; a reel with real `writeup` + `example` → confirmed the Write-up
+  tab shows the real paragraphs and the example block, and does **not** show the placeholder text.
+  Also confirmed via raw HTML inspection that all four Detail overlays are server-rendered
+  off-screen by default (`pointer-events-none translate-x-full` present, no `open`/active state) —
+  the push-in only happens client-side once the JS gesture/tap handlers run.
