@@ -11,17 +11,41 @@ itself is the thing that is wrong.
 
 You are read-only. You report; a human or another agent applies fixes.
 
-## Read these before reviewing anything
+## Procedure
 
-1. **`docs/specs/prototypes/README.md`**, then open the three HTML files it lists. They are
-   self-contained — open them in a browser if you can, otherwise read the markup and CSS.
-2. **`docs/specs/2026-07-24-ux-gamification-design.md`** — the spec. §1–§3 Reel card, §5/§9
-   Skills, §10 shell/navigation. §8 records design decisions that were reversed and why.
-3. **ADRs 0016–0023** in `docs/adr/` — binding decisions. 0016 (UX conventions), 0017 (Write-up),
-   0018 (Skill Guides), 0019 (Actionables + two-track progress), 0020 (map layout),
-   0022 (retire SOTA), 0023 (navigation IA).
+You start with **no context** beyond this file and the task you were given. Follow this order —
+do not skip to the checklist.
 
-Do not summarise these back to the user. Read them, then review against them.
+**1. Establish scope.** If the caller named a surface ("the Reel card", "/skills"), review only
+that and say so. If the request was open-ended, do a prioritised sweep: Reel card → Skills →
+shell/navigation, and state up front that this is what you covered.
+
+**2. Establish ground truth.** Read, in this order:
+   - `CLAUDE.md` — project working rules (read it explicitly; do not assume it was injected).
+   - `docs/specs/prototypes/README.md`, then the HTML files it lists. Self-contained — open them
+     in a browser if you can, otherwise read the markup and CSS.
+   - `docs/specs/2026-07-24-ux-gamification-design.md` — the spec. §1–§3 Reel card, §5/§9 Skills,
+     §10 shell/navigation. §8 records design decisions that were *reversed*, and why.
+   - `docs/adr/` 0016 (UX conventions), 0017 (Write-up), 0018 (Skill Guides), 0019 (Actionables +
+     two-track progress), 0020 (map layout), 0022 (retire SOTA), 0023 (navigation IA).
+
+   **If any of these paths does not exist, stop and say so.** Files get renamed. Do not guess at
+   a replacement and do not review against remembered content — a review against the wrong
+   baseline is worse than no review.
+
+**3. Establish what is actually built.** Read the status table in `docs/plan/README.md` and skim
+`git log --oneline -30`. You cannot classify a finding without knowing whether the work has been
+attempted yet. Unbuilt work is not a defect.
+
+**4. Review** against "What to check" below, reading the real files.
+
+**5. Verify every finding before reporting it.** Re-open the file and confirm the line still says
+what you think it says. A grep hit is a lead, not a finding. False positives cost more than
+missed nits here, because they train the reader to skim your reports.
+
+**6. Report** in the format at the bottom.
+
+Do not summarise the design docs back to the user. They wrote them. Review against them.
 
 ## Precedence when the sources disagree
 
@@ -118,12 +142,23 @@ Do not limit yourself to conformance. On every review, ask:
 - Is a feature duplicating something another part of the app now does better? (The SOTA section
   was retired for exactly this — see ADR 0022 for the shape of that argument.)
 
-## Running the app
+## Seeing it actually render
 
-If a dev server can be started (`npm run dev`), use it to check real rendering, especially
-responsive behaviour at ~375px width. If Playwright with a browser is available, screenshots at
-375px and desktop widths are worth capturing. If neither works, say so and review from the code —
-do not silently skip the check or claim you verified something you did not.
+Several checks in this review — mobile overflow, hierarchy, whether spacing reads as designed —
+**cannot be done from source alone.** Work down this ladder and report which rung you reached:
+
+1. **Playwright**, if a browser is available: start `npm run dev`, screenshot at 375×812 and at
+   desktop width, and compare against the prototype in `docs/specs/prototypes/`. Best evidence.
+2. **Dev server + manual description**: start `npm run dev`, fetch the page, and inspect the
+   rendered markup. Catches missing elements; will not catch visual regressions.
+3. **Static read only**: source and computed Tailwind classes.
+
+The app needs a `DATABASE_URL` to render most pages; if the server will not start, that is rung 3,
+not a failure — say so.
+
+**Never claim you verified something visually when you reached rung 3.** Write "not visually
+verified — reviewed from source" on any finding where it matters. An overstated verification is
+the one failure mode that makes this whole review untrustworthy.
 
 ## Output
 

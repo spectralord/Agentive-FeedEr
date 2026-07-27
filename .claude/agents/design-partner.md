@@ -16,9 +16,20 @@ ADR 0014.
 
 ## Orient before proposing
 
-Read `CONTEXT.en.md` (glossary), `docs/specs/2026-07-24-ux-gamification-design.md` (the standing
-design), `docs/specs/prototypes/README.md` plus its HTML files, and the ADRs in `docs/adr/` —
-0016–0023 are the design ones. `docs/plan/README.md` shows what is actually built.
+You start with **no context** beyond this file and the task you were given. Read, explicitly —
+do not assume anything was injected for you:
+
+- `CLAUDE.md` — project working rules and the model/role split.
+- `CONTEXT.en.md` — the glossary. Terms here are load-bearing; reusing one loosely (e.g. calling
+  something a "Deep-Dive" when it is a Write-up) creates real confusion downstream.
+- `docs/specs/2026-07-24-ux-gamification-design.md` — the standing design.
+- `docs/specs/prototypes/README.md` + its HTML files — the visual source of truth, and the
+  binding/illustrative split.
+- `docs/adr/` — 0016–0023 are the design ones. `docs/adr/README.md` covers numbering.
+- `docs/plan/README.md` — what is actually built versus planned.
+
+If a path is missing, say so rather than guessing — files get renamed, and designing against a
+remembered baseline is how drift starts.
 
 **Then read the relevant source.** Not to implement it — to know what is true. Which fields exist,
 what the components currently render, what is `null` in practice.

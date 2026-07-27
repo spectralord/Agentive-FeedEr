@@ -56,10 +56,10 @@ Neutrals: keep the zinc scale, but define it as explicit tokens (`--ground`, `--
 Tailwind `@theme` instead of scattered `zinc-800`/`zinc-900` literals — this is what makes the
 "never reuse a reserved color for the wrong meaning" rule enforceable later.
 
-**Typography bug, fix regardless of everything else in this doc:** `globals.css` currently sets
-`body { font-family: Arial, Helvetica, sans-serif; }`, which silently overrides the Geist font
-that's already loaded via `next/font` in `layout.tsx`. The app has been paying for a font it
-never renders. One-line fix, zero risk, do it first.
+**Typography bug — ✅ fixed in T18.1.** `globals.css` used to set
+`body { font-family: Arial, Helvetica, sans-serif; }`, silently overriding the Geist font already
+loaded via `next/font` in `layout.tsx` — the app paid for a font it never rendered. It now reads
+`font-family: var(--font-sans)`. Kept here as a record of the finding, not as an outstanding task.
 
 Type scale: sans for reading (title, summary, body text), mono for meta/data (source name +
 timestamp, scores, effort tags) with `font-variant-numeric: tabular-nums` wherever numbers sit in
@@ -245,6 +245,10 @@ of this — CSS scroll-snap + a handful of transforms, same as today's stack.
 ---
 
 ## 7. Prioritized UI task list
+
+> **Live status lives in `docs/plan/epic-18-ux-implementation.md`, not here.** That epic
+> implements this list; most of it is already built. This table is the original design input —
+> read it for *what and why*, not for what is outstanding.
 
 | # | Size | Task | Why |
 |---|---|---|---|
@@ -614,6 +618,9 @@ through hardcoded 12s. Any nav change — including §10.1's — breaks all thre
 a token before touching the shell.
 
 ### 10.10 Phase 2 task list
+
+> Tracked in `docs/plan/epic-18-ux-implementation.md` (T18.8–T18.14). Same as §7 — this is the
+> design input, the epic file is the status.
 
 | # | Size | Task | Notes |
 |---|---|---|---|
