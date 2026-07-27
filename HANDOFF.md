@@ -43,8 +43,8 @@ Postgres in a *remote* container stops on recycling; locally it's Docker, so
 
 ## State at handoff
 
-`main` is green: **build clean, 326 tests passing** (was 214 at the start of the previous
-session). Everything below is merged to `main` unless marked otherwise.
+`main` is green: **build clean, typecheck clean, 363 tests passing** (was 214 at the start of
+the previous session). Everything below is merged to `main` unless marked otherwise.
 
 ### Shipped this session
 - **Production incident fixed.** Site-wide 500 caused by a Next.js dynamic-route conflict
@@ -75,14 +75,15 @@ untouched 0 / seen .33 / tried .66 / mastered 1 + ★) + experimental-dot, resol
 long-standing `TODO(UX pass)` markers; **Reel Detail** with push-nav and a generic tab system
 (Write-up / Context / Skill).
 
-**Phase 2 — in flight at handoff time (T18.8–T18.14).** Check the epic file's checkboxes and
-`git log` for what actually landed; two agents were running when this was written:
-- T18.9 header token → T18.10 bottom tab bar (7 links → 4; **fixes a real 375px overflow**) →
-  T18.11 freshness indicator → T18.13 back-affordance rule.
-- **Not yet started: T18.8** (route `loading`/`error`/`not-found` — *none* exist on any of the 12
-  routes today), **T18.12** (shared empty state; one current empty state tells the user to run
-  `npm run job:daily`), **T18.14** (optimistic mutations; the pattern already exists in
-  `ReelActions`).
+**Phase 2 — DONE (T18.8–T18.14).** Route `loading`/`error`/`not-found` boundaries (there were
+none on any of the 12 routes); header/tabbar height tokens; **bottom tab bar, 7 links → 4**
+(fixed a real 375px overflow — Today · Feed · Skills · Library, Admin is the app-bar gear, and
+the binding "new surfaces go in a hub, never the tab bar" rule is commented at `TabBar.tsx`'s
+`TABS`); freshness indicator; shared empty state (the old one told the user to run
+`npm run job:daily`); back-affordance rule; optimistic mutations over the existing single
+write path.
+
+**Epic 18 is complete.** Build green, typecheck clean, **363/363 tests**.
 
 ## Binding conventions (violating these is a review failure)
 
@@ -105,10 +106,15 @@ long-standing `TODO(UX pass)` markers; **Reel Detail** with push-nav and a gener
    merge renumbers. Highest ADR at handoff: **0023**.
 2. **Re-read the design doc before implementing from it.** It was revised mid-session and the
    Action-block decision *reversed*. A spec written from an earlier read was stale within hours.
-3. **Client/server boundary.** `ReelStackCard` is a Client Component; importing a DB-touching
-   helper pulled `pg`/`tls` into the browser bundle and broke `next build`. `ReelCardBody` was
-   extracted into a DB-free module and pages now build detail data server-side. Type-only imports
-   are fine (erased at compile time).
+3. **Client/server boundary — this bit FIVE times in one epic.** Making a component
+   `"use client"` and then **value**-importing anything from a DB-backed module pulls
+   `pg`/`dns`/`fs` into the browser bundle and breaks `next build`, often far from the edit that
+   caused it. **Established fix, use it by default:** split into a pure vocabulary module with no
+   DB imports (`src/lib/skills/progressStatus.ts`, `src/lib/experienceReportTypes.ts`), have the
+   DB-backed module import it for local use *and re-export it* so server-side callers are
+   untouched, and point Client Components at the pure one. `import type` is always safe. If a
+   layout genuinely must read the DB, `export const dynamic = "force-dynamic"`. Full write-up at
+   the end of `docs/plan/epic-18-ux-implementation.md`.
 4. **Subagents can lose everything to a rate limit.** Instruct them to **commit and push after
    each task**, never batch to the end.
 5. **Verify subagent claims.** One shipped the *wrong* ring: it used the reel-card prototype's
@@ -152,11 +158,17 @@ long-standing `TODO(UX pass)` markers; **Reel Detail** with push-nav and a gener
 ## Suggested start sequence
 
 1. Get local running (`docs/LOCAL_SETUP.md`) and **actually look at the redesign** — that was the
-   stated reason for building it: feel how the surfaces flow together.
-2. Finish Epic 18 Phase 2 (whatever of T18.8 / T18.12 / T18.14 is still unchecked).
-3. Then either: grill **ADR 0017** (write-up generation scope) so the tab gets real content, or
-   delegate **T11.7a–e** + **T10.8**, or grill **ADR 0018 (Guides)** — the load-bearing one that
-   everything in §9 leans on.
+   stated reason for building it: feel how the surfaces flow together. **Note: the Docker step is
+   the one thing never executed** (the sandbox blocks Docker Hub pulls by network policy), so if
+   anything breaks, `npm run db:up` is the least-tested step. Migrations-from-zero and the seed
+   *are* verified.
+2. Then either: grill **ADR 0017** (write-up generation scope) so the Write-up tab gets real
+   content instead of its placeholder — the most directly visible win; or delegate the
+   already-planned **T11.7a–e** + **T10.8**; or grill **ADR 0018 (Guides)**, the load-bearing one
+   everything in design §9 leans on.
+3. Housekeeping worth doing early: one **pre-existing** eslint error (`react-hooks/purity`,
+   `Date.now()` during render in `src/app/overview/page.tsx:43`) — not from Epic 18, verified by
+   stashing. `npm run build`/`npm test` are the DoD gates and both pass.
 
 ## Durable record
 
