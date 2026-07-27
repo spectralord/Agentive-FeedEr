@@ -121,7 +121,7 @@ export function ReelCardBody({ reel, stackBanner }: { reel: FeedReel; stackBanne
   const showNewBadge = isNew(reel);
 
   return (
-    <div className="mx-auto flex h-dvh max-w-xl flex-col overflow-y-auto px-6 pb-20 pt-[calc(var(--header-h)+var(--filterbar-h))]">
+    <div className="mx-auto flex h-[calc(100dvh-var(--tabbar-h))] max-w-xl flex-col overflow-y-auto px-6 pb-20 pt-[calc(var(--header-h)+var(--filterbar-h))]">
       {stackBanner}
 
       <div className="flex items-start justify-between gap-2">

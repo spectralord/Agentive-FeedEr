@@ -17,7 +17,7 @@ function formatToday(now: Date): string {
 
 function EmptyState() {
   return (
-    <div className="mx-auto flex h-dvh max-w-xl flex-col items-center justify-center gap-3 px-6 text-center">
+    <div className="mx-auto flex h-[calc(100dvh-var(--tabbar-h))] max-w-xl flex-col items-center justify-center gap-3 px-6 text-center">
       <p className="text-lg font-medium">Nothing important today</p>
       <p className="text-sm text-zinc-400">— enjoy the quiet.</p>
     </div>
@@ -54,7 +54,7 @@ export default async function TodayPage() {
         </div>
       </nav>
 
-      <div className="feed -mt-[var(--header-h)] h-dvh snap-y snap-mandatory overflow-y-auto overflow-x-hidden">
+      <div className="feed -mt-[var(--header-h)] h-[calc(100dvh-var(--tabbar-h))] snap-y snap-mandatory overflow-y-auto overflow-x-hidden">
         {reels.map((reel) => (
           <ReelCard
             key={reel.id}
@@ -66,7 +66,7 @@ export default async function TodayPage() {
 
         <ResurfaceCard reels={resurfacing} now={now} />
 
-        <div className="reel flex min-h-dvh snap-start items-center justify-center [scroll-snap-stop:always]">
+        <div className="reel flex min-h-[calc(100dvh-var(--tabbar-h))] snap-start items-center justify-center [scroll-snap-stop:always]">
           <div className="mx-auto flex max-w-xl flex-col items-center gap-4 px-6 text-center">
             <p className="text-lg font-medium text-zinc-50">That&apos;s it for today ✅</p>
             <Link

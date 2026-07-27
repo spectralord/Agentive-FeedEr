@@ -1,7 +1,7 @@
 import type { Metadata, Viewport } from "next";
 import { Geist, Geist_Mono } from "next/font/google";
-import Link from "next/link";
 import "./globals.css";
+import { AdminGearLink, AppBarTitle, TabBar } from "@/components/TabBar";
 
 const geistSans = Geist({
   variable: "--font-geist-sans",
@@ -22,16 +22,6 @@ export const viewport: Viewport = {
   themeColor: "#09090b",
 };
 
-const navItems = [
-  { href: "/today", label: "Today" },
-  { href: "/", label: "Feed" },
-  { href: "/overview", label: "Overview" },
-  { href: "/saved", label: "Saved" },
-  { href: "/experience", label: "Experience" },
-  { href: "/skills", label: "Skills" },
-  { href: "/admin", label: "Admin" },
-];
-
 export default function RootLayout({
   children,
 }: Readonly<{
@@ -42,24 +32,20 @@ export default function RootLayout({
       lang="en"
       className={`${geistSans.variable} ${geistMono.variable} h-full antialiased`}
     >
-      <body className="min-h-full bg-zinc-950 text-zinc-100">
-        <header className="fixed inset-x-0 top-0 z-20 border-b border-zinc-800/60 bg-zinc-950/80 backdrop-blur">
-          <nav className="mx-auto flex max-w-xl items-center gap-1 px-4 py-2">
-            <span className="mr-auto text-sm font-semibold tracking-tight">
-              Agentive-FeedEr
-            </span>
-            {navItems.map((item) => (
-              <Link
-                key={item.href}
-                href={item.href}
-                className="rounded-full px-3 py-1 text-sm text-zinc-400 transition-colors hover:bg-zinc-800 hover:text-zinc-100"
-              >
-                {item.label}
-              </Link>
-            ))}
-          </nav>
+      {/* T18.10 (§10.1, ADR 0023): the old 7-links-plus-brand flex row
+          overflowed a 375px phone with no wrap/scroll. Replaced with a
+          slim app bar (contextual title + gear) and a persistent bottom
+          tab bar carrying the four real destinations — see TabBar.tsx for
+          the tab list and the binding "new surfaces go in a hub" rule. */}
+      <body className="min-h-full bg-ground text-ink">
+        <header className="fixed inset-x-0 top-0 z-20 flex h-[var(--header-h)] items-center border-b border-hairline bg-ground/95 px-4 backdrop-blur">
+          <AppBarTitle />
+          <div className="ml-auto flex items-center gap-2.5">
+            <AdminGearLink />
+          </div>
         </header>
-        <main className="pt-[var(--header-h)]">{children}</main>
+        <main className="pt-[var(--header-h)] pb-[var(--tabbar-h)]">{children}</main>
+        <TabBar />
       </body>
     </html>
   );

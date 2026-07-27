@@ -4,6 +4,7 @@ import {
   type ExperienceFilterState,
 } from "@/components/ExperienceFilterBar";
 import { ExperienceList } from "@/components/ExperienceList";
+import { HubSubnav, LIBRARY_ITEMS } from "@/components/HubSubnav";
 import { listReports, type LifecycleState } from "@/lib/experienceReports";
 
 // Own/curated experience reports are a separate content type from Reels
@@ -35,6 +36,8 @@ export default async function ExperiencePage({ searchParams }: ExperiencePagePro
 
   return (
     <div className="pb-16">
+      {/* T18.10 (ADR 0023): Library hub — Saved · Archive · Experience. */}
+      <HubSubnav items={LIBRARY_ITEMS} activeHref="/experience" />
       <div className="mx-auto max-w-xl px-4 pt-4">
         <div className="flex items-center justify-between gap-2">
           <div>

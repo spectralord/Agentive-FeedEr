@@ -286,7 +286,7 @@ Header height is currently coupled to layout by magic number (the feed's `-mt-12
 Replace with a real token. **Prerequisite for T18.10.** **Verification:** header/feed alignment
 unchanged; no remaining magic offsets.
 
-### ☐ T18.10 — Bottom tab bar + hubs: 7 links → 4 (§10.1, ADR 0023, §10.10 #3)
+### ☑ T18.10 — Bottom tab bar + hubs: 7 links → 4 (§10.1, ADR 0023, §10.10 #3)
 
 Depends on T18.9. **Functional breakage today:** `layout.tsx` renders 7 links plus the brand in
 one flex row inside `max-w-xl` — no wrap, no scroll — which **overflows a 375px phone**.
@@ -823,3 +823,92 @@ visible state.
   `expectedSessionValue is null when admin is disabled` — fails because `ADMIN_TOKEN` is set in
   this container's shell environment, unrelated to Epic 18 and not touched by this task; confirmed
   present in the baseline run taken before any T18.9 edits).
+
+**T18.10 (completed 2026-07-27):**
+- **New files:** `src/components/TabBar.tsx` (the four tabs, `activeTabId()` pure-function pathname
+  matcher, `AppBarTitle`, `AdminGearLink`, `TabBar`) and `src/components/HubSubnav.tsx`
+  (`HubSubnav` + the shared `LIBRARY_ITEMS` list).
+- **Kept the existing fixed-header/negative-margin architecture rather than switching to a flex-
+  column shell.** Considered making `<body>` a `flex h-dvh flex-col` with the app bar and tab bar as
+  normal-flow siblings (closer to `nav-ia.html`'s own `.screen` structure) — rejected because T18.9's
+  own verification bar is "visually unchanged," and the fixed-overlay approach (header floats
+  translucently over the feed, content deliberately visible behind it) is the *existing*, working
+  visual design; swapping architectures risked a real regression for no requirement in the task text.
+  Instead: the bottom tab bar is a second `position: fixed` element (mirroring the header), and
+  every place that sized itself to the viewport picked up `calc(100dvh - var(--tabbar-h))` instead.
+  `main` gets `pb-[var(--tabbar-h)]` globally (harmless on feed pages — hidden behind the opaque
+  tab bar, since the feed's own height already stops exactly `tabbar-h` above the true viewport
+  bottom; load-bearing on every plain scrolling page — `/skills`, `/saved`, `/overview`,
+  `/experience`, `/admin`, `/clusters/[id]`, `/skills/[slug]`, `/experience/[id]/edit` — none of
+  which needed individual edits because of this one global rule).
+- **`ReelActions`'s existing `bottom-4` needed no change at all** — verified, not assumed: with a
+  real Playwright check (see below) the reel `<article>`'s bottom edge lands exactly `var(--tabbar-h)`
+  above the true viewport bottom (because the article's own height is now
+  `calc(100dvh - var(--tabbar-h))`), so `bottom-4` (1rem) inside it already puts `ReelActions` 1rem
+  above the tab bar — "riding just above the tab bar" was a consequence of the height formula, not
+  something requiring its own position change. Left `ReelActions.tsx` untouched per the epic's
+  constraint.
+- **Contextual app-bar title via `usePathname()`, not a route param** — root `layout.tsx` has no
+  access to the current path as a prop in the Next.js App Router, so `AppBarTitle`/`TabBar` are
+  Client Components reading `usePathname()` (SSR'd with the real request path, no hydration
+  mismatch — confirmed via curl showing the correct title/active-tab classes in the raw HTML, not
+  just after client JS runs). **Testability concern, resolved by extraction:** rendering a component
+  that calls `usePathname()` via `renderToStaticMarkup` (the pattern this project's other component
+  tests use) throws outside an app-router context — the exact problem T18.5's notes already
+  documented for `useRouter`. Rather than repeat that landmine, `activeTabId(pathname): TabId | null`
+  is exported as a plain, router-free function and is the only part of `TabBar.tsx` unit-tested
+  (`TabBar.test.ts`, 5 cases: Feed only at exact `/`, Today/Skills prefix-match including nested
+  slugs, all three Library members, and `null` for Admin/`/clusters/[id]`). The rendered nav itself
+  is verified live (curl + Playwright, see below) rather than via `renderToStaticMarkup`, matching
+  how the pre-existing 7-link header was never unit-tested either.
+- **Admin reachability:** a small ⚙ `Link` in the top-right of the app bar (`AdminGearLink`,
+  `href="/admin"`) — matches `nav-ia.html`'s `.gear` button exactly, off the tab bar per ADR 0023
+  decision 2.
+- **Skills hub:** both sections (Skill Map, Adoption Log) already lived on the single `/skills`
+  page, so the sub-nav is same-page anchor links (`#skill-map`/`#adoption-log`) rather than a route
+  split — matches ADR 0023's "existing routes can stay where they are... UI-shaped rather than a
+  routing rewrite." Added `scroll-mt-[var(--header-h)]` to both target `<section>`s so an anchor
+  jump doesn't land a heading directly behind the fixed header. Pending SkillTagger proposals stay
+  visible above the "Map" anchor target (they're proposals *for* the map, not a third hub section);
+  not asked for by the task, low-risk placement call, flagged for review. Knowledge Base is not in
+  the sub-nav (doesn't exist yet, per the epic's own Phase-2 preamble).
+- **Library hub:** genuinely three separate existing routes (`/saved`, `/overview`, `/experience`),
+  so `HubSubnav` renders real `<Link>`s between them (`LIBRARY_ITEMS`, shared/exported so all three
+  pages use one literal item list, not three hand-copied ones) — no new `/library` route was
+  invented, again per ADR 0023's explicit preference. `/overview`'s URL is unchanged; only its label
+  in the hub ("Archive") and its nav placement move, matching the epic's note that ADR 0022's actual
+  rename/SOTA-retirement stays out of scope.
+- **`h-dvh`/`min-h-dvh` → `calc(100dvh - var(--tabbar-h))`, six call sites:** both feed containers'
+  and both EmptyState blocks' (`page.tsx`, `today/page.tsx`), `ReelCardBody.tsx`'s card container,
+  `ReelCardShell.tsx`'s `<article>`, and Today's own completion-card `min-h-dvh`. All six needed the
+  change together — leaving any one at the old `100dvh` while its siblings shrank would have broken
+  snap-point alignment (a taller-than-viewport section requires two swipes to pass).
+- **Verification:** `npm run build` green. `npm test`: 330/331 (+5, the new `TabBar.test.ts`), same
+  single pre-existing `admin/auth.test.ts` failure as the T18.9 baseline (env-var leak, unrelated).
+  Ran a fresh `npm run start` (had to kill a stale server left over from the T18.9 verification
+  round that was still holding port 3000 across separate Bash calls in this session — a session
+  tooling artifact, not a product issue) and curled `/`, `/today`, `/skills`, `/saved`, `/overview`,
+  `/experience`, `/admin` (307 → `/admin/login`, unauthenticated, unchanged from before this task):
+  confirmed the app bar's contextual title ("Feed" on `/`), the gear's `href="/admin"`, the tab
+  bar's four links, the Skills/Library sub-navs' hrefs and per-page active-state classes
+  (`border-accent text-accent` on the current section, both in the sub-nav *and* the bottom tab
+  bar's "Library" entry when on `/saved`), and the compiled CSS chunk containing
+  `--header-h:3rem`, `--filterbar-h:4rem`, `--tabbar-h:3.5rem`. Seeded one throwaway reel (not
+  committed) to get a real feed card rendered, then used the environment's pre-installed
+  Playwright/Chromium (global install, referenced by absolute path — **not** added as a project
+  dependency, per the "no new dependencies" constraint) at a 375×812 viewport to check `/`,
+  `/today`, `/skills`, `/saved`, `/overview`, `/experience`: `document.documentElement.scrollWidth
+  === window.innerWidth` (no horizontal overflow) on every route. Read back the actual
+  `getBoundingClientRect()` of the reel `<article>`, `ReelActions`, the header, and the tab bar on
+  `/`: article `0–756px` (exactly `812 − 56`, i.e. `100dvh − tabbar-h`, full-bleed `375px` wide),
+  tab bar `756–812px` (exactly `56px = var(--tabbar-h)`, full width, pinned to the true viewport
+  bottom), header `0–48px` (`var(--header-h)`, floating over the article which starts at `y:0`
+  behind it, preserving the deliberate blur-overlay look), `ReelActions` bottom edge at `740px` —
+  16px (1rem) above the article's own bottom edge and therefore also 16px above the tab bar's top
+  edge, confirming "riding just above the tab bar" without any change to `ReelActions.tsx` itself.
+  Confirmed `/experience/new`, `/clusters/1`, `/skills/nonexistent`, `/admin/login` still all
+  respond (200/404 as before) — no previously-reachable route was broken by the nav restructure.
+  (`/clusters/1`'s `notFound()` currently returns HTTP 200 with a 404-titled body — a pre-existing
+  gap this task didn't introduce and doesn't fix; it's exactly what T18.8, explicitly out of this
+  pass's scope, is for.) Deleted the throwaway seed rows afterward; confirmed via `npm test` re-run
+  that integration tests are unaffected (they truncate their own tables).

@@ -1,6 +1,7 @@
 import { getReels } from "@/lib/feed";
 import { isBestPractice, isSota } from "@/lib/labels";
 import { HistoryList } from "@/components/HistoryList";
+import { HubSubnav, LIBRARY_ITEMS } from "@/components/HubSubnav";
 import { OverviewFilterBar, type OverviewFilterState } from "@/components/OverviewFilterBar";
 import { groupSota, SotaSection } from "@/components/SotaSection";
 
@@ -60,6 +61,10 @@ export default async function OverviewPage({ searchParams }: OverviewPageProps) 
 
   return (
     <div className="pb-16">
+      {/* T18.10 (ADR 0023): Library hub — Saved · Archive · Experience.
+          `/overview`'s own URL is unchanged (ADR 0022's rename to /archive
+          is out of scope this epic); only its nav placement moves here. */}
+      <HubSubnav items={LIBRARY_ITEMS} activeHref="/overview" />
       <SotaSection groups={sotaGroups} />
 
       <div className="mx-auto mt-8 max-w-xl border-t border-zinc-800/60 px-4 pt-4">

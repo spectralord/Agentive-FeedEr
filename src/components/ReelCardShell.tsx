@@ -90,7 +90,7 @@ export function ReelCardShell({ reelId, initial, children, detail }: ReelCardShe
   return (
     <article
       ref={articleRef}
-      className="reel relative min-h-dvh snap-start [scroll-snap-stop:always]"
+      className="reel relative min-h-[calc(100dvh-var(--tabbar-h))] snap-start [scroll-snap-stop:always]"
       onTouchStart={handleTouchStart}
       onTouchEnd={handleTouchEnd}
     >

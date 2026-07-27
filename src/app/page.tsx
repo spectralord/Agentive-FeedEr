@@ -15,7 +15,7 @@ interface FeedPageProps {
 
 function EmptyState({ hasFilters }: { hasFilters: boolean }) {
   return (
-    <div className="mx-auto flex h-dvh max-w-xl flex-col items-center justify-center gap-3 px-6 text-center">
+    <div className="mx-auto flex h-[calc(100dvh-var(--tabbar-h))] max-w-xl flex-col items-center justify-center gap-3 px-6 text-center">
       <p className="text-lg font-medium">No Reels yet</p>
       {hasFilters ? (
         <p className="text-sm text-zinc-400">
@@ -65,7 +65,7 @@ export default async function FeedPage({ searchParams }: FeedPageProps) {
       {reels.length === 0 ? (
         <EmptyState hasFilters={hasFilters} />
       ) : (
-        <div className="feed -mt-[var(--header-h)] h-dvh snap-y snap-mandatory overflow-y-auto overflow-x-hidden">
+        <div className="feed -mt-[var(--header-h)] h-[calc(100dvh-var(--tabbar-h))] snap-y snap-mandatory overflow-y-auto overflow-x-hidden">
           {feedItems.map((item) =>
             item.type === "stack" ? (
               <ReelStackCard
