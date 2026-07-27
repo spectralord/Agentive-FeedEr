@@ -69,7 +69,7 @@ export function FilterBar({ current }: { current: FilterState }) {
   return (
     <nav
       aria-label="Feed filter"
-      className="fixed inset-x-0 top-12 z-10 border-b border-zinc-800/60 bg-zinc-950/70 backdrop-blur"
+      className="fixed inset-x-0 top-[var(--header-h)] z-10 border-b border-zinc-800/60 bg-zinc-950/70 backdrop-blur"
     >
       <div className="mx-auto flex max-w-xl items-center gap-1.5 overflow-x-auto px-4 py-2 text-sm">
         {CATEGORIES.map((category) => {

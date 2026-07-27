@@ -280,7 +280,7 @@ and `/skills/[slug]` both already call `notFound()` with nothing designed behind
 - `error.tsx` with a retry affordance; `not-found.tsx`.
 - Use T18.1's tokens. **Verification:** curl each route family; force an error and a 404.
 
-### ☐ T18.9 — Header-height token (§10.9, §10.10 #2)
+### ☑ T18.9 — Header-height token (§10.9, §10.10 #2)
 
 Header height is currently coupled to layout by magic number (the feed's `-mt-12`/`pt-28` dance).
 Replace with a real token. **Prerequisite for T18.10.** **Verification:** header/feed alignment
@@ -781,3 +781,45 @@ visible state.
   `tried` state (`--accent` ring, "tried" status text) and the "Mark as tried" action correctly
   disappeared from both — direct proof the Skill tab writes through the exact same path the node
   page does, not a second implementation.
+
+**T18.9 (completed 2026-07-27):**
+- **Three plain `:root` CSS custom properties in `globals.css`** — `--header-h: 3rem`,
+  `--filterbar-h: 4rem`, `--tabbar-h: 3.5rem` — deliberately **not** added to the Tailwind
+  `@theme` block (unlike the ADR 0016 color tokens from T18.1). Reason: call sites need them
+  inside `calc()` (`calc(100dvh - var(--tabbar-h))`, `calc(var(--header-h)+var(--filterbar-h))`),
+  which is exactly the spelling ADR 0023 and design doc §10.1 use verbatim for the feed's card
+  height formula — a Tailwind theme-scale entry generates named utility classes, not a
+  `calc()`-composable variable, so a plain custom property is the only shape that satisfies the
+  binding formula's own syntax.
+- **`--tabbar-h` is defined now even though nothing in T18.9 uses it yet** — added ahead of T18.10
+  so all three layout tokens live in one place rather than splitting the token definition across
+  two commits; it is inert (unreferenced) until T18.10.
+- **Two tokens, not one, because two different offsets were being conflated:** `--header-h`
+  (3rem = the pre-existing `pt-12`/`top-12`/`-mt-12` value, the app bar itself) and
+  `--filterbar-h` (4rem — FilterBar's/Today's-nav's own height, which sits directly below the app
+  bar on feed/today only). `ReelCardBody`'s `pt-28` (7rem = 3rem + 4rem) becomes
+  `pt-[calc(var(--header-h)+var(--filterbar-h))]` rather than a single third "reel-top-offset"
+  token, so a future change to either the app bar or the filter bar's height alone (e.g. T18.10
+  restyling the app bar's content without changing its height) doesn't require re-deriving a
+  combined magic number by hand.
+- **Files touched:** `src/app/globals.css` (tokens), `src/app/layout.tsx` (`pt-12` →
+  `pt-[var(--header-h)]`), `src/components/FilterBar.tsx` (`top-12` → `top-[var(--header-h)]`),
+  `src/app/today/page.tsx` (`top-12` and `-mt-12`, two call sites), `src/app/page.tsx` (`-mt-12`),
+  `src/components/ReelCardBody.tsx` (`pt-28` → the calc() above). Deliberately did **not** touch
+  `h-dvh`/`min-h-dvh` anywhere yet (`ReelCardShell.tsx`, the feed containers, the EmptyState
+  blocks) — those are sized against the *viewport*, not the header, and only become
+  header/tabbar-coupled once T18.10 introduces the bottom bar; changing them here would have
+  mixed two tasks' concerns into one commit.
+- **Verification:** `grep -rn "pt-12\b\|top-12\b\|-mt-12\b\|pt-28\b" src/` returns zero hits outside
+  this file's own explanatory comment (confirmed). `npm run build` green. Ran `npm run start`
+  against a fresh `.next` build (had to `rm -rf .next` and rebuild once — an earlier `npm run
+  start` in the same session had picked up a stale pre-edit build directory, a tooling artifact of
+  this session, not a product bug) and curled `/` and `/today`: confirmed `<main class="pt-[var(--
+  header-h)]">`, FilterBar's/Today-nav's `top-[var(--header-h)]` class both present in the raw
+  HTML, and confirmed the compiled CSS chunk contains `--header-h:3rem` and a
+  `.pt-\[var\(--header-h\)\]` rule resolving to `padding-top: 3rem` — byte-identical to the old
+  `pt-12`/`top-12` value, so header/feed alignment is pixel-unchanged. `npm test`: 325/326 green,
+  same single pre-existing failure as the pre-task baseline (`admin/auth.test.ts`'s
+  `expectedSessionValue is null when admin is disabled` — fails because `ADMIN_TOKEN` is set in
+  this container's shell environment, unrelated to Epic 18 and not touched by this task; confirmed
+  present in the baseline run taken before any T18.9 edits).

@@ -59,7 +59,7 @@ export default function RootLayout({
             ))}
           </nav>
         </header>
-        <main className="pt-12">{children}</main>
+        <main className="pt-[var(--header-h)]">{children}</main>
       </body>
     </html>
   );

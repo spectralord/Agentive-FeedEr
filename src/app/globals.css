@@ -36,6 +36,25 @@
   --color-gold-soft: rgba(209, 161, 60, 0.14);
 }
 
+/* T18.9 (§10.9): header-height tokens — the single source of truth for what
+   used to be hardcoded pt-12/top-12/-mt-12/pt-28 magic numbers scattered
+   across layout.tsx, FilterBar.tsx, today/page.tsx and ReelCardBody.tsx.
+   Plain :root custom properties, not Tailwind's @theme namespace, because
+   call sites need them inside calc() (e.g. calc(100dvh - var(--tabbar-h))) —
+   the exact spelling ADR 0023 and design doc §10.1 use for the feed's card
+   height formula, which only works with a real CSS var, not a Tailwind
+   theme-scale entry.
+   --header-h: the fixed app bar (brand/title + freshness + gear, T18.10/11).
+   --filterbar-h: FilterBar / Today's "Important today" nav, which sits
+     directly below the app bar on the feed/today routes only.
+   --tabbar-h: the persistent bottom tab bar (T18.10) — not used by this
+     task, added here so all three layout tokens live in one place. */
+:root {
+  --header-h: 3rem;
+  --filterbar-h: 4rem;
+  --tabbar-h: 3.5rem;
+}
+
 @media (prefers-color-scheme: dark) {
   :root {
     --background: #0a0a0a;

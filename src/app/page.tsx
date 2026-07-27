@@ -65,7 +65,7 @@ export default async function FeedPage({ searchParams }: FeedPageProps) {
       {reels.length === 0 ? (
         <EmptyState hasFilters={hasFilters} />
       ) : (
-        <div className="feed -mt-12 h-dvh snap-y snap-mandatory overflow-y-auto overflow-x-hidden">
+        <div className="feed -mt-[var(--header-h)] h-dvh snap-y snap-mandatory overflow-y-auto overflow-x-hidden">
           {feedItems.map((item) =>
             item.type === "stack" ? (
               <ReelStackCard

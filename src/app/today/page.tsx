@@ -43,7 +43,7 @@ export default async function TodayPage() {
     <>
       <nav
         aria-label="Important today"
-        className="fixed inset-x-0 top-12 z-10 border-b border-zinc-800/60 bg-zinc-950/70 backdrop-blur"
+        className="fixed inset-x-0 top-[var(--header-h)] z-10 border-b border-zinc-800/60 bg-zinc-950/70 backdrop-blur"
       >
         <div className="mx-auto flex max-w-xl flex-col gap-0.5 px-4 py-2">
           <div className="flex items-baseline justify-between text-sm">
@@ -54,7 +54,7 @@ export default async function TodayPage() {
         </div>
       </nav>
 
-      <div className="feed -mt-12 h-dvh snap-y snap-mandatory overflow-y-auto overflow-x-hidden">
+      <div className="feed -mt-[var(--header-h)] h-dvh snap-y snap-mandatory overflow-y-auto overflow-x-hidden">
         {reels.map((reel) => (
           <ReelCard
             key={reel.id}
