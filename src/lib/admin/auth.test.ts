@@ -1,4 +1,4 @@
-import { describe, expect, it } from "vitest";
+import { describe, expect, it, vi } from "vitest";
 import {
   constantTimeEqual,
   expectedSessionValue,
@@ -25,8 +25,22 @@ describe("admin auth", () => {
     expect(sessionValueForToken("secret")).not.toContain("secret");
   });
 
-  it("expectedSessionValue is null when admin is disabled", () => {
-    expect(expectedSessionValue(undefined)).toBeNull();
+  // NOTE: `expectedSessionValue(token = env().ADMIN_TOKEN)` — passing
+  // `undefined` explicitly does NOT bypass the default parameter, it
+  // *triggers* it. So this test used to depend on ADMIN_TOKEN being unset in
+  // the ambient environment, and started failing the moment `.env` gained an
+  // ADMIN_TOKEN (which `.env.example` now sets, so `cp .env.example .env`
+  // reproduced it). Mock the env module instead of relying on the machine's.
+  it("expectedSessionValue is null when admin is disabled", async () => {
+    vi.resetModules();
+    vi.doMock("@/lib/env", () => ({ env: () => ({ ADMIN_TOKEN: undefined }) }));
+    const auth = await import("./auth");
+    expect(auth.expectedSessionValue()).toBeNull();
+    vi.doUnmock("@/lib/env");
+    vi.resetModules();
+  });
+
+  it("expectedSessionValue derives the session value from an explicit token", () => {
     expect(expectedSessionValue("secret")).toBe(sessionValueForToken("secret"));
   });
 
