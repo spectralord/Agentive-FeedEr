@@ -269,7 +269,7 @@ Depends on T18.5 (ring) + T18.6 (tab system). Genuinely new content, not a resty
 >   only its navigation placement changes (T18.10).
 > - The **Knowledge Base** entry in the Skills hub (§9.6) — the surface does not exist.
 
-### ☐ T18.8 — Route boundaries: `loading` / `error` / `not-found` (§10.2, §10.10 #1)
+### ☑ T18.8 — Route boundaries: `loading` / `error` / `not-found` (§10.2, §10.10 #1)
 
 **Functional gap, no design decisions needed.** Verified across all 12 pages: no `loading.tsx`,
 no `error.tsx`, no `not-found.tsx` anywhere. Every page is `force-dynamic`, so **every navigation
@@ -1017,3 +1017,79 @@ visible state.
   and confirmed `/skills/t1813-verify` renders `href="/skills"` with the back-link markup (same
   wording as the pre-existing `SkillNodeDetail` case, now going through the shared component).
   Deleted both seed rows afterward.
+
+**T18.8 (completed 2026-07-27):**
+- **New files:** `src/components/skeletons.tsx` (shared primitives — `SkeletonBar`,
+  `SkeletonCircle`, `FeedCardSkeleton`, `RowSkeleton`/`ListSkeleton`, `GridTileSkeleton`/
+  `GridSkeleton`, `DetailHeaderSkeleton`, `FormFieldSkeleton`); one `loading.tsx` per existing
+  `page.tsx` (12 files, one per route, not one shared generic spinner — each composes the
+  primitives into its own surface's shape: full-height snap-card outlines for `/` and `/today`;
+  row outlines for `/saved`, `/experience`, `/overview`; grid-tile outlines for `/skills`'s Skill
+  Map plus row outlines for its Adoption Log; a ring-headed detail outline for `/skills/[slug]`;
+  a plain detail outline for `/clusters/[id]`; form-field outlines for `/experience/new`,
+  `/experience/[id]/edit`, `/admin/login`; a lighter row/stat treatment for the ops-only `/admin`);
+  one root `error.tsx` (Client Component, `reset()`-wired retry button); one root `not-found.tsx`.
+- **Real, already-working chrome is reused inside skeletons, not re-drawn:** `HubSubnav`,
+  `BackLink` carry no per-request data, so each loading.tsx renders the *actual* component
+  immediately (real hrefs, real active-state), and only the async-data regions (the list/grid/
+  form body) get skeleton bars — this is also why nothing jumps when real content lands: the
+  chrome doesn't change at all, only the skeleton bars get replaced in place. `loading.tsx`
+  receives no `params`/`searchParams` in the Next.js App Router (only `page.tsx`/`layout.tsx` do),
+  so any bar that would need real per-request data it can't get (the main feed's category/caveat
+  `FilterBar`, Today's live "Important today (N)" count) is faked as a plain neutral bar instead
+  of rendering the real interactive component with fabricated props.
+- **A second boundary file added beyond the task's literal three, found while verifying:**
+  `src/app/global-error.tsx`. T18.11 made the *root layout itself* read the DB on every request
+  (the freshness indicator) — so a DB outage doesn't just fail one page's data fetch, it can throw
+  inside `layout.tsx` before any page even starts rendering. Next's own rule is that a segment's
+  `error.tsx` never catches errors thrown by that same segment's `layout.tsx` (only by its
+  `page.tsx`/children below it) — only `global-error.tsx` can catch a root-layout failure, and it
+  must render its own `<html>`/`<body>` since it replaces the entire root layout when active.
+  Without it, a DB outage produced Next's raw, unstyled built-in fallback — exactly the "reads as
+  a dead app" failure this section exists to prevent, just one level higher than an ordinary page
+  error. Verified by actually stopping Postgres and hitting `/`: before this file existed, a bare
+  Next fallback with no designed content; after, the styled "Something went wrong" + retry screen.
+  `global-error.tsx` deliberately uses **inline styles, not Tailwind classes** — `globals.css` is
+  imported by `layout.tsx`, which this file replaces, so those classes are not guaranteed to be
+  styled here; the inline values are copied from the exact T18.1 token hex/rgba values so the look
+  still matches (`--color-ground` `#0a0d10`, `--color-ink` `#eef1f2`, etc.).
+- **A real, non-obvious finding from verification, recorded for review rather than "fixed" further
+  (fixing it would mean reversing the very thing this task was asked to add):** adding a
+  route-level `loading.tsx` turns that route into a Suspense boundary. For a route whose
+  `page.tsx` calls `notFound()` (`/clusters/[id]`, `/skills/[slug]`), throws (any page, now
+  verified with a temporary forced-throw in `saved/page.tsx`, reverted after), or `redirect()`s
+  (`/admin`, unauthenticated), the *initial, non-JS-executed* HTML byte stream now renders that
+  route's **loading skeleton**, with the real not-found/error/redirect delivered as a second,
+  RSC-encoded chunk that a client-side React hydration patches in — confirmed two ways: (1) a
+  plain `curl` of `/clusters/999999` returns HTTP 200 with the loading skeleton as the *visible*
+  markup (the string "Page not found" is present in the response only inside a later inline JSON
+  script payload, not in the rendered body) — this is a pre-existing gap, not one this task
+  introduced (T18.10's own notes already recorded `/clusters/1` returning 200 instead of 404
+  *before any loading.tsx existed anywhere*, so the wrong status code predates T18.8); but
+  (2) confirmed via headless Chromium (Playwright, the same tool T18.10/T18.11 used for exactly
+  this reason — curl cannot observe post-hydration state) that every one of these cases resolves
+  correctly for a real, JS-executing client: `/clusters/999999` and `/skills/does-not-exist` both
+  render "Page not found / There's nothing here. / Back to Feed" after `networkidle`; the forced
+  page-error test renders "Something went wrong / ... / Try again"; `/admin` unauthenticated ends
+  up at `/admin/login` (`page.url()` confirmed). **Net effect:** real users (the entire reason
+  this section exists — "on mobile this reads as a dead app") get instant skeleton feedback *and*
+  correct final content, exactly as designed; only a non-JS client (curl, a bare HTTP status
+  check, a crawler) would observe an HTTP 200 where a 404/307/500 would be more correct — a
+  structural tension in Next's streaming/Suspense model between "show a skeleton instantly" and
+  "commit to a final HTTP status before any bytes are sent", not a bug in this task's own code.
+  Flagged here explicitly for the strong model's review; not fixed further because the only way
+  to guarantee correct non-JS status codes would be to remove the very `loading.tsx` boundaries
+  this task was asked to add for exactly these routes.
+- **Verification:** `service postgresql start && npm run db:migrate`, then `npm run build` +
+  `npm test` green (352/352, +12 net new: `skeletons.test.tsx`, `not-found.test.tsx`,
+  `error.test.tsx`, `global-error.test.tsx`). Curled every route family (`/`, `/today`, `/saved`,
+  `/experience`, `/experience/new`, `/overview`, `/skills`, `/admin`, `/admin/login`) — all 200,
+  no regression. Forced a real DB outage (`service postgresql stop`, fresh `rm -rf .next && npm
+  run build && npm run start`) and confirmed via Playwright that `/` renders the
+  `global-error.tsx` UI with HTTP 500 (not Next's raw fallback). Forced a page-level error via a
+  temporary `if (process.env.T18_8_FORCE_ERROR === "1") throw ...` at the top of
+  `saved/page.tsx` (reverted immediately after, confirmed via `git diff` showing no leftover
+  change) and confirmed via Playwright that `error.tsx`'s "Something went wrong" + "Try again"
+  renders. Forced both named 404s (`/clusters/999999`, `/skills/does-not-exist`) and confirmed via
+  Playwright that `not-found.tsx` renders in both. No skeleton reaches for `--gold`/`--caution`
+  (asserted in `skeletons.test.tsx`, `not-found.test.tsx`, `error.test.tsx`).
