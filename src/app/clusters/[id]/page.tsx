@@ -1,4 +1,5 @@
 import { notFound } from "next/navigation";
+import { BackLink } from "@/components/BackLink";
 import { CONFIDENCE_LABELS } from "@/components/labels";
 import { getClusterWithMembers } from "@/lib/clusters";
 import { formatRelativeTime } from "@/lib/relativeTime";
@@ -28,7 +29,11 @@ export default async function ClusterPage({ params }: PageParams) {
 
   return (
     <div className="mx-auto max-w-xl px-4 py-6">
-      <h1 className="text-lg font-semibold text-zinc-100">{cluster.title}</h1>
+      {/* T18.13 (§10.6): reachable only from a supersession notice, on
+          either Today or Feed — Feed (not "wherever you came from") is the
+          one consistent parent to return to. */}
+      <BackLink href="/" label="Feed" />
+      <h1 className="mt-2 text-lg font-semibold text-zinc-100">{cluster.title}</h1>
       <div className="mt-2 flex flex-wrap items-center gap-2 text-xs text-zinc-400">
         <span className="rounded-full bg-zinc-800 px-2 py-0.5">
           {members.length} source{members.length === 1 ? "" : "s"}

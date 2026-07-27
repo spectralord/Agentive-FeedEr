@@ -7,6 +7,7 @@ import { listSourcesWithErrorCounts } from "@/lib/admin/sources";
 import { env } from "@/lib/env";
 import { recentRuns } from "@/lib/pipeline";
 import { formatRelativeTime } from "@/lib/relativeTime";
+import { BackLink } from "@/components/BackLink";
 
 export const dynamic = "force-dynamic";
 
@@ -131,7 +132,9 @@ export default async function AdminPage({ searchParams }: AdminPageProps) {
 
   return (
     <div className="mx-auto max-w-xl px-4 py-6">
-      <div className="mb-4 flex items-center justify-between">
+      {/* T18.13 (§10.6): the one back-affordance rule, see BackLink.tsx. */}
+      <BackLink href="/" label="Feed" />
+      <div className="mb-4 mt-2 flex items-center justify-between">
         <h1 className="text-lg font-semibold">Admin</h1>
         <form method="post" action="/api/admin/logout">
           <button type="submit" className="text-xs text-zinc-500 hover:text-zinc-300">Log out</button>

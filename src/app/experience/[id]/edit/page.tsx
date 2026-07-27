@@ -1,4 +1,5 @@
 import { notFound } from "next/navigation";
+import { BackLink } from "@/components/BackLink";
 import { getReport } from "@/lib/experienceReports";
 
 // Must reflect the report's current state per request (title/body/lifecycle
@@ -24,7 +25,9 @@ export default async function EditExperienceReportPage({ params }: EditExperienc
 
   return (
     <div className="mx-auto max-w-xl px-4 pt-6 pb-16">
-      <h1 className="text-sm font-semibold text-zinc-100">Edit report</h1>
+      {/* T18.13 (§10.6): the one back-affordance rule, see BackLink.tsx. */}
+      <BackLink href="/experience" label="Experience" />
+      <h1 className="mt-2 text-sm font-semibold text-zinc-100">Edit report</h1>
       <form
         action={`/experience/${report.id}/update`}
         method="post"

@@ -319,7 +319,7 @@ Empty states are inconsistent and **one is developer-facing** — `src/app/page.
 tells the user to run `npm run job:daily`. Extract one shared component; drop the dev copy.
 **Verification:** every empty state renders through it; no CLI instructions in user-facing text.
 
-### ☐ T18.13 — Back-affordance rule for non-tab pages (§10.6, §10.10 #7)
+### ☑ T18.13 — Back-affordance rule for non-tab pages (§10.6, §10.10 #7)
 
 Orphan pages with inconsistent back navigation (`/clusters/[id]`, `/skills/[slug]`,
 `/experience/[id]/edit`, …). Define **one** rule for pages that are not tab destinations and
@@ -983,3 +983,37 @@ visible state.
   `text-ink-faint`/`bg-ink-muted` styling. Re-ran the 375×812 Playwright overflow check from T18.10
   with the freshness text present on all six routes — still zero overflow. Deleted the seed rows
   afterward (`TRUNCATE pipeline_runs RESTART IDENTITY`).
+
+**T18.13 (completed 2026-07-27):**
+- **The rule (`src/components/BackLink.tsx`, doc comment states it in full):** every page that is
+  not one of the four tab-bar destinations carries a `← Back to <parent>` link, first thing in its
+  content, to its logical parent surface — via a **static `href`, deliberately not
+  `router.back()`/browser history**. Reasoning recorded in the component: several of these pages are
+  reachable from more than one place (`/clusters/[id]` from a supersession notice on either Today or
+  Feed), so "return to wherever the link happened to come from" isn't one consistent destination,
+  but "return to the surface this page conceptually belongs under" is — and it also means the link
+  still works when the page is opened directly (a shared URL, a fresh tab) with no browser history
+  to go back to.
+- **`SkillNodeDetail.tsx` already had exactly this pattern** (`← Back to Skill Map`, pre-dating this
+  task) — refactored to call the new shared `BackLink` component instead of its own inline `<Link>`,
+  producing byte-identical rendered output (confirmed: same test count/assertions still pass), so
+  the *existing* correct instance becomes the reference implementation instead of a second one.
+- **Applied to the remaining named orphans, one parent each:** `/clusters/[id]` → Feed (`"/"` — no
+  single page links to a cluster, so Feed, the "browse everything" tab, is the one consistent
+  target, not "whichever card happened to show the supersession notice"); `/experience/[id]/edit`
+  and `/experience/new` → Experience (`/experience`); `/admin` → Feed (`"/"` — Admin is reached from
+  the app-bar gear from any page, so Feed is the same universal-fallback choice as `/clusters/[id]`).
+- **`/admin/login` deliberately exempted, spelled out in `BackLink.tsx`'s doc comment** — it's an
+  auth gate one passes *through*, not a page with a parent surface to return *to* (there is no
+  "parent" of a login screen in the way there's a parent of an edit form).
+- **Verification:** `npm run build` + `npm test` green (338/339, +1 new `BackLink.test.tsx`; same
+  pre-existing `admin/auth.test.ts` failure). Live check (fresh build + `npm run start`, `service
+  postgresql start && npm run db:migrate` first): curled `/experience/new` and confirmed
+  `href="/experience"` with the `←` glyph present; logged into `/admin` via
+  `POST /api/admin/login` with this container's `ADMIN_TOKEN` and confirmed the authenticated
+  `/admin` page renders `href="/"` with the back-link markup (distinct from the tab bar's own
+  separate `href="/"` link, both present); seeded one throwaway `topic_clusters` row and confirmed
+  `/clusters/2` renders `href="/"` with the back-link markup; seeded one throwaway `skill_nodes` row
+  and confirmed `/skills/t1813-verify` renders `href="/skills"` with the back-link markup (same
+  wording as the pre-existing `SkillNodeDetail` case, now going through the shared component).
+  Deleted both seed rows afterward.

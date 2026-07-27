@@ -3,6 +3,7 @@ import type { SkillNodeDetail as SkillNodeDetailData } from "@/lib/skills/map";
 import type { DisplayStatus } from "@/lib/skills/progress";
 import { PROGRESS_STATUSES } from "@/lib/skills/progress";
 import { formatRelativeTime } from "@/lib/relativeTime";
+import { BackLink } from "./BackLink";
 import { SkillRing } from "./SkillRing";
 
 /** Matches `skill-constellation.html`'s `.p-status.<status>` colors
@@ -41,9 +42,8 @@ export function SkillNodeDetail({ detail, previousStatus }: SkillNodeDetailProps
 
   return (
     <div className="mx-auto max-w-xl px-4 pb-16">
-      <Link href="/skills" className="text-xs text-ink-faint hover:text-ink">
-        ← Back to Skill Map
-      </Link>
+      {/* T18.13 (§10.6): the one back-affordance rule, see BackLink.tsx. */}
+      <BackLink href="/skills" label="Skill Map" />
 
       <div className="mt-2 flex items-baseline justify-between gap-2">
         <h1 className="text-lg font-semibold text-ink">{node.title}</h1>

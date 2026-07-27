@@ -1,3 +1,5 @@
+import { BackLink } from "@/components/BackLink";
+
 /**
  * `/experience/new` (T9.5): plain HTML form, no client JS required — posts to
  * the `/experience/create` route handler. `author_type`/`author_label` are
@@ -7,7 +9,9 @@
 export default function NewExperienceReportPage() {
   return (
     <div className="mx-auto max-w-xl px-4 pt-6 pb-16">
-      <h1 className="text-sm font-semibold text-zinc-100">New experience report</h1>
+      {/* T18.13 (§10.6): the one back-affordance rule, see BackLink.tsx. */}
+      <BackLink href="/experience" label="Experience" />
+      <h1 className="mt-2 text-sm font-semibold text-zinc-100">New experience report</h1>
       <form action="/experience/create" method="post" className="mt-4 flex flex-col gap-4">
         <label className="flex flex-col gap-1 text-xs text-zinc-400">
           Title
