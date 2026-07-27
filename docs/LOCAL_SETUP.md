@@ -4,8 +4,13 @@ Postgres in Docker, the Next.js app on your host. Should take about five minutes
 
 ## Prerequisites
 
-- **Node 22+** (`node -v`). The repo declares no `engines`; everything has been built and tested
-  against v22.
+- **Node 20.19+ or 22.12+** (`node -v`). Not just "22+": `@rolldown/binding-*` (via
+  vitest 4 → vite 8) declares `node: "^20.19.0 || >=22.12.0"`, and **22.8 falls in the gap
+  between those two ranges**. npm then *silently skips* the platform binary as an unmet
+  optional dependency and `npm test` dies at startup with "Cannot find native binding" —
+  which reads like the well-known npm optional-deps bug, so the suggested fix (delete
+  `node_modules` + `package-lock.json`, reinstall) sends you in circles. It is a Node
+  version mismatch. Verified working on **v20.19.5** (macOS arm64).
 - **Docker** — Docker Desktop on macOS/Windows, Docker Engine on Linux. Make sure it is actually
   *running* before step 3.
 - That's it. **No `ANTHROPIC_API_KEY` is needed to browse the UI** — see "Do I need an API key?".
@@ -143,9 +148,15 @@ Being straight about this, because it was written in a sandbox and not on a Mac:
   374 tests, green, `feedr_test` auto-created and migrated to 11 tables), and re-counted
   `feedr_dev` afterwards — identical. Both abort paths were exercised too: a missing
   `TEST_DATABASE_URL` and one pointing at `feedr_dev` each stop the run before any test starts.
-- ❌ **The Docker path itself could not be exercised** — the sandbox blocks Docker Hub image
-  pulls at the network-policy level, so `docker compose up` was never actually run end to end.
-  The compose file is small and conventional, but **you are the first to run it**. If
-  `npm run db:up` misbehaves, that's the least-tested step — say so and it'll get fixed.
-- ❌ **Not tested on macOS or Windows** (this was a Linux container), so Docker Desktop specifics
-  are unverified.
+- ✅ **The Docker path is now exercised** (2026-07-27, macOS 15 / arm64, Docker Desktop 24.0.7):
+  `npm run db:up` pulls postgres:16, starts it and passes its healthcheck unchanged. The
+  compose file needed no edits. (This supersedes the earlier "could not be exercised" note —
+  the sandbox that wrote this file could not pull Docker Hub images; a real Mac can.)
+- ✅ **Verified on macOS arm64** — full happy path from a clean clone: `npm ci` → `db:up` →
+  `db:migrate` → `db:seed` → `npm run dev`, plus `npm run build` and a green test suite.
+  See the Node version note under Prerequisites — that was the one real snag.
+- ⚠️ **Reading the DB right after `npm run db:seed` can look empty.** The seed opens with a
+  `TRUNCATE` of every table; a `psql` count issued while it is still running sees the
+  post-truncate, pre-insert state and reports zeros. Nothing is wrong — re-query once it
+  has returned. (Cost an unnecessary debugging detour on first run.)
+- ❌ **Not tested on Windows.**

@@ -1154,7 +1154,8 @@ visible state.
 ## Epic 18 — complete (2026-07-25)
 
 All of Phase 1 (T18.1–T18.7) and Phase 2 (T18.8–T18.14) are built, reviewed and merged.
-Build green, typecheck clean, **363/363 tests**.
+Build green, typecheck clean, **364/364 tests** (363 + one regression test from the
+sixth boundary occurrence below, found while first running the app locally).
 
 ### Recurring hazard worth institutionalising: the client/server boundary
 
@@ -1177,6 +1178,24 @@ Client Components import the pure module. `import type` is always safe (erased a
 it is **value** imports that pull the graph in. When a whole page must read the DB from a layout,
 `export const dynamic = "force-dynamic"` is the escape hatch (otherwise Next tries the query at
 build time for statically-eligible routes).
+
+#### Sixth occurrence — the variant that passes every gate (found 2026-07-27)
+
+`ReelCardBody` (client bundle, via `ReelStackCard`) called `isNew`, which read
+`env().NEW_DAYS`. **No DB-backed module is imported anywhere in that chain**, so the usual
+symptom never appeared: `next build` was green, typecheck was clean, all 363 tests passed.
+It failed only at runtime in the browser — `env()` validates the whole server-side zod schema,
+`DATABASE_URL` is undefined there, so every feed card threw during hydration and the feed
+collapsed into its route error boundary. It was invisible until someone actually opened the app.
+
+**Generalised rule: `src/lib/env.ts` is a server-only module.** Treat calling `env()` exactly
+like importing `pg` — anything reachable from a Client Component must receive config as props,
+resolved by a Server Component. The hazard is not limited to imports that drag in Node
+builtins; **any** server-only *runtime* dependency behaves this way, and the build cannot catch it.
+
+Corollary worth copying: make the injected prop **required**, not defaulted. A default value
+would let the next call site quietly fall back to `env()` again; a required prop turns the same
+mistake into a typecheck failure.
 
 ### Known pre-existing lint error (not from this epic)
 `npx eslint src` reports one error — `react-hooks/purity`, `Date.now()` during render in
