@@ -69,6 +69,32 @@ export function AppBarTitle() {
   );
 }
 
+/**
+ * T18.11 (§10.3): the app-bar "updated Xh ago" freshness signal. Only shown
+ * on Today/Feed (matches `nav-ia.html`'s own script:
+ * `STATE.tab === "today" || "feed"` toggles `#fresh`'s `display`) — the data
+ * is fetched unconditionally in the root layout (cheap, single-row query)
+ * and this component just hides itself via the same `activeTabId` pathname
+ * check the tab bar uses, rather than the layout trying to guess the route
+ * server-side without a client hook.
+ */
+export function AppBarFreshness({ label, stale }: { label: string; stale: boolean }) {
+  const pathname = usePathname();
+  const active = activeTabId(pathname);
+  if (active !== "today" && active !== "feed") return null;
+
+  return (
+    <span
+      className={`flex shrink-0 items-center gap-1.5 font-mono text-[10px] ${
+        stale ? "text-ink" : "text-ink-faint"
+      }`}
+    >
+      <span aria-hidden="true" className={`h-1.5 w-1.5 rounded-full ${stale ? "bg-ink" : "bg-ink-muted"}`} />
+      {label}
+    </span>
+  );
+}
+
 /** ⚙ Admin — off the tab bar entirely (ADR 0023 decision 2), reached via a
  *  small gear icon in the app bar instead, matching `nav-ia.html`'s `.gear`
  *  button exactly. */

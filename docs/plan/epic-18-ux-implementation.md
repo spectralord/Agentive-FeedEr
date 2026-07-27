@@ -306,7 +306,7 @@ one flex row inside `max-w-xl` — no wrap, no scroll — which **overflows a 37
 - **Verification:** curl at 375px-equivalent; no overflow; snap cards still full-bleed above the
   bar; every previously-reachable route still reachable.
 
-### ☐ T18.11 — Freshness indicator in the app bar (§10.3, §10.10 #4)
+### ☑ T18.11 — Freshness indicator in the app bar (§10.3, §10.10 #4)
 
 `lastPolledAt` / `pipeline_runs.finishedAt` appear **only** under `/admin` — if the pipeline
 fails, a user-facing surface shows nothing. **Data already exists**; surface a compact "updated
@@ -912,3 +912,74 @@ visible state.
   gap this task didn't introduce and doesn't fix; it's exactly what T18.8, explicitly out of this
   pass's scope, is for.) Deleted the throwaway seed rows afterward; confirmed via `npm test` re-run
   that integration tests are unaffected (they truncate their own tables).
+
+**T18.11 (completed 2026-07-27):**
+- **Data source: the most recent successful `pipeline_runs` row, not per-source `lastPolledAt`.**
+  `getLatestSuccessfulRunFinishedAt` (new, in `src/lib/pipeline.ts`) — the task names both possible
+  sources; a successful run's `finishedAt` is the better proxy for "is the whole pipeline healthy",
+  which is the actual question §10.3 poses ("if the pipeline fails for three days the feed just
+  looks quiet"). A `running`/`failed` run, or no run at all, correctly reads as `null`.
+- **Color choice for "stale," and why it is *not* `--action` despite the accepted prototype's own
+  CSS using `--action` for its `.fresh .led` dot:** ADR 0016 point 1 reserves each of the four
+  colors to exactly one meaning, project-wide — `--action` already means "sourced Action line +
+  skill badge + mark as tried." A pipeline-health dot would be a fifth, unrelated meaning riding the
+  same green, which is exactly the kind of drift the ADR calls out by name (the "neutral badge
+  briefly used the warning color" bug). So neither `--caution` (explicitly forbidden by this task)
+  nor `--action` (forbidden by ADR 0016's own "one meaning" rule, even though the prototype visually
+  uses it there) was used. **Chosen instead: brightness escalation on a neutral token** — normal
+  is `text-ink-faint`/`bg-ink-muted` (quiet), stale is plain `text-ink`/`bg-ink` (the brightest
+  neutral in the palette, more visually prominent) — salience without spending a reserved color.
+  Documented in `src/lib/freshness.ts`'s doc comment so a future reader doesn't "fix" it back to
+  `--action` because the prototype shows green there.
+- **Threshold:** `FRESHNESS_STALE_MS = 36h` (`pipeline.ts`, next to the existing analogous
+  `STALE_RUN_MS` for in-progress-run staleness) — the design doc's own example threshold (§10.3:
+  "e.g. >36h").
+- **Split into two files on purpose:** `getLatestSuccessfulRunFinishedAt` (DB query, `pipeline.ts`)
+  vs. `getFreshnessInfo` (pure label/stale logic, new `src/lib/freshness.ts`) — the threshold
+  math and wording are unit-tested (`freshness.test.ts`, 4 cases: just-under/just-over the 36h
+  line, a normal recent run, and the never-run state) without touching Postgres; the query itself
+  is separately integration-tested (`pipeline.integration.test.ts`, 3 new cases nested inside the
+  existing `describe` block, reusing its `beforeEach` truncation and its single `afterAll(pool.end)`
+  — a second top-level `describe` with its own `afterAll(() => getPool().end())` would have ended
+  the pool twice across the file, breaking whichever describe runs second; caught this by actually
+  running the suite, not just reading the existing file's structure).
+- **Only shown on Today/Feed, per §10.3 and the prototype's own script** (`STATE.tab === "today" ||
+  "feed"` toggling `#fresh`'s `display`) — `AppBarFreshness` (`TabBar.tsx`) reuses `activeTabId()`
+  to hide itself on every other route, rather than the root layout trying to compute "is this
+  Today or Feed" without a client hook. The data is still fetched unconditionally in the layout
+  (one cheap query per request) since the layout has no server-side way to know which page is
+  being rendered beneath it; the component just doesn't render the visible span elsewhere. Verified
+  with a real headless-browser check (not just `grep`, which false-positived on the props embedded
+  in the client component's React Flight hydration payload) that `/skills` and `/saved`'s actual
+  rendered header text is exactly `"Skills\n⚙"` / `"Library\n⚙"` — no freshness text present.
+- **A real, build-breaking bug found and fixed:** making the root layout `async` and reading the DB
+  on every request broke `next build` outright once Postgres was stopped — Next's static-
+  optimization pass tries to execute the new query at **build time** for any page still eligible for
+  static prerendering (`/experience/new`, `/_not-found`, both static before this task), throwing
+  `ECONNREFUSED` and failing the whole build if the DB isn't reachable during the build step (a real
+  risk on a platform like Railway, where build and runtime DB access aren't guaranteed to be the
+  same). **Fixed by adding `export const dynamic = "force-dynamic"` to `layout.tsx` itself** —
+  consistent with every other page in this app already being `force-dynamic` for the identical
+  "never a frozen build-time snapshot" reason (§10.2). Confirmed by reproducing the failure first
+  (`service postgresql stop && rm -rf .next && npm run build` → prerender error on
+  `/experience/new`), then confirming the fix (same sequence, green, and the route table shows every
+  page — including the two that were previously static — as `ƒ` dynamic).
+- **Verification:** `npm run build` green (including the DB-down repro above). `npm test`: 337/338
+  (+7: 4 in `freshness.test.ts`, 3 in `pipeline.integration.test.ts`), same single pre-existing
+  `admin/auth.test.ts` failure. Two test bugs caught and fixed by actually running the suite rather
+  than trusting the first draft: `formatRelativeTime` switches to day-granularity past 24h, so a
+  35h-old timestamp reads `"1 day ago"` not `"35 hours ago"` (fixed the test's expectation, not the
+  formatter — this app's existing relative-time wording is correct and unchanged); and the
+  "ignores a still-running or failed run" integration test originally called `beginRun` then
+  `executeTrackedRun` back-to-back, which trips the existing concurrent-run guard
+  (`PipelineBusyError`) — rewrote it to `runAndFinish` the *same* row instead of starting a second
+  one. Live verification (fresh `npm run build` + `npm run start`, `service postgresql start &&
+  npm run db:migrate` first): seeded a stale (50h-old) successful run directly via `psql` and
+  confirmed (headless Chromium, not just curl, per the RSC-payload false-positive above) the app bar
+  reads `"updated 2 days ago"` on `/` and `/today` with `text-ink`/`bg-ink` (the escalated, still-
+  neutral treatment) and is entirely absent from `/skills`'s and `/saved`'s rendered header text;
+  truncated `pipeline_runs` to empty and confirmed both routes instead read `"no successful run
+  yet"`; re-seeded a 3h-old successful run and confirmed `"updated 3 hours ago"` with the normal
+  `text-ink-faint`/`bg-ink-muted` styling. Re-ran the 375×812 Playwright overflow check from T18.10
+  with the freshness text present on all six routes — still zero overflow. Deleted the seed rows
+  afterward (`TRUNCATE pipeline_runs RESTART IDENTITY`).

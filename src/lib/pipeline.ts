@@ -1,4 +1,4 @@
-import { and, desc, eq, gte } from "drizzle-orm";
+import { and, desc, eq, gte, isNotNull } from "drizzle-orm";
 import type { NodePgDatabase } from "drizzle-orm/node-postgres";
 import type * as schema from "@/db/schema";
 import { pipelineRuns } from "@/db/schema";
@@ -180,4 +180,30 @@ export async function executeTrackedRun(
 
 export async function recentRuns(db: NodePgDatabase<typeof schema>, limit = 15) {
   return db.select().from(pipelineRuns).orderBy(desc(pipelineRuns.startedAt)).limit(limit);
+}
+
+/** T18.11 (§10.3): past this age, a successful run is "stale" — the app-bar
+ *  freshness indicator escalates its salience (never to `--caution`; see
+ *  `getFreshnessInfo` in `src/lib/freshness.ts` for the non-alarm-color
+ *  treatment ADR 0016 requires). 36h matches the design doc's own example
+ *  threshold. */
+export const FRESHNESS_STALE_MS = 36 * 60 * 60_000;
+
+/** The most recent run that actually finished successfully — the signal the
+ *  §10.3 freshness indicator surfaces in the app bar. `lastPolledAt` (per
+ *  source) exists too, but a successful pipeline run is a better proxy for
+ *  "is the whole thing healthy", which is the actual question §10.3 asks:
+ *  "if the pipeline fails for three days the feed just looks quiet." Returns
+ *  `null` if no run has ever finished successfully (a distinct, honestly-
+ *  labelled state from "ran a while ago" — see `getFreshnessInfo`). */
+export async function getLatestSuccessfulRunFinishedAt(
+  db: NodePgDatabase<typeof schema>,
+): Promise<Date | null> {
+  const rows = await db
+    .select({ finishedAt: pipelineRuns.finishedAt })
+    .from(pipelineRuns)
+    .where(and(eq(pipelineRuns.status, "success"), isNotNull(pipelineRuns.finishedAt)))
+    .orderBy(desc(pipelineRuns.finishedAt))
+    .limit(1);
+  return rows[0]?.finishedAt ?? null;
 }
