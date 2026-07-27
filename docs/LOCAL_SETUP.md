@@ -120,7 +120,8 @@ docker volume rm agentive-feedr-pgdata
 npm run setup
 ```
 
-**The app boots but every page is empty** — the seed didn't run. `npm run db:seed`.
+**The app boots but every page is empty** — the seed didn't run, *or* you ran `npm test` since
+seeding. See the next entry.
 
 **`npm test` aborts with "TEST_DATABASE_URL is not set"** — your `.env` predates the split test
 database. Copy the `TEST_DATABASE_URL` line out of `.env.example` into it; the database is
