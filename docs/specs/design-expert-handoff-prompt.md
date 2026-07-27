@@ -1,5 +1,33 @@
 # Übergabe-Prompt: Design-Experten-Session (UX + Gamification)
 
+> ## ⚠️ SUPERSEDED — 2026-07-24
+>
+> **Do not paste the prompt below into a fresh session. It describes the product as it was
+> *before* the UX pass ran, and following it would redo work that is already done and merged.**
+>
+> Specifically, it is wrong about: the UI language (English since T3, not German), the visual
+> system (a token system with four reserved semantic colours now exists — ADR 0016), the screens
+> (Skills, Saved, Clusters shipped since), and it predates the standing design entirely.
+>
+> **Use the committed agents instead** — they live in the repo, are version-controlled alongside
+> the design they enforce, and can be re-run:
+>
+> | Agent | Use it for |
+> |---|---|
+> | `.claude/agents/design-partner.md` | Designing or reworking a surface — the role this prompt used to describe |
+> | `.claude/agents/design-review.md` | Checking an implemented frontend against the accepted design |
+>
+> The design itself now lives in `docs/specs/2026-07-24-ux-gamification-design.md`, its
+> prototypes in `docs/specs/prototypes/`, and its binding decisions in ADRs 0016–0023.
+>
+> The text below is kept **only as a record** of the original brief (ADR 0014's tier-2
+> deliverable) and of what the product looked like before the pass. It is history, not
+> instructions.
+
+---
+
+## Original prompt (historical — superseded, see above)
+
 > **Verwendung:** Diesen Text als Start-Prompt einer **eigenen** Session geben. Die Session
 > agiert als Design-Experte, schaut sich das Repo an und liefert konkrete, umsetzbare
 > Design-Vorschläge. Sie soll **nicht** sofort Code schreiben, sondern erst analysieren und
