@@ -23,7 +23,6 @@ export default function GlobalRouteError({
   reset: () => void;
 }) {
   useEffect(() => {
-    // eslint-disable-next-line no-console
     console.error(error);
   }, [error]);
 

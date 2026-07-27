@@ -11,23 +11,28 @@ import type { ExperienceReport } from "@/db/schema";
  * `deleteReport` escape hatch.
  */
 
-export const AUTHOR_TYPES = ["own", "curated", "colleague"] as const;
-export type AuthorType = (typeof AUTHOR_TYPES)[number];
+// Pure vocabulary lives in ./experienceReportTypes (no DB imports) so Client
+// Components can import it without dragging `pg` into the browser bundle;
+// imported here for local use and re-exported so existing server-side callers
+// are unaffected. One source of truth, two entry points.
+import {
+  AUTHOR_TYPES,
+  LIFECYCLE_STATES,
+  AUTHOR_TYPE_LABELS,
+  DEFAULT_REPORT_LIMIT,
+  isKnownAuthorType,
+} from "./experienceReportTypes";
+import type { AuthorType, LifecycleState } from "./experienceReportTypes";
 
-export const LIFECYCLE_STATES = ["active", "deprecated", "archived"] as const;
-export type LifecycleState = (typeof LIFECYCLE_STATES)[number];
-
-export const AUTHOR_TYPE_LABELS: Record<AuthorType, string> = {
-  own: "Own",
-  curated: "Curated",
-  colleague: "Colleague",
+export {
+  AUTHOR_TYPES,
+  LIFECYCLE_STATES,
+  AUTHOR_TYPE_LABELS,
+  DEFAULT_REPORT_LIMIT,
+  isKnownAuthorType,
 };
+export type { AuthorType, LifecycleState };
 
-export const DEFAULT_REPORT_LIMIT = 200;
-
-function isKnownAuthorType(value: string): value is AuthorType {
-  return (AUTHOR_TYPES as readonly string[]).includes(value);
-}
 
 export interface ListReportsOptions {
   /** Exact author_type match. Unknown values are ignored (no filter applied). */

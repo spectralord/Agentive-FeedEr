@@ -1,8 +1,12 @@
+"use client";
+
+import { useState } from "react";
 import Link from "next/link";
 import type { SkillNodeDetail as SkillNodeDetailData } from "@/lib/skills/map";
-import type { DisplayStatus } from "@/lib/skills/progress";
-import { PROGRESS_STATUSES } from "@/lib/skills/progress";
+import type { DisplayStatus } from "@/lib/skills/progressStatus";
+import { PROGRESS_STATUSES } from "@/lib/skills/progressStatus";
 import { formatRelativeTime } from "@/lib/relativeTime";
+import { submitFormOptimistic } from "@/lib/optimisticForm";
 import { BackLink } from "./BackLink";
 import { SkillRing } from "./SkillRing";
 
@@ -27,18 +31,57 @@ interface SkillNodeDetailProps {
 }
 
 /**
- * `/skills/[slug]` (T7.3, restyled T18.5 §5.1): a node's description, its
- * shared `SkillRing` (ADR 0016 point 2) + status label, associated content
- * (Reels + active Experience Reports, labeled), a status-change form per
- * reachable status (downgrade allowed — no gates), and the note history
- * (= this node's slice of the Adoption-Log, T7.4). Plain HTML forms posting
- * to `/skills/[slug]/progress`, same pattern as the Experience lifecycle
- * forms.
+ * `/skills/[slug]` (T7.3, restyled T18.5 §5.1, made optimistic T18.14 §10.8):
+ * a node's description, its shared `SkillRing` (ADR 0016 point 2) + status
+ * label, associated content (Reels + active Experience Reports, labeled), a
+ * status-change form per reachable status (downgrade allowed — no gates),
+ * and the note history (= this node's slice of the Adoption-Log, T7.4).
+ *
+ * Each status form is still a plain `<form method="post"
+ * action="/skills/[slug]/progress">` — the exact same route/mutation the
+ * page always posted to, still the **only** `setProgress` write path
+ * (§8.4). A `"use client"` `onSubmit` handler intercepts it *when JS has
+ * hydrated*, flips `status` state immediately (so the ring/label update
+ * without a reload or losing scroll position — §10.8's whole point) and
+ * POSTs the same form's own `FormData` via `submitFormOptimistic`; on
+ * failure it reverts `status` and shows a visible inline note. Without JS,
+ * no handler ever attaches — the form submits natively exactly as before.
+ * `key={status}` on `SkillRing` forces a fresh instance per real transition
+ * so its one-time fill animation (T18.5) replays on every change, not just
+ * the first one after a full-page load — see the Abweichungen note in the
+ * epic file for why this was needed once mutations stopped reloading the
+ * page.
  */
 export function SkillNodeDetail({ detail, previousStatus }: SkillNodeDetailProps) {
-  const { node, content, status, notes } = detail;
+  const { node, content, notes } = detail;
+  const [status, setStatus] = useState<DisplayStatus>(detail.status);
+  const [transitionFrom, setTransitionFrom] = useState<DisplayStatus | undefined>(previousStatus);
+  const [errorText, setErrorText] = useState<string | null>(null);
   const otherStatuses = PROGRESS_STATUSES.filter((s) => s !== status);
-  const justChanged = previousStatus !== undefined && previousStatus !== status;
+  const justChanged = transitionFrom !== undefined && transitionFrom !== status;
+
+  async function handleStatusSubmit(event: React.FormEvent<HTMLFormElement>, target: DisplayStatus) {
+    event.preventDefault();
+    const form = event.currentTarget;
+    const previous = status;
+    setErrorText(null);
+    setTransitionFrom(previous);
+    setStatus(target);
+
+    const ok = await submitFormOptimistic({
+      action: form.action,
+      method: form.method,
+      formData: new FormData(form),
+    });
+
+    if (!ok) {
+      setStatus(previous);
+      setTransitionFrom(undefined);
+      setErrorText("Couldn't save — try again.");
+      return;
+    }
+    form.reset();
+  }
 
   return (
     <div className="mx-auto max-w-xl px-4 pb-16">
@@ -55,12 +98,18 @@ export function SkillNodeDetail({ detail, previousStatus }: SkillNodeDetailProps
 
       <section className="mt-5 rounded-lg border border-hairline bg-surface px-4 py-4">
         <div className="flex items-center gap-4">
-          <SkillRing status={status} previousStatus={previousStatus} />
+          <SkillRing key={status} status={status} previousStatus={transitionFrom} />
           <div>
             <p className={`font-mono text-[11px] tracking-wide uppercase ${STATUS_LABEL_CLASS[status]}`}>
               {status}
             </p>
             {justChanged && <p className="mt-1 text-xs text-ink-muted">Marked as {status}.</p>}
+            {/* A failed request must roll back visibly (T18.14) — ADR 0016
+                reserves --caution for caveat/supersession only, so a mutation
+                error uses the same "brightness escalation on a neutral
+                token" treatment T18.11 already established for salience
+                without spending a reserved color. */}
+            {errorText && <p className="mt-1 text-xs font-medium text-ink">⚠ {errorText}</p>}
           </div>
         </div>
         <div className="mt-4 flex flex-col gap-3">
@@ -69,6 +118,7 @@ export function SkillNodeDetail({ detail, previousStatus }: SkillNodeDetailProps
               key={target}
               action={`/skills/${node.slug}/progress`}
               method="post"
+              onSubmit={(event) => handleStatusSubmit(event, target)}
               className="flex flex-wrap items-center gap-2"
             >
               <input type="hidden" name="status" value={target} />

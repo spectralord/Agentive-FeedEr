@@ -11,38 +11,28 @@ import type { UserProgress, UserProgressNote } from "@/db/schema";
  * `interactions` (Epic 6's save/hide/up/down), which stays reel-scoped.
  */
 
-export const PROGRESS_STATUSES = ["seen", "tried", "mastered"] as const;
-export type ProgressStatus = (typeof PROGRESS_STATUSES)[number];
+// T18.14: the pure status vocabulary lives in ./progressStatus (no DB
+// imports) so Client Components can use it without dragging `pg` into the
+// browser bundle. Imported here for local use and re-exported so every
+// existing server-side importer keeps working — one source of truth, two
+// entry points.
+import {
+  PROGRESS_STATUSES,
+  DEFAULT_PROGRESS_STATUS,
+  isProgressStatus,
+  UNTOUCHED_STATUS,
+  isDisplayStatus,
+} from "./progressStatus";
+import type { ProgressStatus, DisplayStatus } from "./progressStatus";
 
-/** Kept for the write path only (e.g. a future "declare a status" default) —
- *  the read path no longer uses this to paper over a missing row. See
- *  `UNTOUCHED_STATUS` below (T18.4/§9.4). */
-export const DEFAULT_PROGRESS_STATUS: ProgressStatus = "seen";
-
-export function isProgressStatus(value: string): value is ProgressStatus {
-  return (PROGRESS_STATUSES as readonly string[]).includes(value);
-}
-
-/**
- * T18.4 (§9.4): the fourth, purely-read-layer state. A `skill_nodes` row can
- * exist with *no* `user_progress` row at all — e.g. SkillTagger created it
- * off a Reel nobody has ever opened. That is genuinely different from a user
- * explicitly declaring "seen", and the DB already distinguishes the two;
- * this constant/type is what lets the read layer stop discarding the
- * distinction (previously: `?? DEFAULT_PROGRESS_STATUS` collapsed both into
- * "seen"). Never written to `user_progress` — it exists only in read-layer
- * return values (`SkillMapNode.status`, `SkillNodeDetail.status`) and the
- * `SkillRing` component's status prop.
- */
-export const UNTOUCHED_STATUS = "untouched" as const;
-
-/** The four honest states a UI can show, vs. the three a user can actually
- *  declare (`ProgressStatus`). */
-export type DisplayStatus = typeof UNTOUCHED_STATUS | ProgressStatus;
-
-export function isDisplayStatus(value: string): value is DisplayStatus {
-  return value === UNTOUCHED_STATUS || isProgressStatus(value);
-}
+export {
+  PROGRESS_STATUSES,
+  DEFAULT_PROGRESS_STATUS,
+  isProgressStatus,
+  UNTOUCHED_STATUS,
+  isDisplayStatus,
+};
+export type { ProgressStatus, DisplayStatus };
 
 /** All `user_progress` rows for a set of node ids, keyed by node id. Nodes
  *  with no row yet are simply absent from the map — callers surface that as

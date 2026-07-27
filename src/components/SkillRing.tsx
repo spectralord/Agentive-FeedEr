@@ -1,7 +1,7 @@
 "use client";
 
 import { useEffect, useState } from "react";
-import type { DisplayStatus } from "@/lib/skills/progress";
+import type { DisplayStatus } from "@/lib/skills/progressStatus";
 
 /**
  * ADR 0016 point 2 / T18.5 (§5.1): the ONE status-ring component, reused by

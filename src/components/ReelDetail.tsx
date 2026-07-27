@@ -1,9 +1,11 @@
 "use client";
 
+import { useState } from "react";
+import { submitFormOptimistic } from "@/lib/optimisticForm";
 import { EFFORT_LABELS } from "./labels";
 import { SkillRing } from "./SkillRing";
 import { SourceAvatar } from "./SourceAvatar";
-import type { ReelDetailData } from "./reelDetailData";
+import type { ReelDetailData, SkillTabView } from "./reelDetailData";
 
 /**
  * T18.6/T18.7 (§2.2, §7 #6/#8): the Detail overlay's tab system. Genuinely
@@ -163,26 +165,66 @@ function ContextPanel({ data }: { data: ReelDetailData }) {
  * a plain `<form method="post" action="/skills/[slug]/progress">` —
  * literally the same route + `setProgressBySlug` mutation the node detail
  * page's own status form posts to (§8.4's hard constraint: never a second
- * implementation). No optimistic UI layered on top here (T18.14, which
- * would generalize `ReelActions`' optimistic pattern to progress, is
- * out of scope for this epic's phase 1) — a real POST + redirect, same as
- * the freshness "Confirm superseded" form already does in `ReelCard.tsx`.
+ * implementation).
+ *
+ * T18.14 (§10.8): made optimistic. The form is unchanged (still the same
+ * action/method/hidden `status=tried` input — the no-JS fallback still
+ * works exactly as before); a `"use client"` `onSubmit` handler flips this
+ * panel's own local `status` state immediately (ring + label update,
+ * "Tried this already?" disappears, all without leaving the feed or
+ * losing scroll position — T18.7's own notes recorded this full-page-POST
+ * choice as deliberately conservative, pending exactly this task) and POSTs
+ * the same form's `FormData` via `submitFormOptimistic`; on failure it
+ * reverts and shows a visible inline note. `key={status}` forces a fresh
+ * `SkillRing` per real transition so the one-time fill animation (T18.5)
+ * plays here too, same reasoning as `SkillNodeDetail.tsx`.
  */
 function SkillPanel({ data }: { data: ReelDetailData }) {
   const skill = data.skill;
+  const [status, setStatus] = useState<SkillTabView["status"] | undefined>(skill?.status);
+  const [justMarked, setJustMarked] = useState(false);
+  const [errorText, setErrorText] = useState<string | null>(null);
   if (!skill) return null;
+  const originalStatus = skill.status;
+  const currentStatus = status ?? originalStatus;
+
+  async function handleMarkTried(event: React.FormEvent<HTMLFormElement>) {
+    event.preventDefault();
+    const form = event.currentTarget;
+    setErrorText(null);
+    setJustMarked(false);
+    setStatus("tried");
+
+    const ok = await submitFormOptimistic({
+      action: form.action,
+      method: form.method,
+      formData: new FormData(form),
+    });
+
+    if (!ok) {
+      setStatus(originalStatus);
+      setErrorText("Couldn't save — try again.");
+      return;
+    }
+    setJustMarked(true);
+  }
 
   return (
     <>
       <div className="flex items-center gap-3.5">
-        <SkillRing status={skill.status} size={52} />
+        <SkillRing
+          key={currentStatus}
+          status={currentStatus}
+          previousStatus={currentStatus === "tried" && originalStatus === "seen" ? "seen" : undefined}
+          size={52}
+        />
         <div>
           <p className="text-[15.5px] font-semibold text-ink">{skill.title}</p>
           <p className="mt-0.5 text-[11px] text-ink-faint">{skill.theme}</p>
           <p
-            className={`mt-0.5 font-mono text-[10.5px] uppercase tracking-wide ${skillStatusTextClass(skill.status)}`}
+            className={`mt-0.5 font-mono text-[10.5px] uppercase tracking-wide ${skillStatusTextClass(currentStatus)}`}
           >
-            {skill.status}
+            {currentStatus}
           </p>
         </div>
       </div>
@@ -199,11 +241,12 @@ function SkillPanel({ data }: { data: ReelDetailData }) {
         </div>
       )}
 
-      {skill.status === "seen" && (
+      {currentStatus === "seen" && (
         <form
           method="post"
           action={`/skills/${skill.slug}/progress`}
           data-no-open
+          onSubmit={handleMarkTried}
           className="mt-4 flex items-center justify-between gap-2.5 rounded-xl border border-action/30 bg-action-soft p-3"
         >
           <input type="hidden" name="status" value="tried" />
@@ -216,7 +259,14 @@ function SkillPanel({ data }: { data: ReelDetailData }) {
           </button>
         </form>
       )}
-      {skill.status === "mastered" && (
+      {justMarked && currentStatus === "tried" && (
+        <p className="mt-4 text-xs text-ink-muted">Marked as tried.</p>
+      )}
+      {/* Visible rollback (T18.14) — same neutral-brightness treatment as
+          SkillNodeDetail.tsx, never --caution (ADR 0016: caveat/supersession
+          only). */}
+      {errorText && <p className="mt-4 text-xs font-medium text-ink">⚠ {errorText}</p>}
+      {currentStatus === "mastered" && (
         <p className="mt-4 rounded-xl border border-gold/30 bg-gold-soft p-3 text-xs text-gold">
           ★ Mastered — confirmed through the Adoption Log.
         </p>

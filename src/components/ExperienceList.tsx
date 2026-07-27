@@ -1,20 +1,6 @@
-import Link from "next/link";
 import type { ExperienceReport } from "@/db/schema";
-import { AUTHOR_TYPE_LABELS } from "@/lib/experienceReports";
-import { formatRelativeTime } from "@/lib/relativeTime";
 import { EmptyState } from "./EmptyState";
-
-function Badge({
-  children,
-  tone = "zinc",
-}: {
-  children: React.ReactNode;
-  tone?: "zinc" | "amber";
-}) {
-  const cls =
-    tone === "amber" ? "bg-amber-900/60 text-amber-200" : "bg-zinc-800 text-zinc-300";
-  return <span className={`rounded-full px-2 py-0.5 text-xs ${cls}`}>{children}</span>;
-}
+import { ExperienceReportItem } from "./ExperienceReportItem";
 
 /**
  * `/experience` (T9.4): a compact chronological list of reports, clearly
@@ -23,6 +9,10 @@ function Badge({
  * `whitespace-pre-wrap` preformatted text (T9.7): JSX text content is always
  * HTML-escaped by React, so this can never execute injected markup — no
  * markdown lib is available without a new dependency (documented deviation).
+ *
+ * Stays a plain Server Component; each row is `ExperienceReportItem.tsx`
+ * (T18.14, §10.8) — a `"use client"` component owning the optimistic
+ * lifecycle state for that one report.
  */
 export function ExperienceList({ reports }: { reports: ExperienceReport[] }) {
   // T18.12 (§10.7): routed through the shared EmptyState component.
@@ -33,122 +23,8 @@ export function ExperienceList({ reports }: { reports: ExperienceReport[] }) {
   return (
     <ol className="mx-auto flex max-w-xl flex-col divide-y divide-zinc-800/60 px-4 pb-16">
       {reports.map((report) => (
-        <li key={report.id} className="flex flex-col gap-2 py-4">
-          <div className="flex flex-wrap items-center gap-2 text-xs text-zinc-400">
-            <time dateTime={report.createdAt.toISOString()}>
-              {formatRelativeTime(report.createdAt)}
-            </time>
-            <span aria-hidden="true">·</span>
-            <span>{report.authorLabel}</span>
-            <Badge>{AUTHOR_TYPE_LABELS[report.authorType]}</Badge>
-            {report.important && <Badge>⭐ important</Badge>}
-            {report.lifecycleState === "deprecated" && <Badge tone="amber">⚠️ deprecated</Badge>}
-            {report.lifecycleState === "archived" && <Badge>🗄️ archived</Badge>}
-          </div>
-
-          <Link
-            href={`/experience/${report.id}/edit`}
-            className="text-sm font-medium text-zinc-100 hover:underline"
-          >
-            {report.title}
-          </Link>
-
-          {report.lifecycleState !== "active" && report.lifecycleReason && (
-            <p className="text-xs text-amber-300">
-              Reason: {report.lifecycleReason}
-              {report.supersededByReportId !== null && (
-                <>
-                  {" "}
-                  ·{" "}
-                  <Link
-                    href={`/experience/${report.supersededByReportId}/edit`}
-                    className="underline"
-                  >
-                    superseded by #{report.supersededByReportId}
-                  </Link>
-                </>
-              )}
-            </p>
-          )}
-
-          <p className="whitespace-pre-wrap text-sm text-zinc-300">{report.body}</p>
-
-          <LifecycleActions report={report} />
-        </li>
+        <ExperienceReportItem key={report.id} report={report} />
       ))}
     </ol>
-  );
-}
-
-const actionButtonClass =
-  "rounded-full bg-zinc-800 px-2.5 py-1 text-xs text-zinc-300 transition-colors hover:bg-zinc-700";
-const actionInputClass =
-  "w-28 rounded-full bg-zinc-800 px-2 py-1 text-xs text-zinc-200 placeholder:text-zinc-500 outline-none focus:ring-1 focus:ring-zinc-500";
-
-/**
- * Lifecycle transition forms (T9.6): plain `<form method="post">`s posting to
- * `/experience/[id]/lifecycle`, one per action so each is a single click (or
- * a single curl POST) — no client JS needed. Deliberately separate from the
- * hard-delete escape hatch (ADR 0008), which has no UI here.
- */
-function LifecycleActions({ report }: { report: ExperienceReport }) {
-  if (report.lifecycleState === "active") {
-    return (
-      <div className="flex flex-wrap items-center gap-2 pt-1">
-        <form
-          action={`/experience/${report.id}/lifecycle`}
-          method="post"
-          className="flex flex-wrap items-center gap-1"
-        >
-          <input type="hidden" name="state" value="deprecated" />
-          <input type="text" name="reason" placeholder="Reason (optional)" className={actionInputClass} />
-          <input
-            type="number"
-            name="supersededByReportId"
-            placeholder="superseded by #"
-            className={actionInputClass}
-          />
-          <button type="submit" className={actionButtonClass}>
-            Mark as deprecated
-          </button>
-        </form>
-        <form action={`/experience/${report.id}/lifecycle`} method="post">
-          <input type="hidden" name="state" value="archived" />
-          <button type="submit" className={actionButtonClass}>
-            Archive
-          </button>
-        </form>
-      </div>
-    );
-  }
-
-  if (report.lifecycleState === "deprecated") {
-    return (
-      <div className="flex flex-wrap items-center gap-2 pt-1">
-        <form action={`/experience/${report.id}/lifecycle`} method="post">
-          <input type="hidden" name="state" value="active" />
-          <button type="submit" className={actionButtonClass}>
-            Reactivate
-          </button>
-        </form>
-        <form action={`/experience/${report.id}/lifecycle`} method="post">
-          <input type="hidden" name="state" value="archived" />
-          <button type="submit" className={actionButtonClass}>
-            Archive
-          </button>
-        </form>
-      </div>
-    );
-  }
-
-  return (
-    <div className="flex flex-wrap items-center gap-2 pt-1">
-      <form action={`/experience/${report.id}/lifecycle`} method="post">
-        <input type="hidden" name="state" value="active" />
-        <button type="submit" className={actionButtonClass}>
-          Reactivate
-        </button>
-      </form>
-    </div>
   );
 }
