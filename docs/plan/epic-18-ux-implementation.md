@@ -325,7 +325,7 @@ Orphan pages with inconsistent back navigation (`/clusters/[id]`, `/skills/[slug
 `/experience/[id]/edit`, …). Define **one** rule for pages that are not tab destinations and
 apply it everywhere. **Verification:** every non-tab page has a consistent, working back path.
 
-### ☐ T18.14 — Optimistic mutations for progress/lifecycle (§10.8, §10.10 #9)
+### ☑ T18.14 — Optimistic mutations for progress/lifecycle (§10.8, §10.10 #9)
 
 Every mutation is currently a full-page POST + redirect. **The pattern already exists** in
 `ReelActions` (Epic 6) — extend it to progress (`setProgress`) and lifecycle actions.
@@ -1148,3 +1148,37 @@ visible state.
   Reel to save it for later."; curled `/experience`, confirmed "No reports for this filter
   combination."
 
+
+---
+
+## Epic 18 — complete (2026-07-25)
+
+All of Phase 1 (T18.1–T18.7) and Phase 2 (T18.8–T18.14) are built, reviewed and merged.
+Build green, typecheck clean, **363/363 tests**.
+
+### Recurring hazard worth institutionalising: the client/server boundary
+
+This bit **five times** in one epic and cost real time each go. Making a component
+`"use client"` and then **value**-importing anything from a DB-backed module pulls
+`pg`/`dns`/`fs`/`net` into the browser bundle and fails `next build` — often far from the edit
+that caused it.
+
+Occurrences: `ReelStackCard` → `reelDetailData` (T18.6) · the root layout reading the DB for the
+freshness indicator (T18.11) · `SkillRing`/`SkillNodeDetail` → `skills/progress` (T18.14) ·
+`ExperienceReportItem` → `experienceReports` (T18.14).
+
+**The established fix, use it by default:** split the module in two —
+- a **pure** module with the vocabulary (constants, types, guards) and **no DB imports**:
+  `src/lib/skills/progressStatus.ts`, `src/lib/experienceReportTypes.ts`;
+- the DB-backed module **imports it for local use and re-exports it**, so every existing
+  server-side caller is untouched. One source of truth, two entry points.
+
+Client Components import the pure module. `import type` is always safe (erased at compile time);
+it is **value** imports that pull the graph in. When a whole page must read the DB from a layout,
+`export const dynamic = "force-dynamic"` is the escape hatch (otherwise Next tries the query at
+build time for statically-eligible routes).
+
+### Known pre-existing lint error (not from this epic)
+`npx eslint src` reports one error — `react-hooks/purity`, `Date.now()` during render in
+`src/app/overview/page.tsx:43`. Verified pre-existing by stashing this epic's changes. `npm run
+build` + `npm test` are the DoD gates and both pass; worth fixing separately.
