@@ -1,0 +1,31 @@
+# Local dev Postgres ONLY — the Next.js app itself runs on the host via
+# `npm run dev` (faster feedback loop, no rebuild-on-change through a
+# container). See docs/LOCAL_SETUP.md.
+#
+# Quick start: `npm run db:up` (wraps `docker compose up -d --wait`).
+#
+# Port already taken on your machine? Either:
+#   POSTGRES_PORT=5433 npm run db:up
+# or add `POSTGRES_PORT=5433` to your `.env` (docker compose reads `.env`
+# from the project root automatically) — then update DATABASE_URL in `.env`
+# to match the same port.
+services:
+  db:
+    image: postgres:16
+    restart: unless-stopped
+    environment:
+      POSTGRES_USER: feedr
+      POSTGRES_PASSWORD: feedr_local_dev
+      POSTGRES_DB: feedr_dev
+    ports:
+      - "${POSTGRES_PORT:-5432}:5432"
+    volumes:
+      - agentive-feedr-pgdata:/var/lib/postgresql/data
+    healthcheck:
+      test: ["CMD-SHELL", "pg_isready -U feedr -d feedr_dev"]
+      interval: 2s
+      timeout: 3s
+      retries: 20
+
+volumes:
+  agentive-feedr-pgdata:

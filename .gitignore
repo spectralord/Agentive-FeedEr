@@ -32,6 +32,9 @@ yarn-error.log*
 
 # env files (can opt-in for committing if needed)
 .env*
+# ...but the template must be committable — this blanket ignore is why
+# `.env.example` never existed despite docs/plan/README.md §4 claiming it did.
+!.env.example
 
 # vercel
 .vercel
