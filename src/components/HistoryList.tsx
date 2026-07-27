@@ -1,6 +1,7 @@
 import type { FeedReel } from "@/lib/feed";
 import { isBestPractice, isNew, isSota } from "@/lib/labels";
 import { formatRelativeTime } from "@/lib/relativeTime";
+import { EmptyState } from "./EmptyState";
 import { CATEGORY_LABELS, MATURITY_LABELS } from "./labels";
 
 function Badge({ children }: { children: React.ReactNode }) {
@@ -15,12 +16,9 @@ function Badge({ children }: { children: React.ReactNode }) {
  * src/lib/labels.ts functions as ReelCard/SOTA — no duplicated logic.
  */
 export function HistoryList({ reels }: { reels: FeedReel[] }) {
+  // T18.12 (§10.7): routed through the shared EmptyState component.
   if (reels.length === 0) {
-    return (
-      <p className="mx-auto max-w-xl px-4 py-10 text-center text-sm text-zinc-400">
-        No Reels for this filter combination.
-      </p>
-    );
+    return <EmptyState variant="inline" title="No Reels for this filter combination." />;
   }
 
   return (

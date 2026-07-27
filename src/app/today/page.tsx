@@ -1,4 +1,5 @@
 import Link from "next/link";
+import { EmptyState } from "@/components/EmptyState";
 import { ReelCard } from "@/components/ReelCard";
 import { ResurfaceCard } from "@/components/ResurfaceCard";
 import { getInteractionFlags, getResurfacingCandidates } from "@/lib/interactions";
@@ -15,21 +16,14 @@ function formatToday(now: Date): string {
   return new Intl.DateTimeFormat("en-GB", { day: "2-digit", month: "2-digit", year: "numeric" }).format(now);
 }
 
-function EmptyState() {
-  return (
-    <div className="mx-auto flex h-[calc(100dvh-var(--tabbar-h))] max-w-xl flex-col items-center justify-center gap-3 px-6 text-center">
-      <p className="text-lg font-medium">Nothing important today</p>
-      <p className="text-sm text-zinc-400">— enjoy the quiet.</p>
-    </div>
-  );
-}
-
 export default async function TodayPage() {
   const now = new Date();
   const { reels, usedFallback } = await getTodayTopReels(now);
 
+  // T18.12 (§10.7): routed through the shared EmptyState component — this
+  // copy was already good ("say what is true"), kept verbatim.
   if (reels.length === 0) {
-    return <EmptyState />;
+    return <EmptyState title="Nothing important today" message="— enjoy the quiet." />;
   }
 
   const interactionFlags = await getInteractionFlags(reels.map((r) => r.id));

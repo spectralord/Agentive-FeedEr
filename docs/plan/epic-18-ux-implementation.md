@@ -313,7 +313,7 @@ fails, a user-facing surface shows nothing. **Data already exists**; surface a c
 Xh ago" signal in the app bar. Must **not** use `--caution` for the normal case (ADR 0016 — that
 token is caveat/supersession only). **Verification:** curl with a recent and a stale run.
 
-### ☐ T18.12 — Shared empty-state component (§10.7, §10.10 #6)
+### ☑ T18.12 — Shared empty-state component (§10.7, §10.10 #6)
 
 Empty states are inconsistent and **one is developer-facing** — `src/app/page.tsx`'s empty feed
 tells the user to run `npm run job:daily`. Extract one shared component; drop the dev copy.
@@ -1093,3 +1093,58 @@ visible state.
   renders. Forced both named 404s (`/clusters/999999`, `/skills/does-not-exist`) and confirmed via
   Playwright that `not-found.tsx` renders in both. No skeleton reaches for `--gold`/`--caution`
   (asserted in `skeletons.test.tsx`, `not-found.test.tsx`, `error.test.tsx`).
+
+**T18.12 (completed 2026-07-27):**
+- **New file:** `src/components/EmptyState.tsx` — one component, three variants matching the three
+  shapes empty states already took across the app (kept, not invented): `"page"` (full remaining-
+  viewport height, centered — the feed, Today), `"inline"` (a centered paragraph inside the same
+  `max-w-xl` column the list itself would render — Saved, Experience, History), `"compact"` (a
+  short left-aligned muted line for a section embedded inside a page with other content around it
+  — SOTA, Adoption Log, the Skill Map's own empty case). `title` + optional `message` + optional
+  `action: {href, label}` (a real `Link`, e.g. the feed's "Reset filters").
+- **Routed every empty state found through it** (`grep -rn "length === 0"` across `src/components`
+  and `src/app` was the census): `src/app/page.tsx` (feed, both the filtered and true-empty
+  cases), `src/app/today/page.tsx`, `SavedList.tsx`, `ExperienceList.tsx`, `HistoryList.tsx`
+  (`/overview`'s History section), `SotaSection.tsx`, `AdoptionLog.tsx`, `SkillMap.tsx`. **Not**
+  routed: `SkillNodeDetail.tsx`'s "Nothing tagged with this skill yet."/"No notes yet." and
+  `ReelDetail.tsx`'s Context-tab "Single-sourced." — these are short in-context micro-notes inside
+  an already-rendered detail view (not a surface whose whole point is "nothing to show"), and
+  `admin/page.tsx`'s two `length === 0` checks — an ops-only surface, explicitly out of scope
+  per the epic's own "user-facing surface" framing (T18.12's own verification bullet: "no CLI
+  instructions in *user-facing* text").
+- **Dropped the one developer-facing copy, per the task's explicit instruction:** the feed's true-
+  empty state no longer says "The pipeline runs from Epic 1/2 — collect sources with `npm run
+  job:daily`". New copy: title **"The feed is empty"**, message **"Nothing has come in yet — new
+  Reels appear automatically as sources are processed. Check back soon."** — true (this app has no
+  manual-only ingestion path a reader could act on) and meaningful to someone who has never seen
+  this repo. The filtered-empty case keeps its existing "Reset filters" action link, now rendered
+  through `EmptyState`'s `action` prop instead of a bespoke inline `<a>`.
+- **Every other empty state's existing copy was kept verbatim**, only re-styled through the shared
+  component (design doc §10.7 names `/today` and `/saved`'s copy as "already good... should be the
+  model" — no reason to rewrite what wasn't broken): "Nothing important today — enjoy the quiet.",
+  "Nothing saved yet — tap 🔖 on a Reel." (split into title/message, same words), "No reports for
+  this filter combination.", "No Reels for this filter combination.", "No SOTA Reels yet.", "No
+  adopted notes yet.", "No active skill nodes yet — confirm a proposal above to create one."
+- **Not done (flagged, not fixed — out of the task's explicit checklist):** §10.7's "related minor
+  hierarchy bug" (`/saved` and `/experience` use `text-sm` page titles above 18px card titles) —
+  the epic task handed to this session lists only the empty-state extraction and the CLI-copy
+  drop as T18.12's scope; the title-hierarchy note is called "related" and "minor" in the design
+  doc, not part of the task's own bullet list or verification steps, so left untouched to keep the
+  diff scoped to what was asked.
+- **Verification:** `service postgresql start && npm run db:migrate`, then `npm run build` +
+  `npm test` green (359/359, +7 net new: `EmptyState.test.tsx`). `grep -rniE "npm run|job:daily"
+  src/app src/components --include=*.tsx` (excluding test files) returns zero hits outside this
+  task's own explanatory code comments (confirmed by hand — the two remaining matches are both
+  comments describing the change, not rendered copy). Live check (fresh `rm -rf .next && npm run
+  build && npm run start`, `service postgresql start && npm run db:migrate` first, against the
+  dev DB's current empty state — no reels/reports/saves seeded): curled `/`, confirmed the raw
+  HTML contains "The feed is empty" / "Nothing has come in yet" and **not** "npm run"/"job:daily"
+  (the previous run of this same check, before restarting a stray server process left over from
+  the T18.8 verification round, had accidentally hit that stale pre-edit process and still showed
+  the old copy — caught by noticing the literal old wording in the response, traced to a `next-
+  server` process from an earlier `npm run start` that `pkill -f "next start"` doesn't match
+  since the child process is named `next-server`, not `next start`; killed by PID and re-verified
+  against a genuinely fresh server); curled `/saved`, confirmed "Nothing saved yet" + "Tap 🔖 on a
+  Reel to save it for later."; curled `/experience`, confirmed "No reports for this filter
+  combination."
+

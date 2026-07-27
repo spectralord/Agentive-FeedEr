@@ -2,6 +2,7 @@ import Link from "next/link";
 import type { FeedCategory, FeedReel } from "@/lib/feed";
 import { CATEGORIES } from "@/lib/enrichment/schema";
 import { formatRelativeTime } from "@/lib/relativeTime";
+import { EmptyState } from "./EmptyState";
 import { CATEGORY_LABELS } from "./labels";
 
 const MAX_PER_CATEGORY = 5;
@@ -52,7 +53,7 @@ export function SotaSection({ groups }: { groups: SotaGroup[] }) {
       </h2>
 
       {groups.length === 0 ? (
-        <p className="mt-2 text-sm text-zinc-400">No SOTA Reels yet.</p>
+        <EmptyState variant="compact" title="No SOTA Reels yet." />
       ) : (
         groups.map((group) => (
           <div key={group.category} className="mt-4">

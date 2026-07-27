@@ -2,6 +2,7 @@ import Link from "next/link";
 import type { ExperienceReport } from "@/db/schema";
 import { AUTHOR_TYPE_LABELS } from "@/lib/experienceReports";
 import { formatRelativeTime } from "@/lib/relativeTime";
+import { EmptyState } from "./EmptyState";
 
 function Badge({
   children,
@@ -24,12 +25,9 @@ function Badge({
  * markdown lib is available without a new dependency (documented deviation).
  */
 export function ExperienceList({ reports }: { reports: ExperienceReport[] }) {
+  // T18.12 (§10.7): routed through the shared EmptyState component.
   if (reports.length === 0) {
-    return (
-      <p className="mx-auto max-w-xl px-4 py-10 text-center text-sm text-zinc-400">
-        No reports for this filter combination.
-      </p>
-    );
+    return <EmptyState variant="inline" title="No reports for this filter combination." />;
   }
 
   return (

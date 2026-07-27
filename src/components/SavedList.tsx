@@ -1,5 +1,6 @@
 import type { SavedReel } from "@/lib/interactions";
 import { formatRelativeTime } from "@/lib/relativeTime";
+import { EmptyState } from "./EmptyState";
 import { CATEGORY_LABELS, MATURITY_LABELS } from "./labels";
 
 function Badge({ children }: { children: React.ReactNode }) {
@@ -15,11 +16,12 @@ function Badge({ children }: { children: React.ReactNode }) {
  * docs/plan/epic-6-interactions.md.
  */
 export function SavedList({ reels }: { reels: SavedReel[] }) {
+  // T18.12 (§10.7): routed through the shared EmptyState component — same
+  // copy as before, already a good model ("say what is true, and where
+  // useful say what would change it").
   if (reels.length === 0) {
     return (
-      <p className="mx-auto max-w-xl px-4 py-10 text-center text-sm text-zinc-400">
-        Nothing saved yet — tap 🔖 on a Reel.
-      </p>
+      <EmptyState variant="inline" title="Nothing saved yet" message="Tap 🔖 on a Reel to save it for later." />
     );
   }
 

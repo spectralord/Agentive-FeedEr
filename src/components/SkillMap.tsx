@@ -1,5 +1,6 @@
 import Link from "next/link";
 import type { SkillMapTheme } from "@/lib/skills/map";
+import { EmptyState } from "./EmptyState";
 import { SkillRing } from "./SkillRing";
 
 const GRID_RING_SIZE = 40;
@@ -15,9 +16,10 @@ const GRID_RING_SIZE = 40;
 export function SkillMap({ themes }: { themes: SkillMapTheme[] }) {
   if (themes.length === 0) {
     return (
-      <p className="mt-6 text-sm text-ink-muted">
-        No active skill nodes yet — confirm a proposal above to create one.
-      </p>
+      <EmptyState
+        variant="compact"
+        title="No active skill nodes yet — confirm a proposal above to create one."
+      />
     );
   }
 

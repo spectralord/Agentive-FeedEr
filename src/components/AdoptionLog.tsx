@@ -1,6 +1,7 @@
 import Link from "next/link";
 import type { AdoptionLogEntry } from "@/lib/skills/progress";
 import { formatRelativeTime } from "@/lib/relativeTime";
+import { EmptyState } from "./EmptyState";
 
 /**
  * `/skills` (T7.4): "what I actually adopted through the tool" — every
@@ -11,7 +12,7 @@ import { formatRelativeTime } from "@/lib/relativeTime";
  */
 export function AdoptionLog({ entries }: { entries: AdoptionLogEntry[] }) {
   if (entries.length === 0) {
-    return <p className="mt-4 text-sm text-zinc-500">No adopted notes yet.</p>;
+    return <EmptyState variant="compact" title="No adopted notes yet." />;
   }
 
   return (

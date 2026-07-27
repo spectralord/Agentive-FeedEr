@@ -2,6 +2,7 @@ import Link from "next/link";
 import { DEFAULT_FEED_LIMIT, getReels, groupReelsForFeed } from "@/lib/feed";
 import { getInteractionFlags } from "@/lib/interactions";
 import { getSkillTabInfoForSlugs } from "@/lib/skills/reelSkillTab";
+import { EmptyState } from "@/components/EmptyState";
 import { ReelCard } from "@/components/ReelCard";
 import { ReelStackCard } from "@/components/ReelStackCard";
 import { buildReelDetailData } from "@/components/reelDetailData";
@@ -13,27 +14,24 @@ interface FeedPageProps {
   searchParams: Promise<FeedSearchParams>;
 }
 
-function EmptyState({ hasFilters }: { hasFilters: boolean }) {
-  return (
-    <div className="mx-auto flex h-[calc(100dvh-var(--tabbar-h))] max-w-xl flex-col items-center justify-center gap-3 px-6 text-center">
-      <p className="text-lg font-medium">No Reels yet</p>
-      {hasFilters ? (
-        <p className="text-sm text-zinc-400">
-          No Reels for this filter combination.{" "}
-          <a href="/" className="underline decoration-zinc-700 hover:text-zinc-300">
-            Reset filters
-          </a>
-          .
-        </p>
-      ) : (
-        <p className="text-sm text-zinc-400">
-          The pipeline runs from Epic 1/2 — collect sources with{" "}
-          <code className="rounded bg-zinc-800 px-1.5 py-0.5 font-mono text-xs">
-            npm run job:daily
-          </code>
-        </p>
-      )}
-    </div>
+/**
+ * T18.12 (§10.7): routed through the shared `EmptyState` component. The
+ * previous no-filters copy told the reader to run `npm run job:daily` — a
+ * CLI instruction in a user-facing surface. Dropped; replaced with copy that
+ * is true and meaningful to someone who has never seen this repo.
+ */
+function FeedEmptyState({ hasFilters }: { hasFilters: boolean }) {
+  return hasFilters ? (
+    <EmptyState
+      title="No Reels for this filter"
+      message="Nothing matches this combination of filters."
+      action={{ href: "/", label: "Reset filters" }}
+    />
+  ) : (
+    <EmptyState
+      title="The feed is empty"
+      message="Nothing has come in yet — new Reels appear automatically as sources are processed. Check back soon."
+    />
   );
 }
 
@@ -63,7 +61,7 @@ export default async function FeedPage({ searchParams }: FeedPageProps) {
     <>
       <FilterBar current={params} />
       {reels.length === 0 ? (
-        <EmptyState hasFilters={hasFilters} />
+        <FeedEmptyState hasFilters={hasFilters} />
       ) : (
         <div className="feed -mt-[var(--header-h)] h-[calc(100dvh-var(--tabbar-h))] snap-y snap-mandatory overflow-y-auto overflow-x-hidden">
           {feedItems.map((item) =>
