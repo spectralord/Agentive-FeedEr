@@ -13,19 +13,29 @@ function daysAgo(n: number): Date {
 
 describe("isNew", () => {
   it("is true just inside the NEW_DAYS window", () => {
-    expect(isNew({ publishedAt: daysAgo(NEW_DAYS - 0.01) }, NOW)).toBe(true);
+    expect(isNew({ publishedAt: daysAgo(NEW_DAYS - 0.01) }, NOW, NEW_DAYS)).toBe(true);
   });
 
   it("is false exactly at the NEW_DAYS boundary (strict >)", () => {
-    expect(isNew({ publishedAt: daysAgo(NEW_DAYS) }, NOW)).toBe(false);
+    expect(isNew({ publishedAt: daysAgo(NEW_DAYS) }, NOW, NEW_DAYS)).toBe(false);
   });
 
   it("is false just outside the NEW_DAYS window", () => {
-    expect(isNew({ publishedAt: daysAgo(NEW_DAYS + 0.01) }, NOW)).toBe(false);
+    expect(isNew({ publishedAt: daysAgo(NEW_DAYS + 0.01) }, NOW, NEW_DAYS)).toBe(false);
   });
 
   it("is true for something published right now", () => {
-    expect(isNew({ publishedAt: NOW }, NOW)).toBe(true);
+    expect(isNew({ publishedAt: NOW }, NOW, NEW_DAYS)).toBe(true);
+  });
+
+  it("honours an injected window instead of the env default", () => {
+    // The reason `newDays` is a parameter at all: Client Components cannot
+    // read env() in the browser (DATABASE_URL is undefined there), so the
+    // server resolves the window and passes it down. A caller-supplied
+    // value must therefore actually win over the default.
+    const publishedAt = daysAgo(10);
+    expect(isNew({ publishedAt }, NOW, 7)).toBe(false);
+    expect(isNew({ publishedAt }, NOW, 30)).toBe(true);
   });
 });
 

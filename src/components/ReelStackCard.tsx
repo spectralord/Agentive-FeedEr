@@ -30,6 +30,15 @@ export interface ReelStackCardProps {
    * this boundary isn't respected.
    */
   detail: ReelDetailData;
+  /**
+   * `env().NEW_DAYS`, resolved by the calling Server Component. Same
+   * boundary rule as `detail` above: this is a Client Component, so neither
+   * it nor `ReelCardBody` beneath it may call `env()` — the zod schema
+   * requires `DATABASE_URL`, which is undefined in the browser, and the
+   * throw surfaces as a hydration-time error boundary rather than a build
+   * failure. Resolve it on the server, pass the plain number down.
+   */
+  newDays: number;
 }
 
 /**
@@ -53,7 +62,14 @@ export interface ReelStackCardProps {
  * the remaining member(s) — as a solo card if only one is left (see
  * groupReelsForFeed in src/lib/feed.ts).
  */
-export function ReelStackCard({ clusterTitle, primary, others, interactions, detail }: ReelStackCardProps) {
+export function ReelStackCard({
+  clusterTitle,
+  primary,
+  others,
+  interactions,
+  detail,
+  newDays,
+}: ReelStackCardProps) {
   const [expanded, setExpanded] = useState(false);
   const totalSources = 1 + others.length;
 
@@ -105,7 +121,7 @@ export function ReelStackCard({ clusterTitle, primary, others, interactions, det
 
   return (
     <ReelCardShell reelId={primary.id} initial={interactions ?? NO_INTERACTIONS} detail={detail}>
-      <ReelCardBody reel={primary} stackBanner={banner} />
+      <ReelCardBody reel={primary} stackBanner={banner} newDays={newDays} />
     </ReelCardShell>
   );
 }

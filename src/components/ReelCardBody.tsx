@@ -117,8 +117,19 @@ function ScoreMini({ relevance, quality }: { relevance: number; quality: number 
  * affordance earns its keep (flagged for review, since the epic's own
  * enumerated Compact composition doesn't explicitly list it).
  */
-export function ReelCardBody({ reel, stackBanner }: { reel: FeedReel; stackBanner?: React.ReactNode }) {
-  const showNewBadge = isNew(reel);
+export function ReelCardBody({
+  reel,
+  stackBanner,
+  newDays,
+}: {
+  reel: FeedReel;
+  stackBanner?: React.ReactNode;
+  /** env().NEW_DAYS, resolved by a Server Component and passed down. This
+   *  component is reached from the client bundle via `ReelStackCard`, so it
+   *  must never read `env()` itself — see `isNew`'s doc comment. */
+  newDays: number;
+}) {
+  const showNewBadge = isNew(reel, new Date(), newDays);
 
   return (
     <div className="mx-auto flex h-[calc(100dvh-var(--tabbar-h))] max-w-xl flex-col overflow-y-auto px-6 pb-20 pt-[calc(var(--header-h)+var(--filterbar-h))]">

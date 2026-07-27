@@ -2,6 +2,7 @@ import Link from "next/link";
 import { EmptyState } from "@/components/EmptyState";
 import { ReelCard } from "@/components/ReelCard";
 import { ResurfaceCard } from "@/components/ResurfaceCard";
+import { env } from "@/lib/env";
 import { getInteractionFlags, getResurfacingCandidates } from "@/lib/interactions";
 import { getSkillTabInfoForSlugs } from "@/lib/skills/reelSkillTab";
 import { getTodayTopReels } from "@/lib/today";
@@ -55,6 +56,7 @@ export default async function TodayPage() {
             reel={reel}
             interactions={interactionFlags.get(reel.id)}
             skillTabInfo={reel.skill ? skillTabMap.get(reel.skill) : undefined}
+            newDays={env().NEW_DAYS}
           />
         ))}
 
