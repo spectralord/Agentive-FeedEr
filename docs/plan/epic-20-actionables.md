@@ -67,7 +67,7 @@ away — it is a decision, and the reasoning is in ADR 0019 decision 5.
 
 ---
 
-### ☐ T20.2 — `src/lib/actionables/` — the one shared mutation
+### ☒ T20.2 — `src/lib/actionables/` — the one shared mutation
 
 **Do:**
 - `toggleActionable(reelId, note?)` — the **single** write path. Inserts a completion (snapshotting
