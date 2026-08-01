@@ -228,6 +228,40 @@ export const appState = pgTable("app_state", {
   updatedAt: timestamp("updated_at", { withTimezone: true }).notNull().defaultNow(),
 });
 
+// Epic 20 (ADR 0019): a completed Actionable (= a Reel's `action`, promoted
+// to checkable). One row per completed Reel — `reelId` is `unique()`, so
+// ticking is idempotent (a second toggle deletes the row, see
+// src/lib/actionables/index.ts's toggleActionable) rather than a counter of
+// repeated completions.
+//
+// `skillNodeId` is resolved from `reels.skill` AT COMPLETION TIME and stored
+// alongside, not re-derived on every read — so the roll-up to a node
+// survives the Reel's `skill` tag changing later (re-tagging shouldn't
+// silently move history to a different node).
+//
+// `actionText`/`effortTag` are a deliberate snapshot (ADR 0019 decision 5),
+// NOT a duplication for query convenience: `reels.action` is mutable (a
+// re-enrichment pass can rewrite it), so without a snapshot, ticking off
+// "try X" and later finding the column says "try Y" would silently rewrite
+// the user's own history. Uncompleted Actionables remain a pure view over
+// `reels.action` — text is captured here only at the moment completion
+// turns it into a historical fact. Do not remove this in favour of a live
+// join; that is the whole point of the decision.
+export const actionableCompletions = pgTable("actionable_completions", {
+  id: serial("id").primaryKey(),
+  reelId: integer("reel_id")
+    .notNull()
+    .references(() => reels.id)
+    .unique(),
+  skillNodeId: integer("skill_node_id")
+    .notNull()
+    .references(() => skillNodes.id),
+  actionText: text("action_text").notNull(),
+  effortTag: text("effort_tag", { enum: ["5-min-test", "afternoon", "know-only"] }),
+  note: text("note"),
+  doneAt: timestamp("done_at", { withTimezone: true }).notNull().defaultNow(),
+});
+
 export type Source = typeof sources.$inferSelect;
 export type RawItem = typeof rawItems.$inferSelect;
 export type NewRawItem = typeof rawItems.$inferInsert;
@@ -249,3 +283,5 @@ export type UserProgressNote = typeof userProgressNotes.$inferSelect;
 export type NewUserProgressNote = typeof userProgressNotes.$inferInsert;
 export type TopicCluster = typeof topicClusters.$inferSelect;
 export type NewTopicCluster = typeof topicClusters.$inferInsert;
+export type ActionableCompletion = typeof actionableCompletions.$inferSelect;
+export type NewActionableCompletion = typeof actionableCompletions.$inferInsert;

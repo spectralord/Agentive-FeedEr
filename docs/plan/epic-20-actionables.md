@@ -40,7 +40,7 @@ Net-new is: one table, one mutation, read-layer counts, and UI.
 
 ## Tasks
 
-### ☐ T20.1 — Schema: the completion table
+### ☒ T20.1 — Schema: the completion table
 
 **Do:** add `actionable_completions` to `src/db/schema.ts` + a `drizzle-kit` migration.
 
