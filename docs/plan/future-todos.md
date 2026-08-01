@@ -12,6 +12,11 @@ sein und dann eine **besser aufgearbeitete, tiefere Zusammenfassung** zeigen (De
   wird on-demand nachgeladen.
 
 ## T2 — Actionables / „To-Try"-Aufforderungen überarbeiten
+> **AUFGEGRIFFEN 2026-08-01 → ADR 0019 (akzeptiert).** `reels.action` wird zum abhakbaren
+> Actionable befördert, zweispuriger Fortschritt (declared/evidenced) ohne Gating, `effort_tag`
+> wird funktional (Filter „5-Minuten-Gewinn"). Der hier notierte Kern — „die Aufforderungen sind
+> zu schwach" — ist damit *strukturell* adressiert (abhakbar + rollt auf den Skill Node auf);
+> die *Formulierungsqualität* der generierten `action`-Texte bleibt eine separate Prompt-Frage.
 Die aktuellen Handlungs-/TODO-Aufforderungen (`action`/`effort_tag`) sind noch **zu schwach**.
 Bei Gelegenheit überarbeiten — konkreter, motivierender, klarer Anreiz zum Ausprobieren.
 Hängt mit dem Actionable-Konzept (Epic 6/7-Revision) zusammen.

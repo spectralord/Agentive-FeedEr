@@ -35,7 +35,7 @@
 |---|---|
 | ~~§7 #10 Write-up tab~~ → **NOW IN SCOPE** (T18.6, user decision 2026-07-25) | The *tab* and the `reels.writeup` **field** are built now, with an explicit placeholder while the field is null (ADR 0017 amended, ADR 0016 point 3 amended). Only the **enrichment pass that fills it** stays deferred. **Update 2026-08-01:** no longer deferred — ADR 0017 decisions 2–4 accepted and **ADR 0024** settles the mechanism (user-triggered per Reel, via the `claude-code` executor / subscription, not a batch pass). Buildable; not built. References to "deferred" further down this file describe what T18.6 shipped at the time and are left as-is |
 | §9.2 Guides | **ADR 0018 `accepted` 2026-08-01** — but build gated on corpus size (decision 6: nodes hold 1–3 items today); schema + new pipeline pass still unbuilt |
-| §9.2/§9.3 Actionables (To-Try), evidenced track | **ADR 0019 `proposed`** — schema change, revisits an Epic 6 decision |
+| §9.2/§9.3 Actionables (To-Try), evidenced track | **ADR 0019 `accepted` 2026-08-01 — buildable now** (premise verified: 7 Reels are actionable-ready, content already renders read-only in the Detail Skill tab). Needs a completion table + one shared mutation |
 | §9.5 Constellation view | **ADR 0020 `proposed`** — schema addition; and §9.9 warns it is "a beautiful shell over thin content" before Guides exist |
 | §9.7 Explain-it-back / decay / diffs | Need Guides first |
 | §8.3 Trust-tag (Official/Independent/Community) | No source-authority data exists (`sources` has no authority field, and `type` is a fetch mechanism, not authority). Also an open product decision (§7 #11) |

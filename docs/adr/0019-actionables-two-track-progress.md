@@ -1,7 +1,11 @@
 # ADR 0019 — Actionables (To-Try) and two-track skill progress
 
-- Status: proposed (needs strong-model grill — schema change; revisits an Epic 6 decision)
-- Date: 2026-07-24
+- Status: **accepted** 2026-08-01 (grill session, strong model + user). Decisions 1–4 accepted as
+  written; decisions 5–6 added below; both original open questions resolved. **Buildable now** —
+  unlike ADR 0018, this ADR's premise was verified against the live data and holds: the content it
+  promotes already exists.
+  Was: proposed (needs strong-model grill — schema change; revisits an Epic 6 decision).
+- Date: 2026-07-24 (grilled + amended 2026-08-01)
 - Related: ADR 0005 (sourced-only), ADR 0008 (durable layer), ADR 0009 (SkillTagger),
   `docs/plan/epic-6-interactions.md` ("Revidiert 2026-07-23" — dropped the reel `tried`
   interaction), `docs/specs/2026-07-22-experience-reports-design.md` ("Revidierte Annahmen")
@@ -48,6 +52,35 @@ in columns; what's missing is that it can't be *checked off* and doesn't roll up
 4. **Completion is evidence for the node, not for the Reel.** Reels are never checked off (the
    Epic 6 decision stands). Completion rolls up to `reels.skill`'s node.
 
+### Amendments from the 2026-08-01 grill
+
+**Premise verified first** (the check ADR 0018 failed). Measured in `feedr_dev`: 16 Reels, **8 with
+`action`**, 8 with `effort_tag`, **7 actionable-ready** (`action` *and* `skill` both present),
+spread across all four nodes (3 / 2 / 1 / 1). `reels.action` and `effortTag` already render
+read-only in the Detail Skill tab (`ReelDetail.tsx:239-243`). So decision 1's claim holds
+literally: this adds a checkbox to content already on screen, and the net-new state is one
+completion record. Also confirmed the history this ADR rests on — `interactions.type` is
+`["save","hide","up","down"]`, with **no `tried`**, so Epic 6's removal is real in the schema and
+the gap described is genuine.
+
+5. **A completion record snapshots the action text it was completed against.** The Consequences
+   section below argues the Actionable is a *view* over `reels.action` and therefore needs no
+   duplicated text. That is right for *uncompleted* actions and wrong for completed ones:
+   **`reels.action` is mutable** — a re-enrichment, or a future pass, can rewrite it. Without a
+   snapshot, ticking off "try X" and later finding the column says "try Y" silently rewrites your
+   own history, and the Adoption Log (which this ADR feeds) would misreport what you actually did.
+
+   So: store the action text on the completion record. A small, deliberate denormalisation, bought
+   for truthfulness of history rather than for query convenience. Uncompleted actionables remain a
+   pure view — nothing is duplicated until the moment it becomes a historical fact.
+
+6. **`effort_tag` earns its keep: Actionables are filterable/sortable by effort.** The column is
+   populated on 8 Reels and rendered as a label, but drives **nothing** today — no filter, no sort.
+   Once actions are checkable, *"give me a 5-minute win"* is the obvious and most-used shape of the
+   feature, and `effort_tag` (`5-min-test` / `afternoon` / `know-only`) is exactly the field for it.
+   Bringing it into scope here turns a decorative column into the thing that makes a To-Try list
+   usable, at the cost of one filter control.
+
 ## Alternatives
 
 - **Reinstate a reel-level `tried` interaction:** simpler (the `interactions` table exists), but
@@ -64,9 +97,12 @@ in columns; what's missing is that it can't be *checked off* and doesn't roll up
 ## Consequences
 
 - Schema: a completion table keyed by the actionable's source (`reel_id`, and later
-  `experience_report_id`), with `done_at` and optional `note`. Deliberately *not* a full
-  `actionables` table duplicating action text that already lives on the Reel — the Actionable is
-  a *view* over `reels.action`, with only completion state stored net-new.
+  `experience_report_id`), with `done_at`, optional `note`, and — per **decision 5** — the
+  **action text as completed**. Still deliberately *not* a full `actionables` table mirroring every
+  action on every Reel: uncompleted actionables remain a pure view over `reels.action`. Text is
+  captured only at the moment completion turns it into a historical fact.
+- `effort_tag` moves from display-only to functional (**decision 6**): the To-Try list is
+  filterable/sortable by effort. No schema change — the column already exists and is populated.
 - `getSkillMap`/`getNodeDetail` gain evidence counts alongside the existing status.
 - The Reel Detail Skill tab (design doc §5.2) and the node page both surface To-Trys; both must
   write through **one shared mutation**, not two implementations (see design doc §8.4).
@@ -77,12 +113,18 @@ in columns; what's missing is that it can't be *checked off* and doesn't roll up
 - Experience Reports are **not** in v1 scope as an Actionable source (they have no `action`
   field). Adding them later means either a field or an extraction pass — a separate decision.
 
-## Open questions
+## Open questions — both RESOLVED 2026-08-01 (grill, user confirmed)
 
-- Should completing an Actionable **auto-advance** the declared status `seen → tried`? Convenient,
-  and arguably honest ("you demonstrably tried something"), but it blurs the two-track separation
-  this ADR is built on. The design prototype does auto-advance; leaning toward *not* doing it in
-  production, or making it a one-time suggestion rather than an automatic write.
-- Does an Actionable ever expire? A "5-min-test" from a Reel that has since been superseded
-  (Epic 11 freshness) is arguably stale advice. Cheap option: surface the parent Reel's
-  supersession state on the actionable rather than expiring it.
+- ~~Auto-advance `seen → tried` on completion?~~ **No — never an automatic write.** It would blur
+  the two-track separation that is the whole point of decision 2: the moment evidence silently
+  moves the declared track, "declared" stops meaning *self-declared* and the two tracks stop being
+  independent. The prototype's auto-advance is not carried into production. **A one-time,
+  dismissible suggestion** ("you completed something here — mark this skill as tried?") is
+  permitted, because it keeps the write in the user's hands.
+- ~~Does an Actionable expire?~~ **No — never expired or hidden. Its parent Reel's supersession
+  state is surfaced on it instead.** Epic 11's freshness machinery already computes that signal, so
+  this costs a read, not a new mechanism. Expiring was rejected because superseded advice is often
+  still valid, and silently removing a To-Try the user was planning to do is worse than showing it
+  with an honest caveat. Note the display rule: supersession is a **`--caution`** case under
+  ADR 0016 (caveat + freshness/supersession), so this is one of the few places that colour is
+  correct.
