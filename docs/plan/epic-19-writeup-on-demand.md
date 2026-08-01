@@ -59,7 +59,7 @@ Verified 2026-08-01:
 
 ---
 
-### ☐ T19.2 — `src/lib/writeup/run.ts`: the generation function
+### ☒ T19.2 — `src/lib/writeup/run.ts`: the generation function
 
 **Do:**
 - Export `StructuredCaller` typed exactly as in `src/lib/verifier/run.ts:23-27`.
