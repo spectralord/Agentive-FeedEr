@@ -6,6 +6,7 @@ import { sql } from "drizzle-orm";
 import { db, getPool } from "@/db/client";
 import { experienceReports, rawItems, reels, skillNodes, sources } from "@/db/schema";
 import { toggleActionable } from "@/lib/actionables";
+import { resolveNodePosition, THEME_LAYOUT } from "@/lib/skills/layout";
 import { setProgress } from "./progress";
 import { getNodeDetail, getSkillMap, setProgressBySlug } from "./map";
 
@@ -80,6 +81,37 @@ describe("skill map (integration)", () => {
     const tooling = map.find((t) => t.theme === "tooling")!;
     expect(tooling.nodes.map((n) => n.slug)).toEqual(["mcp"]); // "not-yet" (pending) excluded
     expect(tooling.nodes[0].contentCount).toBe(1);
+  });
+
+  it("Epic 21 T21.4: resolves each node's position via resolveNodePosition — hash fallback by default, locked override when set", async () => {
+    await db()
+      .insert(skillNodes)
+      .values([
+        { slug: "sub-agents", title: "Sub-Agents", theme: "agents", description: "…", status: "active" },
+        {
+          slug: "pinned-node",
+          title: "Pinned Node",
+          theme: "agents",
+          description: "…",
+          status: "active",
+          positionX: 42,
+          positionY: 84,
+          positionLocked: true,
+        },
+      ]);
+
+    const map = await getSkillMap();
+    const nodes = map.flatMap((t) => t.nodes);
+
+    const hashFallback = nodes.find((n) => n.slug === "sub-agents")!;
+    expect(hashFallback.positionLocked).toBe(false);
+    expect(hashFallback.position).toEqual(resolveNodePosition({ ...hashFallback, positionX: null, positionY: null, positionLocked: false }));
+    const region = THEME_LAYOUT.agents;
+    expect(Math.hypot(hashFallback.position.x - region.cx, hashFallback.position.y - region.cy)).toBeLessThanOrEqual(region.r);
+
+    const pinned = nodes.find((n) => n.slug === "pinned-node")!;
+    expect(pinned.positionLocked).toBe(true);
+    expect(pinned.position).toEqual({ x: 42, y: 84 });
   });
 
   it("reflects the current self-declared status per node", async () => {

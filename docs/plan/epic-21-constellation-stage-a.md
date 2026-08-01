@@ -127,7 +127,7 @@ its theme circle; a node with no stored position still resolves; the precedence 
 
 ---
 
-### ☐ T21.4 — Render the constellation
+### ☒ T21.4 — Render the constellation
 
 **Do:** render nodes at resolved positions inside their theme regions, reusing the **existing shared
 `SkillRing`** component for node state — **do not write a second ring.** It has exactly three call

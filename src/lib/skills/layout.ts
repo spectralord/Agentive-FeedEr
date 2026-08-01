@@ -90,32 +90,84 @@ function fnv1a(input: string): number {
   return hash >>> 0;
 }
 
+// The golden angle (radians) — the standard constant behind Fibonacci/
+// sunflower spirals (Vogel's model), chosen because consecutive points are
+// maximally spread rather than drifting into rings or spokes the way a
+// naive `angle = i / n * 2π` grid does.
+const GOLDEN_ANGLE = Math.PI * (3 - Math.sqrt(5));
+
+// Target minimum centre-to-centre spacing between two hash-tier points in
+// the same theme, in the same abstract units as THEME_LAYOUT — chosen so
+// that after the renderer scales the 1000-unit square down to a real
+// viewport, two 36px SkillRings (T21.4's node size) plus their labels don't
+// visually touch. Drives HASH_SLOT_COUNT below; see that constant's comment
+// for why this can only be a target, not a guarantee, at high node counts.
+const TARGET_MIN_SPACING = 45;
+
+/**
+ * Per-region slot count for the sunflower spiral (see `hashPositionInRegion`),
+ * sized so consecutive slots stay >= TARGET_MIN_SPACING apart even at the
+ * spiral's outer edge (its most sparsely-populated ring). Proportional to
+ * region.r because a small region (e.g. `industry`, r=90) fits fewer
+ * comfortably-spaced points than a large one (`agents`, r=150) — a single
+ * global slot count sized for the biggest region would crowd the smallest
+ * one, and one sized for the smallest would under-use the biggest.
+ *
+ * This is a target, not an absolute guarantee: two *different* slugs always
+ * land on different points as long as they hash to different slots (the
+ * spiral's geometry keeps distinct slots apart by construction), but a
+ * theme holding more nodes than it has slots will see hash collisions —
+ * the point at which ADR 0020's open question about per-theme overflow
+ * (grow the radius, add a ring, cap and paginate) needs an answer anyway,
+ * not something this hash tier can or should paper over on its own.
+ */
+function hashSlotCount(region: ThemeRegion): number {
+  // Solving TARGET_MIN_SPACING ~= 2π * r_outer / n for n, where r_outer is
+  // the spiral's outer radius (region.r * 0.85, matching the 0.85 factor in
+  // hashPositionInRegion below) — i.e. treat the outermost ring as a plain
+  // circle and ask how many TARGET_MIN_SPACING-wide arcs fit around it.
+  const outerRadius = region.r * 0.85;
+  const slots = Math.floor((2 * Math.PI * outerRadius) / TARGET_MIN_SPACING);
+  return Math.max(slots, 6); // never so few that the fallback feels broken
+}
+
 /**
  * Deterministic hash fallback tier (ADR 0020 decision 2/7): `slug` maps to
- * an (angle, radius) pair inside the node's theme circle, purely — no DB
- * read, no randomness, no Date/Math.random. The same slug always lands on
- * the exact same point, forever, in this process or any other, which is the
- * whole point: it guarantees every node has *some* stable position even
- * before any layout pass (stage b, explicitly out of scope this epic) has
- * ever run.
+ * a point inside the node's theme circle, purely — no DB read, no
+ * randomness, no Date/Math.random. The same slug always lands on the exact
+ * same point, forever, in this process or any other, which is the whole
+ * point: it guarantees every node has *some* stable position even before
+ * any layout pass (stage b, explicitly out of scope this epic) has ever
+ * run.
  *
- * Two independent hash values (the slug, and the slug with a suffix) drive
- * angle and radius separately so nodes don't all land at the same distance
- * from centre just because they got the same angle bucket by coincidence.
- * Radius is scaled to keep points away from the exact center (a cluster of
- * nodes all sitting on top of the centre dot would look wrong) and away
- * from the outer edge (so a node never renders as if it's escaping its
- * theme's circle at the boundary).
+ * Naive polar hashing (independent random angle + radius per slug) was
+ * tried and rejected here: with few nodes sharing a theme, nothing stops
+ * two unrelated slugs from hashing to nearby angles *and* nearby radii,
+ * producing visually overlapping nodes purely by chance — measured directly
+ * against this project's seed data (`agentic-tool-use`, `mcp-servers`,
+ * `computer-use`, all theme `agents`, landed within ~60 units of each other
+ * in the 1000-unit space, close enough for their rendered rings/labels to
+ * collide). A **sunflower/Fibonacci spiral lattice** fixes this
+ * structurally: `slug` hashes to one of a fixed number of slots
+ * (`hashSlotCount`, Vogel's model, using the golden angle), and any two
+ * *different* slots are guaranteed apart from each other by the spiral's
+ * geometry — a collision can only happen if two slugs hash to the *same*
+ * slot.
  */
 function hashPositionInRegion(slug: string, region: ThemeRegion): ResolvedPosition {
-  const angleHash = fnv1a(slug);
-  const radiusHash = fnv1a(`${slug}:radius`);
+  const slotCount = hashSlotCount(region);
+  const slot = fnv1a(slug) % slotCount;
 
-  const angle = (angleHash / 0xffffffff) * 2 * Math.PI;
-  // Keep the point within [15%, 85%] of the region's radius from its
-  // centre — see rationale above.
-  const radiusFraction = 0.15 + (radiusHash / 0xffffffff) * 0.7;
-  const radius = region.r * radiusFraction;
+  // Vogel's sunflower model: point i sits at radius sqrt(i / n) (so density
+  // stays even from centre to edge, rather than the outer ring being
+  // sparser) and angle i * goldenAngle. max(slot, 0.5) keeps slot 0 off
+  // dead-centre, matching how every other slot is offset. The 0.85 factor
+  // (rather than closer to 1) keeps every point comfortably inside the
+  // circle, not grazing its boundary — and matches the outer-radius
+  // assumption `hashSlotCount` solves against.
+  const fraction = Math.max(slot, 0.5) / slotCount;
+  const radius = region.r * 0.85 * Math.sqrt(fraction);
+  const angle = slot * GOLDEN_ANGLE;
 
   return {
     x: region.cx + radius * Math.cos(angle),

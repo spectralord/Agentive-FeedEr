@@ -116,4 +116,38 @@ describe("resolveNodePosition", () => {
     const pos = resolveNodePosition(node({ positionX: 42, positionY: 84, positionLocked: false }));
     expect(pos).toEqual({ x: 42, y: 84 });
   });
+
+  // Regression (T21.4 screenshot review): the first hash implementation
+  // (independent continuous angle+radius per slug) placed
+  // agentic-tool-use/mcp-servers/computer-use — this project's actual
+  // seeded `agents`-theme nodes — within ~60 units of each other in a
+  // 150-radius circle, close enough that their rendered SkillRings and
+  // labels visibly overlapped. The sunflower-spiral slot approach exists
+  // specifically to keep this from recurring.
+  it("keeps this project's real seeded agents-theme slugs comfortably separated (regression)", () => {
+    const slugs = ["agentic-tool-use", "mcp-servers", "computer-use"];
+    const positions = slugs.map((slug) => resolveNodePosition(node({ slug, theme: "agents" })));
+    for (let i = 0; i < positions.length; i++) {
+      for (let j = i + 1; j < positions.length; j++) {
+        const distance = Math.hypot(positions[i].x - positions[j].x, positions[i].y - positions[j].y);
+        expect(distance, `${slugs[i]} vs ${slugs[j]}`).toBeGreaterThanOrEqual(45);
+      }
+    }
+  });
+
+  it("keeps a batch of arbitrary slugs within a small theme comfortably separated, for every theme", () => {
+    const batch = Array.from({ length: 6 }, (_, i) => `skill-${i}`);
+    for (const theme of THEMES) {
+      const positions = batch.map((slug) => resolveNodePosition(node({ slug, theme })));
+      for (let i = 0; i < positions.length; i++) {
+        for (let j = i + 1; j < positions.length; j++) {
+          const distance = Math.hypot(positions[i].x - positions[j].x, positions[i].y - positions[j].y);
+          // Same-slot hash collisions are possible in principle (see
+          // hashSlotCount's docstring) but shouldn't happen for 6 slugs
+          // against a region sized to hold at least 6 well-spaced slots.
+          expect(distance, `${theme}: ${batch[i]} vs ${batch[j]}`).toBeGreaterThan(0);
+        }
+      }
+    }
+  });
 });

@@ -5,6 +5,7 @@ import type { SkillNode, UserProgress, UserProgressNote } from "@/db/schema";
 import type { Theme } from "@/lib/skills";
 import { listActiveNodes } from "@/lib/skilltagger/nodes";
 import { countEvidenceForNodes, listActionablesForNode, type ActionableListItem } from "@/lib/actionables";
+import { resolveNodePosition, type ResolvedPosition } from "@/lib/skills/layout";
 import {
   UNTOUCHED_STATUS,
   getProgress,
@@ -43,6 +44,14 @@ export interface SkillMapNode {
    *  (the DECLARED track) and never combined into one number: "mastered
    *  with zero evidence" must stay fully representable. */
   evidenceCount: number;
+  /** Epic 21 (T21.4): the node's resolved render position (ADR 0020
+   *  decision 2's three-tier precedence — see `resolveNodePosition`), in
+   *  the same abstract 0-1000 coordinate space as `THEME_LAYOUT`. */
+  position: ResolvedPosition;
+  /** Epic 21 (T21.5): whether `position` is a manual override rather than
+   *  the hash fallback — the constellation renders a locked node with a
+   *  slightly different affordance and offers "reset to computed". */
+  positionLocked: boolean;
 }
 
 export interface SkillMapTheme {
@@ -125,6 +134,8 @@ export async function getSkillMap(): Promise<SkillMapTheme[]> {
       // Epic 20: nodes with zero completions are absent from the map —
       // absent means 0, same convention as getInteractionFlags.
       evidenceCount: evidenceCounts.get(node.id) ?? 0,
+      position: resolveNodePosition(node),
+      positionLocked: node.positionLocked,
     };
     const bucket = byTheme.get(node.theme);
     if (bucket) bucket.push(mapped);
