@@ -325,7 +325,22 @@ export function ReelDetail({ data, open, activeTab, onSelectTab, onClose }: Reel
 
   return (
     <div
-      className={`absolute inset-0 flex flex-col border-l border-hairline bg-ground transition-transform duration-300 ease-out ${
+      /* `fixed` + z-30, not `absolute`: the parent <article> is `relative`, so
+         an absolutely-positioned overlay stacks only INSIDE that article and
+         still paints beneath the fixed app bar (z-20, layout.tsx) and FilterBar
+         (z-10) — which sit in a different stacking context. That made every
+         control here unreachable: Back and all three tabs were covered, so
+         Detail could be opened but never dismissed or navigated (a Playwright
+         click() on Back timed out).
+
+         Detail covers the shell chrome deliberately. The accepted prototype
+         (docs/specs/prototypes/reel-card-and-detail.html) renders Detail as
+         `absolute; inset: 0` filling the whole `.reel-slot` — which there IS
+         the entire phone screen, with no app bar or filter bar outside it. The
+         prototype therefore never had to say which wins; full-frame Detail is
+         the faithful translation. Bottom inset leaves the tab bar visible, per
+         ADR 0023's persistent-tab-bar rule. */
+      className={`fixed inset-x-0 top-0 bottom-[var(--tabbar-h)] z-30 flex flex-col border-l border-hairline bg-ground transition-transform duration-300 ease-out ${
         open ? "translate-x-0" : "pointer-events-none translate-x-full"
       }`}
       aria-hidden={!open}
