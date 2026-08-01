@@ -106,7 +106,7 @@ dev server running returns a JSON status.
 
 ---
 
-### ☐ T19.4 — The button in the Write-up tab
+### ☒ T19.4 — The button in the Write-up tab
 
 **Do:**
 - In `src/components/ReelDetail.tsx`, inside the **existing** `writeup === null` branch
@@ -184,6 +184,19 @@ reason — nothing else asserted it, so a silent flip would not have failed any 
   one Reel and wrote prose into `reels.writeup`" is **not yet satisfied** — it needs to be run once,
   after merge, from a shell with an authenticated `claude` CLI (e.g. the outer/host session, not
   this nested one). Conservative choice made here: recorded as open rather than faked or skipped.
+- **T19.4 screenshot verification — confirmed via live browser interaction, not just a static
+  homepage PNG.** `node scripts/design-screenshot.mjs http://localhost:3000/ --vp phone` only
+  screenshots the given URL and cannot open the Detail overlay (it requires a tap gesture on a
+  card, not a URL). Its PNG (`design-shots/localhost-3000-phone.png`, not committed — throwaway
+  review artifact, same as prior epics' screenshots) confirms the feed itself is unaffected: dark
+  background, no overflow. For the actual thing this task adds, the Browser tool was used to open
+  a real card's Write-up tab and drive the button through all three states — idle
+  ("Generate write-up", accent-outlined pill, comfortably >= 40px tall), pending ("Generating…",
+  disabled/dimmed, no layout shift), and error (button re-enabled with its original label, plus
+  "Couldn't generate a write-up — try again." in muted ink, never `--caution`). No horizontal
+  overflow, no white background, placeholder copy unchanged above the button, no ADR/epic numbers
+  visible. The error state was reached via the same real (sandbox-unauthenticated) CLI call
+  described above — confirming the UI's error path is exercised by a real failure, not simulated.
 
 ## Explicitly out of scope
 

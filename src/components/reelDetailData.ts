@@ -48,12 +48,23 @@ export interface SkillTabView {
 }
 
 export interface ReelDetailData {
+  id: number;
   title: string;
   sourceName: string;
-  /** ADR 0017 (T18.6): null everywhere until the write-up enrichment pass
-   *  ships. The Write-up tab shows an explicit placeholder when this is
-   *  null — never hidden either way. */
+  /** ADR 0017 (T18.6): null everywhere until a write-up has been generated
+   *  (ADR 0024: user-triggered, on demand, per Reel). The Write-up tab shows
+   *  an explicit placeholder — plus, since T19.4, a "Generate write-up"
+   *  button — when this is null; never hidden either way. */
   writeup: string | null;
+  /** ADR 0024 decision 3 (cloud guard, T19.4): whether the "Generate
+   *  write-up" button may be shown at all. False when the resolved executor
+   *  is `api` (the claude-code executor's `claude` CLI does not exist under
+   *  APP_PROFILE=cloud/Railway) — the button must be hidden entirely rather
+   *  than shown and left to 503 on click. Resolved server-side by the
+   *  calling page via `writeupGenerationAvailable()`
+   *  (src/lib/writeup/run.ts) and passed down as a plain boolean, same
+   *  boundary rule as `newDays` elsewhere (src/lib/env.ts is server-only). */
+  canGenerateWriteup: boolean;
   example: string | null;
   /** Full caveat text (Compact keeps only the minimal marker, T18.2 judgment
    *  call 1) — rendered in the Context tab. */
@@ -76,11 +87,15 @@ export interface ReelDetailData {
  *  definition), or `ReelStackCard`'s `others` for the cluster's primary.
  *  `skillTabInfo` is this reel's `reel.skill` slug looked up in the batch
  *  map `getSkillTabInfoForSlugs` returns (T18.7) — omit/pass `undefined`
- *  when the reel has no skill, or the slug wasn't found in that map. */
+ *  when the reel has no skill, or the slug wasn't found in that map.
+ *  `canGenerateWriteup` (T19.4) is the page-level `writeupGenerationAvailable()`
+ *  result — the same value for every card on a page, resolved once by the
+ *  calling Server Component and threaded through here. */
 export function buildReelDetailData(
   reel: FeedReel,
   clusterMembers: FeedReel[],
   skillTabInfo?: SkillTabInfo,
+  canGenerateWriteup = false,
 ): ReelDetailData {
   const skill: SkillTabView | undefined =
     reel.skill && skillTabInfo
@@ -105,9 +120,11 @@ export function buildReelDetailData(
       : undefined;
 
   return {
+    id: reel.id,
     title: reel.title,
     sourceName: reel.sourceName,
     writeup: reel.writeup,
+    canGenerateWriteup,
     example: reel.example,
     caveat: reel.caveat,
     clusterMembers: clusterMembers.map((m) => ({

@@ -3,6 +3,8 @@ import type { NodePgDatabase } from "drizzle-orm/node-postgres";
 import type * as schema from "@/db/schema";
 import { rawItems, reels, sources } from "@/db/schema";
 import { callStructured } from "@/lib/claude";
+import { env } from "@/lib/env";
+import { resolveExecutionConfig } from "@/lib/executor/config";
 import {
   buildWriteupUserPrompt,
   WRITEUP_SYSTEM_PROMPT,
@@ -50,6 +52,19 @@ export async function generateWriteup(
   });
   const output = writeupOutputSchema.parse(raw);
   return { writeup: output.writeup };
+}
+
+/**
+ * ADR 0024 decision 3 (cloud guard): the "Generate write-up" button must be
+ * hidden — not merely disabled or left to 503 at click time — when the
+ * resolved executor is `api` (the `claude-code` executor spawns the local
+ * `claude` CLI, which does not exist under `APP_PROFILE=cloud`/Railway).
+ * Resolved server-side (this reads `env()`, so it must never be called from
+ * a `"use client"` component — see src/lib/env.ts) and passed down as a
+ * plain boolean prop, same pattern as `newDays` (env().NEW_DAYS) elsewhere.
+ */
+export function writeupGenerationAvailable(): boolean {
+  return resolveExecutionConfig(env()).executor !== "api";
 }
 
 export type WriteupStatus = "generated" | "already-present" | "not-found" | "empty" | "failed";

@@ -26,14 +26,17 @@ export interface ReelCardProps {
   /** env().NEW_DAYS, resolved by the page (a Server Component) and passed
    *  down to `ReelCardBody`, which must not read `env()` itself. */
   newDays: number;
+  /** T19.4 (ADR 0024 decision 3): `writeupGenerationAvailable()`, resolved
+   *  by the page. Same server/client boundary rule as `newDays` above. */
+  canGenerateWriteup?: boolean;
 }
 
 /** One reel card, sized to fill the viewport (see .reel/.feed scroll-snap in page.tsx). */
-export function ReelCard({ reel, interactions, skillTabInfo, newDays }: ReelCardProps) {
+export function ReelCard({ reel, interactions, skillTabInfo, newDays, canGenerateWriteup }: ReelCardProps) {
   // T18.6: a solo card has nothing beyond the primary by definition (no
   // cluster, or a cluster reduced to one visible member) — the Context
   // tab's cluster-members list is always empty here.
-  const detail = buildReelDetailData(reel, [], skillTabInfo);
+  const detail = buildReelDetailData(reel, [], skillTabInfo, canGenerateWriteup);
   return (
     <ReelCardShell reelId={reel.id} initial={interactions ?? NO_INTERACTIONS} detail={detail}>
       <ReelCardBody reel={reel} newDays={newDays} />
