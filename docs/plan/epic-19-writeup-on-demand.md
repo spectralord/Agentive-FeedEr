@@ -39,7 +39,7 @@ Verified 2026-08-01:
 
 ## Tasks
 
-### ☐ T19.1 — `src/lib/writeup/prompt.ts` + `schema.ts`
+### ☒ T19.1 — `src/lib/writeup/prompt.ts` + `schema.ts`
 
 **Do:**
 - `schema.ts`: a zod schema and its JSON-schema twin, mirroring
