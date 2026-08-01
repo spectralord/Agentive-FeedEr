@@ -5,6 +5,21 @@
 > Build clean · typecheck clean · **377 tests / 60 files green** · 1 known eslint error.
 > Every subagent finding was independently re-verified before being recorded here.
 
+## Status: Tier 1 + Tier 2 implemented (branch `claude/sweep-tier1-tier2`, not merged)
+
+Fixed in `334e7a2`, `c28c6da`, `befe331`, `bc3051e`, `b86ccd6` — each finding below is
+tagged **[FIXED]** or **[OPEN]**. After: build clean · typecheck clean · **eslint 0 problems**
+(was 1) · 377 tests green · body overflow still 0.
+
+**Deliberately still open, and why:**
+- The **222 → 206 raw palette literals** on `/admin`, `/clusters`, `/experience`. This is the
+  retokenisation task gated on your ADR 0016 scope decision (§6.2 of the handoff) — not mine to
+  pre-empt. Note some of the remaining amber there is arguably *legitimate* caution use
+  ("a run is already in progress", "Deprecated"), so a blanket sweep would be wrong.
+- The ⭐/🕐 emoji-vs-gold finding — cosmetic, and touching it invites the same scope question.
+- Everything in Tier 0 (ratify ADR 0023, Detail-vs-chrome, ADR 0017 grill, landing route) and
+  Tier 3 (feature work).
+
 ---
 
 ## Verdict
@@ -28,19 +43,19 @@ correct *inside* the components Epic 18 touched.
 
 | Sev | Finding | Where | Source violated |
 |---|---|---|---|
-| MAJOR | Neutral text "incl. yesterday" in the reserved caution colour. **Visually the most alarming element on `/today`** — reads as a warning; it is a scope note. | `src/app/today/page.tsx:48` | ADR 0016 pt 1 (names this exact bug) |
-| MAJOR | Amber for neutral filter toggles: "Weak signal" and "🧪 experimental" | `FilterBar.tsx:105`, `OverviewFilterBar.tsx:157` | ADR 0016 pt 1 |
-| MAJOR | **222** raw `zinc-*`/`amber-*`/`emerald-*` literals in 20 non-test files. Visible seam: `/overview` + `/saved` still show footer `R 88 · Q 90` text where the restyled card uses score bars. | worst: `admin/page.tsx` 37, `skills/page.tsx` 24, `clusters/[id]/page.tsx` 22, `ExperienceFilterBar` 17, `ExperienceReportItem` 16 | ADR 0016 / spec §1 |
-| MAJOR | **Zero `focus-visible` states app-wide.** Only 7 plain `focus:` rings exist, all on form inputs, all `zinc`/`hairline`. Feed, tab bar, Detail tabs and every filter chip are keyboard-unnavigable. | whole codebase | spec "Accessibility" |
-| MAJOR | `/skills` inverts its own hierarchy: `New Skills` (`h1`, `text-lg`, 3-line explainer) owns the top third and its content is merely "No open proposals." — pushing **Skill Map** (`h2`, `text-sm`, the product thesis) below the fold. | `skills/page.tsx:35` vs `:106` | spec §10.7 (same bug class it flagged for `/saved`) |
-| MAJOR | Skill Map node titles truncate to ~14 chars at 2-up on 375px: "Agentic Tool…", "Computer U…", "Prompt Cac…". A skill map whose labels are unreadable undercuts its purpose. | `SkillMap.tsx:42` | spec §5/§9 intent |
-| MINOR | "Weak signal" chip is effectively undiscoverable: sits at **x=821 in a 977px strip clipped to 375px** (`scrollLeft:0`, `inViewport:false`) — 602px of horizontal scroll with no scrollbar or fade affordance. | `FilterBar.tsx:101-110` | spec §10.1 |
-| MINOR | ReelActions buttons measure exactly **38×26px** (all 44 instances). Height is the real miss — 26px is under two-thirds of the ~40px floor on the card's primary actions. | `ReelActions.tsx:31-34` | spec "Touch targets" |
-| MINOR | ADR number in shipped **user-facing copy**: "…hasn't run yet (ADR 0017)". | `ReelDetail.tsx:84-86` | spec §10 "no epic numbers in user copy" |
-| MINOR | Bright ⭐/🕐 emoji compete with reserved `--gold` on `/overview`; the yellow ⭐ is the most saturated thing on the page and means "well-scored", not "mastered". | `SotaSection.tsx` | ADR 0016 pt 1 (gold must stay rare) |
-| MINOR | `ResurfaceCard` uses `min-h-dvh` where every sibling reel container uses `min-h-[calc(100dvh-var(--tabbar-h))]` → runs under the fixed tab bar. **Not visually verified** (needs a save 7–21 days old; the only seeded save is 45 min old) — source only. | `ResurfaceCard.tsx:25` | consistency w/ `ReelCardShell.tsx:93` |
-| MINOR | `src/app/page.tsx` — the Feed, the default landing route — is the only primary surface without `export const dynamic = "force-dynamic"`; 8 other pages have it. Dynamic in practice via `Promise` searchParams, but inconsistent. | `src/app/page.tsx` | consistency |
-| — | Pre-existing eslint error, `react-hooks/purity`: `Date.now()` during render. Exactly 1 problem repo-wide. | `overview/page.tsx:43` | — |
+| MAJOR | **[FIXED]**  Neutral text "incl. yesterday" in the reserved caution colour. **Visually the most alarming element on `/today`** — reads as a warning; it is a scope note. | `src/app/today/page.tsx:48` | ADR 0016 pt 1 (names this exact bug) |
+| MAJOR | **[FIXED]**  Amber for neutral filter toggles: "Weak signal" and "🧪 experimental" | `FilterBar.tsx:105`, `OverviewFilterBar.tsx:157` | ADR 0016 pt 1 |
+| MAJOR | **[OPEN]**  **222** raw `zinc-*`/`amber-*`/`emerald-*` literals in 20 non-test files. Visible seam: `/overview` + `/saved` still show footer `R 88 · Q 90` text where the restyled card uses score bars. | worst: `admin/page.tsx` 37, `skills/page.tsx` 24, `clusters/[id]/page.tsx` 22, `ExperienceFilterBar` 17, `ExperienceReportItem` 16 | ADR 0016 / spec §1 |
+| MAJOR | **[FIXED]**  **Zero `focus-visible` states app-wide.** Only 7 plain `focus:` rings exist, all on form inputs, all `zinc`/`hairline`. Feed, tab bar, Detail tabs and every filter chip are keyboard-unnavigable. | whole codebase | spec "Accessibility" |
+| MAJOR | **[FIXED]**  `/skills` inverts its own hierarchy: `New Skills` (`h1`, `text-lg`, 3-line explainer) owns the top third and its content is merely "No open proposals." — pushing **Skill Map** (`h2`, `text-sm`, the product thesis) below the fold. | `skills/page.tsx:35` vs `:106` | spec §10.7 (same bug class it flagged for `/saved`) |
+| MAJOR | **[FIXED]**  Skill Map node titles truncate to ~14 chars at 2-up on 375px: "Agentic Tool…", "Computer U…", "Prompt Cac…". A skill map whose labels are unreadable undercuts its purpose. | `SkillMap.tsx:42` | spec §5/§9 intent |
+| MINOR | **[OPEN]**  "Weak signal" chip is effectively undiscoverable: sits at **x=821 in a 977px strip clipped to 375px** (`scrollLeft:0`, `inViewport:false`) — 602px of horizontal scroll with no scrollbar or fade affordance. | `FilterBar.tsx:101-110` | spec §10.1 |
+| MINOR | **[FIXED]**  ReelActions buttons measure exactly **38×26px** (all 44 instances). Height is the real miss — 26px is under two-thirds of the ~40px floor on the card's primary actions. | `ReelActions.tsx:31-34` | spec "Touch targets" |
+| MINOR | **[FIXED]**  ADR number in shipped **user-facing copy**: "…hasn't run yet (ADR 0017)". | `ReelDetail.tsx:84-86` | spec §10 "no epic numbers in user copy" |
+| MINOR | **[OPEN]**  Bright ⭐/🕐 emoji compete with reserved `--gold` on `/overview`; the yellow ⭐ is the most saturated thing on the page and means "well-scored", not "mastered". | `SotaSection.tsx` | ADR 0016 pt 1 (gold must stay rare) |
+| MINOR | **[FIXED]**  `ResurfaceCard` uses `min-h-dvh` where every sibling reel container uses `min-h-[calc(100dvh-var(--tabbar-h))]` → runs under the fixed tab bar. **Not visually verified** (needs a save 7–21 days old; the only seeded save is 45 min old) — source only. | `ResurfaceCard.tsx:25` | consistency w/ `ReelCardShell.tsx:93` |
+| MINOR | **[FIXED]**  `src/app/page.tsx` — the Feed, the default landing route — is the only primary surface without `export const dynamic = "force-dynamic"`; 8 other pages have it. Dynamic in practice via `Promise` searchParams, but inconsistent. | `src/app/page.tsx` | consistency |
+| — | **[FIXED]**  Pre-existing eslint error, `react-hooks/purity`: `Date.now()` during render. Exactly 1 problem repo-wide. | `overview/page.tsx:43` | — |
 
 ### Seam leak (INFO, worth a decision)
 
@@ -56,26 +71,27 @@ for error classification), but it is the seam leaking.
 
 This was the highest-value category again, as the handoff predicted.
 
-1. **The status table is stale a third time.** `docs/plan/README.md:125,130` mark
+1. **[FIXED]** **The status table is stale a third time.** `docs/plan/README.md:125,130` mark
    **Epic 7 (Skill-Map)** and **Epic 12 (SkillTagger)** as `☐ offen` — both are **fully
    built and tested**: `src/lib/skilltagger/{tagger,run,nodes,prompt,schema}.ts` with tests,
    `src/app/skills/{page,loading,[slug]}/`, `src/lib/skills/{map,progress,progressStatus,reelSkillTab}.ts`.
    The table calls itself the single source of truth.
 
-2. **`APP_PROFILE` default doc is wrong, and it is the money-relevant one.**
+2. **[FIXED]** **`APP_PROFILE` default doc is wrong, and it is the money-relevant one.**
    `docs/plan/README.md:94` says the default is `cloud`; `src/lib/env.ts:41` is
    `.default("local")` since 2026-08-01. `cloud` implies `executor=api` — the paid API. The
    flip was made deliberately and pinned by a test, but the env-var reference was not updated
    with it.
 
-3. **`HANDOFF.md` contradicts itself and reality.** §3 says "none of it is pushed"; §1 says
+3. **[OPEN — for the next handoff to supersede]** **`HANDOFF.md` contradicts itself and
+   reality.** §3 says "none of it is pushed"; §1 says
    "Everything is pushed" at `4a6d265`. Actual: `main` is clean and in sync with
    `origin/main` at `307371e` — everything *is* pushed, and both stated SHAs are behind.
 
-4. **Test counts disagree three ways.** Actual **377**; `HANDOFF.md` §3 says 375; the Epic 18
-   status entry says 364.
+4. **[FIXED in the status table; HANDOFF still stale]** **Test counts disagree three ways.**
+   Actual **377**; `HANDOFF.md` §3 says 375; the Epic 18 status entry said 364.
 
-5. **ADR 0016 never states the app is dark-only.** Zero mentions of dark mode or
+5. **[FIXED]** **ADR 0016 never states the app is dark-only.** Zero mentions of dark mode or
    `prefers-color-scheme` in the whole ADR. This is *why* T18.1 left the Epic-0
    `prefers-color-scheme` pair alone and shipped the white-background BLOCKER. Confirms
    handoff §6.3.
