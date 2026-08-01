@@ -19,6 +19,10 @@
    Halluzination", ADR 0005 „Sourced-only"). Kein zusätzlicher Scope, keine
    zusätzlichen Bibliotheken außer den hier genannten, außer es ist technisch
    zwingend — dann unter „Abweichungen" im Epic-File dokumentieren.
+   *Ausnahme, bewusst entschieden 2026-08-01:* `playwright` als reine
+   **devDependency** für `scripts/design-screenshot.mjs` (Design-Review-Agent).
+   Begründung im Script-Header. Gilt nur für Tooling — für **Runtime**-Deps
+   bleibt die Regel unverändert streng.
 4. **Bei Unklarheit:** nicht raten. Abweichung/Frage im Epic-File unter
    „Abweichungen/Fragen" notieren, konservativste Interpretation wählen, weiterarbeiten.
 5. **Nach jedem Epic:** `npm run build` und `npm test` müssen grün sein; kurzen
@@ -129,7 +133,7 @@ Ein Epic ist fertig, wenn:
 | 15 — Topic-Clustering (Fundament) | `epic-15-topic-clustering.md` | Fast-Follow | ✅ fertig (ADR 0013; T15.1–T15.5 gebaut & getestet — siehe Abweichungen in `epic-15-topic-clustering.md`); Vorläufer für Epic 11 |
 | 16 — Refactoring-Agent (nächtl. Claude-Code-Cron) | `epic-16-refactoring-agent.md` | Tooling/Vision (erst grillen) | ☐ geparkt (teilt CC-Routine-Mechanik mit Epic 17) |
 | 17 — Ausführungs-Modi (Trigger × Executor) | `epic-17-execution-modes.md` | Tooling/Vision | ◑ in Umsetzung (ADR 0015): T17.1–T17.5+T17.7 fertig & getestet; T17.6 offen (Infra) |
-| 18 — UX-Implementierung (Design-Pass) | `epic-18-ux-implementation.md` | Fast-Follow | ◑ in Umsetzung (ADR 0016 akzeptiert). **Phase 1 fertig**: T18.1–T18.7 ✅ (Tokens/Font; Compact restyle; ReelActions/ResurfaceCard restyle; vier ehrliche Status; ein Ring-Component + `/skills`; Reel-Detail Push-Nav + Write-up/Context-Tab inkl. `reels.writeup`, ADR 0017 Entscheidung 1; Skill-Tab inkl. „Mark as tried" durch denselben `setProgress`-Pfad). **Phase 2 teilweise fertig**: T18.9–T18.11 + T18.13 ✅ (Header-Height-Token; Bottom-Tab-Bar 7→4 + Skills-/Library-Hubs, ADR 0023; Freshness-Indikator in der App-Bar; Back-Affordance-Regel für Non-Tab-Seiten). **Phase 2 noch offen**: T18.8 (Route-Boundaries loading/error/not-found), T18.12 (Shared Empty-State), T18.14 (optimistische Mutations) — separater Durchlauf. **Weiterhin blockiert**: die Write-up-Enrichment-Pass selbst (ADR 0017 Entscheidungen 2–4, `writeup` bleibt NULL), Guides (0018), Actionables (0019), Constellation (0020), SOTA-Retirement (0022 — erst wenn Guides stehen), Knowledge-Base, Trust-Tag |
+| 18 — UX-Implementierung (Design-Pass) | `epic-18-ux-implementation.md` | Fast-Follow | ✅ fertig (ADR 0016 akzeptiert). **Phase 1 fertig**: T18.1–T18.7 ✅ (Tokens/Font; Compact restyle; ReelActions/ResurfaceCard restyle; vier ehrliche Status; ein Ring-Component + `/skills`; Reel-Detail Push-Nav + Write-up/Context-Tab inkl. `reels.writeup`, ADR 0017 Entscheidung 1; Skill-Tab inkl. „Mark as tried" durch denselben `setProgress`-Pfad). **Phase 2 teilweise fertig**: T18.9–T18.11 + T18.13 ✅ (Header-Height-Token; Bottom-Tab-Bar 7→4 + Skills-/Library-Hubs, ADR 0023; Freshness-Indikator in der App-Bar; Back-Affordance-Regel für Non-Tab-Seiten). **Phase 2 fertig**: T18.8 (Route-Boundaries loading/error/not-found), T18.12 (Shared Empty-State), T18.14 (optimistische Mutations) ✅ — Epic 18 damit abgeschlossen (Build grün, 364 Tests). **Weiterhin blockiert**: die Write-up-Enrichment-Pass selbst (ADR 0017 Entscheidungen 2–4, `writeup` bleibt NULL), Guides (0018), Actionables (0019), Constellation (0020), SOTA-Retirement (0022 — erst wenn Guides stehen), Knowledge-Base, Trust-Tag |
 | — Vision-Backlog (optional) | `vision-backlog.md` | Vision | ☐ offen |
 
 **MVP = Epic 0–5 (fertig).** Danach Fast-Follow: 6 (Saves), 9 (Erfahrung), 12 (SkillTagger,

@@ -23,17 +23,20 @@ export interface ReelCardProps {
    *  from `getSkillTabInfoForSlugs` — undefined when the reel has no skill,
    *  which also means the Skill tab hides. */
   skillTabInfo?: SkillTabInfo;
+  /** env().NEW_DAYS, resolved by the page (a Server Component) and passed
+   *  down to `ReelCardBody`, which must not read `env()` itself. */
+  newDays: number;
 }
 
 /** One reel card, sized to fill the viewport (see .reel/.feed scroll-snap in page.tsx). */
-export function ReelCard({ reel, interactions, skillTabInfo }: ReelCardProps) {
+export function ReelCard({ reel, interactions, skillTabInfo, newDays }: ReelCardProps) {
   // T18.6: a solo card has nothing beyond the primary by definition (no
   // cluster, or a cluster reduced to one visible member) — the Context
   // tab's cluster-members list is always empty here.
   const detail = buildReelDetailData(reel, [], skillTabInfo);
   return (
     <ReelCardShell reelId={reel.id} initial={interactions ?? NO_INTERACTIONS} detail={detail}>
-      <ReelCardBody reel={reel} />
+      <ReelCardBody reel={reel} newDays={newDays} />
     </ReelCardShell>
   );
 }

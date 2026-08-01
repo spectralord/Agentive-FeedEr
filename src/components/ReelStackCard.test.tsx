@@ -46,7 +46,7 @@ describe("ReelStackCard (T18.6: Context tab = cluster members beyond the primary
   it("marks the 'show sources' banner data-no-open so it doesn't also open Detail", () => {
     const detail = buildReelDetailData(baseReel, [otherReel]);
     const html = renderToStaticMarkup(
-      <ReelStackCard clusterTitle="Some Topic" primary={baseReel} others={[otherReel]} detail={detail} />,
+      <ReelStackCard newDays={7} clusterTitle="Some Topic" primary={baseReel} others={[otherReel]} detail={detail} />,
     );
     expect(html).toContain("data-no-open");
     expect(html).toContain("Show sources");
@@ -55,7 +55,7 @@ describe("ReelStackCard (T18.6: Context tab = cluster members beyond the primary
   it("Context tab lists the other cluster member(s), and the tab is shown (not hidden)", () => {
     const detail = buildReelDetailData(baseReel, [otherReel]);
     const html = renderToStaticMarkup(
-      <ReelStackCard clusterTitle="Some Topic" primary={baseReel} others={[otherReel]} detail={detail} />,
+      <ReelStackCard newDays={7} clusterTitle="Some Topic" primary={baseReel} others={[otherReel]} detail={detail} />,
     );
     expect(html).toContain("Context");
     expect(html).toContain("other-source");

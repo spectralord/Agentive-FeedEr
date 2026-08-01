@@ -17,9 +17,25 @@ export interface NewableReel {
   publishedAt: Date;
 }
 
-/** "🆕 Neu": published within env().NEW_DAYS of `now`. */
-export function isNew(r: NewableReel, now: Date = new Date()): boolean {
-  return r.publishedAt.getTime() > now.getTime() - env().NEW_DAYS * 86_400_000;
+/**
+ * "🆕 Neu": published within `newDays` of `now`.
+ *
+ * `newDays` is injectable for the same reason `now` is — and, more sharply,
+ * because this function is reached from Client Components (`ReelCardBody`,
+ * pulled into the client bundle by `ReelStackCard`'s `"use client"`).
+ * Reading `env()` here would evaluate the whole server-side zod schema in the
+ * browser, where `DATABASE_URL` is undefined, throwing during hydration —
+ * the client/server boundary hazard documented at the end of
+ * `docs/plan/epic-18-ux-implementation.md`. Server callers get the
+ * `env().NEW_DAYS` default; Client Components must pass the value down as a
+ * prop from a Server Component.
+ */
+export function isNew(
+  r: NewableReel,
+  now: Date = new Date(),
+  newDays: number = env().NEW_DAYS,
+): boolean {
+  return r.publishedAt.getTime() > now.getTime() - newDays * 86_400_000;
 }
 
 export interface SotaReel {

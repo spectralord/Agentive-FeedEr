@@ -1,8 +1,19 @@
 @import "tailwindcss";
 
+/* The product is dark-first by decision (docs/specs/prototypes/README.md: "no
+   light variant was designed"), so these carry the dark values unconditionally
+   and mirror --color-ground/--color-ink below.
+
+   They used to be #ffffff/#171717 with a prefers-color-scheme override (Epic 0
+   scaffolding, left untouched by T18.1). That was a live bug, not dead code:
+   the unlayered `body` rule at the bottom of this file beats Tailwind's layered
+   `.bg-ground` utility from layout.tsx regardless of specificity, so the app
+   rendered on a WHITE background for every visitor whose OS was not in dark
+   mode — with --color-ink (#eef1f2) text on it, i.e. near-invisible. Measured
+   before the fix: light and no-preference both gave rgb(255,255,255). */
 :root {
-  --background: #ffffff;
-  --foreground: #171717;
+  --background: #0a0d10;
+  --foreground: #eef1f2;
 }
 
 @theme inline {
@@ -55,12 +66,10 @@
   --tabbar-h: 3.5rem;
 }
 
-@media (prefers-color-scheme: dark) {
-  :root {
-    --background: #0a0a0a;
-    --foreground: #ededed;
-  }
-}
+/* No prefers-color-scheme override here on purpose: the app is dark in every
+   scheme (see :root above). The former override also used #0a0a0a/#ededed,
+   which were near-miss duplicates of the real --color-ground/--color-ink
+   tokens — so even dark-mode users were not getting the designed values. */
 
 body {
   background: var(--background);

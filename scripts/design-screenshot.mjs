@@ -6,12 +6,22 @@
  * more viewports and writes PNGs, so a design review can compare what is built
  * against docs/specs/prototypes/ visually rather than by reading markup.
  *
- * Playwright is NOT a project dependency (docs/plan/README.md §2 — no extra
- * libraries without a documented reason). To use this script, opt in once:
+ * Playwright IS a devDependency as of 2026-08-01 (it was deliberately not one
+ * before; changed by the owner's decision after the first real design review).
+ * The documented reason required by docs/plan/README.md §2: the review agent's
+ * highest-value checks are the ones only a rendered page can answer, and the
+ * first visual pass immediately found two BLOCKERs that build, typecheck and
+ * 363 green tests had all missed — a white page background in every non-dark
+ * OS scheme, and a Detail overlay whose controls were all unclickable. Leaving
+ * it opt-in meant every review started by re-deciding whether to install it.
  *
- *     npm i -D playwright && npx playwright install chromium
+ * devDependency only — it never ships to Railway.
  *
- * It must be installed *in this project* — a global install does not work,
+ * The browser binary is a separate, one-time, machine-level download:
+ *
+ *     npx playwright install chromium
+ *
+ * The package must resolve *in this project* — a global install does not work,
  * because Node ignores NODE_PATH and global roots when resolving ESM imports
  * (verified, not assumed). If it is absent the script exits 3 with this
  * message, so a review falls back to a source-only pass instead of silently

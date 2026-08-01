@@ -1,4 +1,5 @@
 import Link from "next/link";
+import { env } from "@/lib/env";
 import { DEFAULT_FEED_LIMIT, getReels, groupReelsForFeed } from "@/lib/feed";
 import { getInteractionFlags } from "@/lib/interactions";
 import { getSkillTabInfoForSlugs } from "@/lib/skills/reelSkillTab";
@@ -56,6 +57,9 @@ export default async function FeedPage({ searchParams }: FeedPageProps) {
   // Epic 15 (T15.4): topic clusters with >= 2 displayed members bundle into
   // one stack card; everything else renders as a plain solo card, unchanged.
   const feedItems = groupReelsForFeed(reels);
+  // Resolved here (Server Component) and passed down: `ReelStackCard` is a
+  // Client Component, so nothing beneath it may call `env()` in the browser.
+  const newDays = env().NEW_DAYS;
 
   return (
     <>
@@ -77,6 +81,7 @@ export default async function FeedPage({ searchParams }: FeedPageProps) {
                   item.others,
                   item.primary.skill ? skillTabMap.get(item.primary.skill) : undefined,
                 )}
+                newDays={newDays}
               />
             ) : (
               <ReelCard
@@ -84,6 +89,7 @@ export default async function FeedPage({ searchParams }: FeedPageProps) {
                 reel={item.reel}
                 interactions={interactionFlags.get(item.reel.id)}
                 skillTabInfo={item.reel.skill ? skillTabMap.get(item.reel.skill) : undefined}
+                newDays={newDays}
               />
             ),
           )}

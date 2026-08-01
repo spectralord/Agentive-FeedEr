@@ -159,8 +159,10 @@ Then **read the PNGs back** and compare the built screen against the prototype s
 also reports body-level horizontal overflow, which is invisible in a viewport-clipped image and is
 the most common mobile bug in this project.
 
-It requires a one-time opt-in (`npm i -D playwright && npx playwright install chromium`) — the
-script exits 3 with instructions if absent. Playwright is deliberately not a committed dependency.
+Playwright is a committed **devDependency** as of 2026-08-01, so `npm ci` gives you the package.
+The browser binary is a separate one-time, machine-level download: `npx playwright install
+chromium`. The script exits 3 with instructions if either is missing — if that happens, drop to
+rung 2 or 3 and say so rather than skipping the check silently.
 
 **Rung 2 — dev server, no browser.** Start the server and inspect returned markup. Catches missing
 or wrongly-ordered elements; catches no visual regression whatsoever.
