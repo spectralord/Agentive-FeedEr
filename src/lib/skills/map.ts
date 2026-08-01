@@ -3,6 +3,7 @@ import { db } from "@/db/client";
 import { experienceReports, rawItems, reels, skillNodes } from "@/db/schema";
 import type { SkillNode, UserProgress, UserProgressNote } from "@/db/schema";
 import { listActiveNodes } from "@/lib/skilltagger/nodes";
+import { countEvidenceForNodes, listActionablesForNode, type ActionableListItem } from "@/lib/actionables";
 import {
   UNTOUCHED_STATUS,
   getProgress,
@@ -36,6 +37,11 @@ export interface SkillMapNode {
    *  node's associated *Reels* are marked `experimental`. Reports have no
    *  `experimental` field and are excluded from both sides of the ratio. */
   experimentalDot: boolean;
+  /** Epic 20 (ADR 0019 decision 2): the EVIDENCED track — count of completed
+   *  Actionables rolled up to this node. Deliberately separate from `status`
+   *  (the DECLARED track) and never combined into one number: "mastered
+   *  with zero evidence" must stay fully representable. */
+  evidenceCount: number;
 }
 
 export interface SkillMapTheme {
@@ -95,9 +101,11 @@ export async function getSkillMap(): Promise<SkillMapTheme[]> {
   if (activeNodes.length === 0) return [];
 
   const slugs = activeNodes.map((n) => n.slug);
-  const [{ counts, experimentalMajority }, progressMap] = await Promise.all([
+  const nodeIds = activeNodes.map((n) => n.id);
+  const [{ counts, experimentalMajority }, progressMap, evidenceCounts] = await Promise.all([
     getContentCounts(slugs),
-    getProgressMap(activeNodes.map((n) => n.id)),
+    getProgressMap(nodeIds),
+    countEvidenceForNodes(nodeIds),
   ]);
 
   const byTheme = new Map<string, SkillMapNode[]>();
@@ -113,6 +121,9 @@ export async function getSkillMap(): Promise<SkillMapTheme[]> {
       // stop collapsing the two.
       status: progressMap.get(node.id)?.status ?? UNTOUCHED_STATUS,
       experimentalDot: experimentalMajority.has(node.slug),
+      // Epic 20: nodes with zero completions are absent from the map —
+      // absent means 0, same convention as getInteractionFlags.
+      evidenceCount: evidenceCounts.get(node.id) ?? 0,
     };
     const bucket = byTheme.get(node.theme);
     if (bucket) bucket.push(mapped);
@@ -145,6 +156,12 @@ export interface SkillNodeDetail {
   content: AssociatedContent[];
   status: DisplayStatus;
   notes: UserProgressNote[];
+  /** Epic 20 (ADR 0019): this node's To-Try list — every tagged Reel with a
+   *  non-null `action`, each with its completion state. */
+  actionables: ActionableListItem[];
+  /** Epic 20: the EVIDENCED track's count, parallel to `status` (the
+   *  DECLARED track) — see `SkillMapNode.evidenceCount`'s comment. */
+  evidenceCount: number;
 }
 
 /** Node + associated content + current status + note history, for the
@@ -157,7 +174,7 @@ export async function getNodeDetail(slug: string): Promise<SkillNodeDetail | und
     .where(and(eq(skillNodes.slug, slug), eq(skillNodes.status, "active")));
   if (!node) return undefined;
 
-  const [reelRows, reportRows, status, notes] = await Promise.all([
+  const [reelRows, reportRows, status, notes, actionables, evidenceCounts] = await Promise.all([
     db()
       .select({ id: reels.id, title: rawItems.title, url: rawItems.url, publishedAt: rawItems.publishedAt })
       .from(reels)
@@ -176,6 +193,8 @@ export async function getNodeDetail(slug: string): Promise<SkillNodeDetail | und
       .orderBy(desc(experienceReports.createdAt)),
     getProgress(node.id),
     listNotesForNode(node.id),
+    listActionablesForNode(node.id),
+    countEvidenceForNodes([node.id]),
   ]);
 
   const content: AssociatedContent[] = [
@@ -189,6 +208,8 @@ export async function getNodeDetail(slug: string): Promise<SkillNodeDetail | und
     // T18.4 (§9.4): no `user_progress` row is "untouched", not "seen".
     status: status?.status ?? UNTOUCHED_STATUS,
     notes,
+    actionables,
+    evidenceCount: evidenceCounts.get(node.id) ?? 0,
   };
 }
 

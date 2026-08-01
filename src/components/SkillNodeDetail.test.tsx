@@ -30,6 +30,8 @@ const baseDetail: SkillNodeDetailData = {
   ],
   status: "tried",
   notes: [note],
+  actionables: [],
+  evidenceCount: 0,
 };
 
 describe("SkillNodeDetail", () => {

@@ -92,7 +92,7 @@ snapshot survives a subsequent `UPDATE reels SET action = …` (this is the deci
 
 ---
 
-### ☐ T20.3 — Read layer: evidence counts alongside declared status
+### ☒ T20.3 — Read layer: evidence counts alongside declared status
 
 **Do:**
 - `getSkillMap` (`src/lib/skills/map.ts`) — add an evidence count per node via
