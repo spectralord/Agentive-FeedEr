@@ -1,4 +1,5 @@
 import Link from "next/link";
+import { THEME_LABELS } from "@/lib/skills";
 import type { SkillMapTheme } from "@/lib/skills/map";
 import { EmptyState } from "./EmptyState";
 import { SkillRing } from "./SkillRing";
@@ -28,7 +29,7 @@ export function SkillMap({ themes }: { themes: SkillMapTheme[] }) {
       {themes.map((theme) => (
         <section key={theme.theme}>
           <h3 className="mb-2 font-mono text-xs font-medium tracking-wide text-ink-faint uppercase">
-            {theme.theme}
+            {THEME_LABELS[theme.theme]}
           </h3>
           {/* One column on a narrow phone, two from 400px, three from sm.
               At grid-cols-2 on a 375px screen each tile had ~120px of text

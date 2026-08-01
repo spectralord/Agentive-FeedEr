@@ -2,6 +2,7 @@
 
 import { useMemo, useState } from "react";
 import Link from "next/link";
+import { THEME_LABELS } from "@/lib/skills";
 import type { SkillNodeDetail as SkillNodeDetailData } from "@/lib/skills/map";
 // Type-only import — erased at compile time, so this never drags
 // `@/lib/actionables`'s `db`/`pg` import chain into the client bundle. Same
@@ -104,7 +105,7 @@ export function SkillNodeDetail({ detail, previousStatus }: SkillNodeDetailProps
       <div className="mt-2 flex items-baseline justify-between gap-2">
         <h1 className="text-lg font-semibold text-ink">{node.title}</h1>
         <span className="shrink-0 rounded-full border border-hairline bg-surface-raised px-2 py-0.5 font-mono text-[11px] text-ink-muted">
-          {node.theme}
+          {THEME_LABELS[node.theme]}
         </span>
       </div>
       {node.description && <p className="mt-1 text-sm text-ink-muted">{node.description}</p>}

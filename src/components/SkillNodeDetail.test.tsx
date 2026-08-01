@@ -1,6 +1,7 @@
 import { renderToStaticMarkup } from "react-dom/server";
 import { describe, expect, it } from "vitest";
 import type { SkillNode, UserProgressNote } from "@/db/schema";
+import { THEME_LABELS } from "@/lib/skills";
 import type { SkillNodeDetail as SkillNodeDetailData } from "@/lib/skills/map";
 import { SkillNodeDetail } from "./SkillNodeDetail";
 
@@ -8,7 +9,7 @@ const node: SkillNode = {
   id: 1,
   slug: "sub-agents",
   title: "Sub-Agents",
-  theme: "Agentic Development",
+  theme: "agents",
   description: "Splitting work across parallel agents.",
   status: "active",
   createdAt: new Date("2026-07-01T00:00:00Z"),
@@ -35,10 +36,10 @@ const baseDetail: SkillNodeDetailData = {
 };
 
 describe("SkillNodeDetail", () => {
-  it("renders title, theme, description, the status ring, and the status label", () => {
+  it("renders title, theme label (not the raw slug), description, the status ring, and the status label", () => {
     const html = renderToStaticMarkup(<SkillNodeDetail detail={baseDetail} />);
     expect(html).toContain("Sub-Agents");
-    expect(html).toContain("Agentic Development");
+    expect(html).toContain(THEME_LABELS.agents);
     expect(html).toContain("Splitting work across parallel agents.");
     expect(html).toContain("tried");
     // The shared SkillRing renders here (T18.5) — a partial --accent arc for "tried".

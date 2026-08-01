@@ -43,7 +43,7 @@ wrote friendly display strings straight into a free-form `text` column and bypas
 
 ## Tasks
 
-### ☐ T21.1 — Theme vocabulary: constrain, migrate, and add display labels
+### ☒ T21.1 — Theme vocabulary: constrain, migrate, and add display labels
 
 **Do:**
 1. **`THEME_LABELS`** in `src/lib/skills.ts` — a `Record<Theme, string>` of user-facing labels, e.g.

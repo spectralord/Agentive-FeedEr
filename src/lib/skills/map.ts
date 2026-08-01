@@ -2,6 +2,7 @@ import { desc, eq, and, inArray, sql } from "drizzle-orm";
 import { db } from "@/db/client";
 import { experienceReports, rawItems, reels, skillNodes } from "@/db/schema";
 import type { SkillNode, UserProgress, UserProgressNote } from "@/db/schema";
+import type { Theme } from "@/lib/skills";
 import { listActiveNodes } from "@/lib/skilltagger/nodes";
 import { countEvidenceForNodes, listActionablesForNode, type ActionableListItem } from "@/lib/actionables";
 import {
@@ -26,7 +27,7 @@ export interface SkillMapNode {
   id: number;
   slug: string;
   title: string;
-  theme: string;
+  theme: Theme;
   description: string;
   /** Reels + active experience reports tagged with this node's slug. Not
    *  quality/experimental-filtered — this is an index of everything
@@ -45,7 +46,7 @@ export interface SkillMapNode {
 }
 
 export interface SkillMapTheme {
-  theme: string;
+  theme: Theme;
   nodes: SkillMapNode[];
 }
 
@@ -108,7 +109,7 @@ export async function getSkillMap(): Promise<SkillMapTheme[]> {
     countEvidenceForNodes(nodeIds),
   ]);
 
-  const byTheme = new Map<string, SkillMapNode[]>();
+  const byTheme = new Map<Theme, SkillMapNode[]>();
   for (const node of activeNodes) {
     const mapped: SkillMapNode = {
       id: node.id,

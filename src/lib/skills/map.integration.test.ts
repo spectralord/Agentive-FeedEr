@@ -62,22 +62,22 @@ describe("skill map (integration)", () => {
     await db()
       .insert(skillNodes)
       .values([
-        { slug: "sub-agents", title: "Sub-Agents", theme: "Agentic Development", description: "…", status: "active" },
-        { slug: "mcp", title: "MCP", theme: "Tooling & Workflow", description: "…", status: "active" },
-        { slug: "not-yet", title: "Not Yet", theme: "Tooling & Workflow", description: "…", status: "pending" },
+        { slug: "sub-agents", title: "Sub-Agents", theme: "agents", description: "…", status: "active" },
+        { slug: "mcp", title: "MCP", theme: "tooling", description: "…", status: "active" },
+        { slug: "not-yet", title: "Not Yet", theme: "tooling", description: "…", status: "pending" },
       ]);
     await seedReel("r1", "sub-agents");
     await seedReel("r2", "sub-agents");
     await seedReel("r3", "mcp");
 
     const map = await getSkillMap();
-    expect(map.map((t) => t.theme).sort()).toEqual(["Agentic Development", "Tooling & Workflow"]);
+    expect(map.map((t) => t.theme).sort()).toEqual(["agents", "tooling"]);
 
-    const agentic = map.find((t) => t.theme === "Agentic Development")!;
+    const agentic = map.find((t) => t.theme === "agents")!;
     expect(agentic.nodes).toHaveLength(1);
     expect(agentic.nodes[0]).toMatchObject({ slug: "sub-agents", contentCount: 2, status: "untouched" });
 
-    const tooling = map.find((t) => t.theme === "Tooling & Workflow")!;
+    const tooling = map.find((t) => t.theme === "tooling")!;
     expect(tooling.nodes.map((n) => n.slug)).toEqual(["mcp"]); // "not-yet" (pending) excluded
     expect(tooling.nodes[0].contentCount).toBe(1);
   });
@@ -85,7 +85,7 @@ describe("skill map (integration)", () => {
   it("reflects the current self-declared status per node", async () => {
     const [node] = await db()
       .insert(skillNodes)
-      .values({ slug: "prompt-caching", title: "Prompt Caching", theme: "Claude & Models", description: "…", status: "active" })
+      .values({ slug: "prompt-caching", title: "Prompt Caching", theme: "models", description: "…", status: "active" })
       .returning();
     await setProgress(node.id, "mastered", "Using it in production.");
 
@@ -97,8 +97,8 @@ describe("skill map (integration)", () => {
     const [untouchedNode, seenNode] = await db()
       .insert(skillNodes)
       .values([
-        { slug: "never-opened", title: "Never Opened", theme: "Agentic Development", description: "…", status: "active" },
-        { slug: "explicitly-seen", title: "Explicitly Seen", theme: "Agentic Development", description: "…", status: "active" },
+        { slug: "never-opened", title: "Never Opened", theme: "agents", description: "…", status: "active" },
+        { slug: "explicitly-seen", title: "Explicitly Seen", theme: "agents", description: "…", status: "active" },
       ])
       .returning();
     // untouchedNode: no user_progress row at all — never call setProgress for it.
@@ -117,7 +117,7 @@ describe("skill map (integration)", () => {
   it("getNodeDetail returns the node, labeled Reels + active Experience Reports, status, and note history", async () => {
     const [node] = await db()
       .insert(skillNodes)
-      .values({ slug: "sub-agents", title: "Sub-Agents", theme: "Agentic Development", description: "Splitting work across agents.", status: "active" })
+      .values({ slug: "sub-agents", title: "Sub-Agents", theme: "agents", description: "Splitting work across agents.", status: "active" })
       .returning();
     await seedReel("r1", "sub-agents");
     await db().insert(experienceReports).values({
@@ -155,7 +155,7 @@ describe("skill map (integration)", () => {
   it("getNodeDetail returns undefined for a pending node or unknown slug", async () => {
     await db()
       .insert(skillNodes)
-      .values({ slug: "pending-one", title: "Pending", theme: "Tooling & Workflow", description: "…", status: "pending" });
+      .values({ slug: "pending-one", title: "Pending", theme: "tooling", description: "…", status: "pending" });
 
     expect(await getNodeDetail("pending-one")).toBeUndefined();
     expect(await getNodeDetail("does-not-exist")).toBeUndefined();
@@ -165,9 +165,9 @@ describe("skill map (integration)", () => {
     await db()
       .insert(skillNodes)
       .values([
-        { slug: "mostly-experimental", title: "Mostly Experimental", theme: "Tooling & Workflow", description: "…", status: "active" },
-        { slug: "half-experimental", title: "Half Experimental", theme: "Tooling & Workflow", description: "…", status: "active" },
-        { slug: "no-experimental", title: "No Experimental", theme: "Tooling & Workflow", description: "…", status: "active" },
+        { slug: "mostly-experimental", title: "Mostly Experimental", theme: "tooling", description: "…", status: "active" },
+        { slug: "half-experimental", title: "Half Experimental", theme: "tooling", description: "…", status: "active" },
+        { slug: "no-experimental", title: "No Experimental", theme: "tooling", description: "…", status: "active" },
       ]);
     // 2/3 experimental — above threshold.
     await seedReel("me1", "mostly-experimental", true);
@@ -190,7 +190,7 @@ describe("skill map (integration)", () => {
   it("T18.5: setProgressBySlug reports the previous status (untouched when no row existed) alongside the new row", async () => {
     await db()
       .insert(skillNodes)
-      .values({ slug: "sub-agents", title: "Sub-Agents", theme: "Agentic Development", description: "…", status: "active" });
+      .values({ slug: "sub-agents", title: "Sub-Agents", theme: "agents", description: "…", status: "active" });
 
     const first = await setProgressBySlug("sub-agents", "tried");
     expect(first).toMatchObject({ previousStatus: "untouched", row: { status: "tried" } });

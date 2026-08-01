@@ -9,6 +9,7 @@ import {
   timestamp,
   uniqueIndex,
 } from "drizzle-orm/pg-core";
+import { THEMES } from "@/lib/skills";
 
 export const sources = pgTable("sources", {
   id: serial("id").primaryKey(),
@@ -153,7 +154,12 @@ export const skillNodes = pgTable("skill_nodes", {
   id: serial("id").primaryKey(),
   slug: text("slug").notNull().unique(),
   title: text("title").notNull(),
-  theme: text("theme").notNull(),
+  // Epic 21 (T21.1, ADR 0020 decision 6): constrained to the 8 THEMES slugs
+  // — was bare text().notNull(), which let scripts/seed-dev.sql drift onto
+  // free-text values ("Agentic Workflows", "Cost & Performance") that matched
+  // none of them. THEME_LAYOUT (T21.2) keys off THEMES, so an off-vocabulary
+  // theme has no map region; the DB now rejects one outright.
+  theme: text("theme", { enum: THEMES }).notNull(),
   description: text("description").notNull(),
   status: text("status", { enum: ["active", "pending"] }).notNull().default("pending"),
   createdAt: timestamp("created_at", { withTimezone: true }).notNull().defaultNow(),

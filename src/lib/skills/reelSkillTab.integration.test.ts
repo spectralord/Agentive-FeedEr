@@ -56,7 +56,7 @@ describe("reelSkillTab (integration)", () => {
       .values({
         slug: "agent-skills",
         title: "Agent Skills",
-        theme: "Agentic Development",
+        theme: "agents",
         description: "Building reusable Skills.",
         status: "active",
       })
@@ -85,7 +85,7 @@ describe("reelSkillTab (integration)", () => {
     const info = map.get("agent-skills");
     expect(info).toBeDefined();
     expect(info!.title).toBe("Agent Skills");
-    expect(info!.theme).toBe("Agentic Development");
+    expect(info!.theme).toBe("agents");
     expect(info!.description).toBe("Building reusable Skills.");
     expect(info!.status).toBe("tried");
     // Newest first: newer reel, then the report, then the older reel.
@@ -100,7 +100,7 @@ describe("reelSkillTab (integration)", () => {
     await db().insert(skillNodes).values({
       slug: "mcp",
       title: "MCP",
-      theme: "Tooling & Workflow",
+      theme: "tooling",
       description: "…",
       status: "active",
     });

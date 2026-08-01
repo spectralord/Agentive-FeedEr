@@ -52,14 +52,18 @@ INSERT INTO sources (name, type, url) VALUES
 -- Skill nodes (ids 1..4) — all `active` (SkillTagger-confirmed), one per
 -- four-rung progress state below.
 -- ============================================================================
+-- theme values are THEMES slugs (src/lib/skills.ts), not display strings —
+-- Epic 21 T21.1 fixed this file after it drifted onto free text ("Agentic
+-- Workflows", "Cost & Performance") that matched none of the 8 allowed
+-- values. THEME_LABELS maps these slugs to the friendly labels the UI shows.
 INSERT INTO skill_nodes (slug, title, theme, description, status) VALUES
-  ('agentic-tool-use', 'Agentic Tool Use', 'Agentic Workflows',
+  ('agentic-tool-use', 'Agentic Tool Use', 'agents',
    'Chaining tools together so Claude plans and executes multi-step tasks itself.', 'active'),
-  ('mcp-servers', 'MCP Servers', 'Agentic Workflows',
+  ('mcp-servers', 'MCP Servers', 'agents',
    'Building and connecting Model Context Protocol servers to give Claude new tools.', 'active'),
-  ('prompt-caching', 'Prompt Caching', 'Cost & Performance',
+  ('prompt-caching', 'Prompt Caching', 'prompting',
    'Reusing cached prompt prefixes to cut latency and cost on repeated calls.', 'active'),
-  ('computer-use', 'Computer Use', 'Agentic Workflows',
+  ('computer-use', 'Computer Use', 'agents',
    'Letting Claude operate a GUI directly (mouse/keyboard) instead of an API.', 'active');
 
 -- user_progress: node 1 = mastered, node 2 = tried, node 3 = seen,
