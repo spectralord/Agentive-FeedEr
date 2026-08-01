@@ -32,6 +32,15 @@ möglich sein, der **nie** mit Railway oder der API interagiert.
 
 - **Ausgeschlossen:** `railway-cron` + `claude-code` (Railway kann kein CC-Kontingent verbrauchen).
 - **`APP_PROFILE=local|cloud`** setzt Defaults; einzelne Achsen sind per Env überschreibbar.
+- **Amendment 2026-08-01 (Benutzer-Entscheidung):** Der **Default** von `APP_PROFILE` ist von
+  `cloud` auf **`local`** geändert (`src/lib/env.ts`). Die Matrix oben bleibt unverändert —
+  `cloud` ist weiterhin voll unterstützt, muss aber **explizit** gesetzt werden. Grund: `cloud`
+  impliziert `executor=api`, also die **kostenpflichtige** API. Ein *ungesetztes* `APP_PROFILE`
+  bedeutete damit „Geld ausgeben und einen Cloud-Cron annehmen"; jetzt bedeutet es Claude-Code-
+  Kontingent + manueller Trigger, was beides nicht kann. Zusätzlicher Anlass: das Railway-Deployment
+  ruht derzeit. Der Default ist in `src/lib/env.test.ts` festgenagelt, weil die
+  `resolveExecutionConfig`-Tests `APP_PROFILE` immer explizit übergeben und ein stilles
+  Zurückflippen sonst keinen Test brechen würde.
 - **Harte Leitplanke local:** null API-Calls, **kein stiller API-Fallback**. Misslingt der
   CC-Weg, wird abgebrochen/geskippt, nie über die API nachgeholt. `ANTHROPIC_API_KEY` darf
   ungesetzt sein.

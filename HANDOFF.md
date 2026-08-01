@@ -29,9 +29,30 @@ Local startup: `npm run db:up` (Docker Desktop must be running) → `npm run dev
 
 ---
 
+## 0b. Railway is dormant — do not check it
+
+The user's Railway subscription may have lapsed (2026-08-01). **Do not query Railway deploys,
+logs or metrics, and do not treat a Railway failure as a defect.** The deployment is not part of
+the current workflow; **local is the only live environment.** `main` is still the branch that
+*would* deploy if it were reactivated, so keep it green — but verify your work locally
+(`npm run dev` + `scripts/design-screenshot.mjs`), never against a production URL.
+
+Nothing was removed for this: no Railway config exists in the repo (it is wired up on Railway's
+side), and ADR 0006 (hosting) and ADR 0015 (execution model) are deliberately **left intact** so
+reactivation is a one-step change. The single code consequence is below.
+
+**`APP_PROFILE` now defaults to `local`, not `cloud`** (`src/lib/env.ts`, ADR 0015 amended
+2026-08-01). `cloud` implies `executor=api` — the *paid* Anthropic API — so an unset profile used
+to mean "spend credit and assume a cloud cron". It now means Claude Code quota + manual trigger,
+which can do neither. `cloud` still works, but must be set explicitly. The default is pinned by a
+test in `src/lib/env.test.ts`, because every `resolveExecutionConfig` test passes `APP_PROFILE`
+explicitly and would not catch a silent flip back.
+
+---
+
 ## 1. Git auth — resolved, but note the local-only setup
 
-Everything is **pushed**; `origin/main` is at `4a6d265`. Railway has the fixes.
+Everything is **pushed**; `origin/main` is at `4a6d265`.
 
 How it works on this machine, because it is not the default and a fresh clone will not inherit it:
 - **The remote is SSH** (`git@github.com:spectralord/…`), not HTTPS. HTTPS is unusable here — the

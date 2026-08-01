@@ -52,4 +52,19 @@ describe("parseEnv", () => {
   it("rejects out-of-range values", () => {
     expect(() => parseEnv({ ...required, QUALITY_THRESHOLD: "101" })).toThrow();
   });
+
+  it("defaults APP_PROFILE to local, so an unset profile cannot spend API credit", () => {
+    // Changed from "cloud" on 2026-08-01. `cloud` resolves to executor=api —
+    // the PAID Anthropic API — plus a cron trigger, so the old default meant an
+    // unconfigured process would reach for money and a dormant deployment.
+    // `local` resolves to claude-code + manual, which can do neither. Pinned
+    // here because nothing else asserts the zod default: the
+    // resolveExecutionConfig tests all pass APP_PROFILE explicitly, so a silent
+    // flip back would not fail any existing test.
+    expect(parseEnv(required).APP_PROFILE).toBe("local");
+  });
+
+  it("still accepts an explicit cloud profile (ADR 0015's matrix is unchanged)", () => {
+    expect(parseEnv({ ...required, APP_PROFILE: "cloud" }).APP_PROFILE).toBe("cloud");
+  });
 });

@@ -30,7 +30,15 @@ const envSchema = z.object({
   // profile matrix / illegal-combo validation lives in
   // src/lib/executor/config.ts (resolveExecutionConfig), not here, because it
   // is cross-field.
-  APP_PROFILE: z.enum(["local", "cloud"]).default("cloud"),
+  // Default flipped cloud -> local on 2026-08-01 (owner's decision; ADR 0015's
+  // matrix is otherwise unchanged and `cloud` remains fully supported by
+  // setting APP_PROFILE explicitly). Two reasons: the Railway deployment is
+  // dormant, and — the load-bearing one — `cloud` implies executor=api, i.e.
+  // the PAID Anthropic API. An unset APP_PROFILE therefore used to mean "spend
+  // API credit"; it now means Claude Code quota + manual trigger, which cannot
+  // spend money or reach a cloud cron by accident. Failing safe is the right
+  // default for a single-user tool that is currently run locally.
+  APP_PROFILE: z.enum(["local", "cloud"]).default("local"),
   PIPELINE_EXECUTOR: z.preprocess(
     (v) => (v === "" ? undefined : v),
     z.enum(["api", "claude-code"]).optional(),
