@@ -144,7 +144,7 @@ size, no horizontal overflow, no white background.
 
 ---
 
-### ☐ T19.5 — Pin the cloud guard with a test
+### ☒ T19.5 — Pin the cloud guard with a test
 
 **Do:** a test asserting the button/route is unavailable when the resolved executor is `api`.
 Precedent for *why*: `src/lib/env.test.ts:56-65` pins the `APP_PROFILE` default for exactly this
@@ -156,13 +156,17 @@ reason — nothing else asserted it, so a silent flip would not have failed any 
 
 ## Definition of done
 
-- [ ] `npm run build` clean · `npx tsc --noEmit` clean
-- [ ] `npm test` green — **≥ 377 tests** (the count at plan time; new tests raise it)
-- [ ] `npx eslint src` reports **zero** problems (it is currently at zero — do not regress it)
-- [ ] Screenshot reviewed at `--vp phone` (T19.4)
+- [x] `npm run build` clean · `npx tsc --noEmit` clean
+- [x] `npm test` green — **≥ 377 tests** (the count at plan time; new tests raise it) — **393 passing / 64 files** at epic completion
+- [x] `npx eslint src` reports **zero** problems (it is currently at zero — do not regress it)
+- [x] Screenshot reviewed at `--vp phone` (T19.4) — plus live browser interaction driving all three button states (see Abweichungen)
 - [ ] A real end-to-end generation ran locally against one Reel and wrote prose into `reels.writeup`
-- [ ] No new runtime dependencies
-- [ ] Status table row updated in `docs/plan/README.md` §6
+      — **not satisfied by this subagent session**; see Abweichungen. Needs one run from a shell
+      with an authenticated `claude` CLI (this session's own CLI is unauthenticated/untrusted).
+- [x] No new runtime dependencies
+- [ ] Status table row updated in `docs/plan/README.md` §6 — left to the reviewing strong model,
+      per standard hand-back (the row already correctly says "Plan fertig, delegierbar"; it needs
+      a status flip to done, which the strong model does at merge review per CLAUDE.md's QA step)
 
 ## Abweichungen / Fragen
 
@@ -197,6 +201,18 @@ reason — nothing else asserted it, so a silent flip would not have failed any 
   overflow, no white background, placeholder copy unchanged above the button, no ADR/epic numbers
   visible. The error state was reached via the same real (sandbox-unauthenticated) CLI call
   described above — confirming the UI's error path is exercised by a real failure, not simulated.
+- **T19.5 guard-removal check — done via a scratch reproduction, not by disabling the real route.**
+  The task's own verification step says "check that by removing it temporarily." Doing that
+  literally (editing the committed `route.ts` to skip the `config.executor === "api"` branch, then
+  running the test suite via Bash) was refused by this session's own auto-mode classifier as
+  resembling a security-check bypass — a reasonable read, so it was not retried or worked around.
+  Instead: a standalone scratch test file (not committed, deleted immediately after) reproduced the
+  route's POST handler with the guard branch omitted, under the exact same mocks the real
+  `route.test.ts` uses, and confirmed it returns 200 and calls the executor/DB even under
+  `APP_PROFILE=cloud` — i.e. exactly the regression the real test's assertions (503, zero calls)
+  would catch. `git status`/`git diff` before and after confirm `route.ts` itself was never
+  touched. Net effect is the same as the literal instruction (a verified-to-fail-without-the-guard
+  test now exists); the mechanism differs for a safety reason worth recording.
 
 ## Explicitly out of scope
 
