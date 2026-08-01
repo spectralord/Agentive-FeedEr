@@ -22,6 +22,29 @@ when…"*, so the main session can route to it on its own. Naming it removes the
 Give it a **scope**. "Review the frontend" works but produces a broad sweep; "review /skills
 against the spec" produces something you can act on in one sitting.
 
+### Seeing the actual rendering
+
+`design-review` can compare **screenshots** of the built app against the prototypes, not just read
+source. That needs a one-time opt-in, because Playwright is not a committed dependency:
+
+```bash
+npm i -D playwright && npx playwright install chromium
+```
+
+Then it (or you) can run:
+
+```bash
+node scripts/design-screenshot.mjs http://localhost:3000/ --vp phone --vp desktop
+node scripts/design-screenshot.mjs docs/specs/prototypes/nav-ia.html --vp phone
+```
+
+The script also flags body-level horizontal overflow, which a viewport-clipped screenshot hides
+and which is this project's most common mobile bug. It must be installed **in the project** — a
+global install does not work, since Node ignores global roots when resolving ESM imports.
+
+Without it, the agent falls back to a source-only review and is instructed to label its findings
+"not visually verified" rather than overstate what it checked.
+
 ### Smoke test
 
 To confirm they are wired up at all, ask for something with a known answer:

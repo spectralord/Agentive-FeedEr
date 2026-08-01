@@ -144,21 +144,35 @@ Do not limit yourself to conformance. On every review, ask:
 
 ## Seeing it actually render
 
-Several checks in this review — mobile overflow, hierarchy, whether spacing reads as designed —
-**cannot be done from source alone.** Work down this ladder and report which rung you reached:
+Several checks here — mobile overflow, visual hierarchy, whether spacing reads as designed —
+**cannot be done from source alone.** Work down this ladder and state which rung you reached.
 
-1. **Playwright**, if a browser is available: start `npm run dev`, screenshot at 375×812 and at
-   desktop width, and compare against the prototype in `docs/specs/prototypes/`. Best evidence.
-2. **Dev server + manual description**: start `npm run dev`, fetch the page, and inspect the
-   rendered markup. Catches missing elements; will not catch visual regressions.
-3. **Static read only**: source and computed Tailwind classes.
+**Rung 1 — screenshots (best evidence).** `scripts/design-screenshot.mjs` exists for this:
 
-The app needs a `DATABASE_URL` to render most pages; if the server will not start, that is rung 3,
-not a failure — say so.
+```bash
+npm run dev &                                             # needs DATABASE_URL
+node scripts/design-screenshot.mjs http://localhost:3000/ --vp phone --vp desktop
+node scripts/design-screenshot.mjs docs/specs/prototypes/reel-card-and-detail.html --vp desktop
+```
 
-**Never claim you verified something visually when you reached rung 3.** Write "not visually
-verified — reviewed from source" on any finding where it matters. An overstated verification is
-the one failure mode that makes this whole review untrustworthy.
+Then **read the PNGs back** and compare the built screen against the prototype screen. The script
+also reports body-level horizontal overflow, which is invisible in a viewport-clipped image and is
+the most common mobile bug in this project.
+
+It requires a one-time opt-in (`npm i -D playwright && npx playwright install chromium`) — the
+script exits 3 with instructions if absent. Playwright is deliberately not a committed dependency.
+
+**Rung 2 — dev server, no browser.** Start the server and inspect returned markup. Catches missing
+or wrongly-ordered elements; catches no visual regression whatsoever.
+
+**Rung 3 — source only.** Components and Tailwind classes.
+
+Most pages need `DATABASE_URL`. If the server will not start, that is rung 3 — not a failure, just
+say so.
+
+**Never describe a rung-3 finding as visually verified.** Mark such findings "not visually
+verified — reviewed from source". Overstated verification is the single failure mode that makes
+this entire review untrustworthy.
 
 ## Output
 
