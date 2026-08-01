@@ -109,6 +109,9 @@ This was the highest-value category again, as the handoff predicted.
 
 ## 3. Governance finding
 
+**[RESOLVED 2026-08-01 — ADR 0023 ratified as accepted, and decision 6 added to close the
+Detail-vs-chrome gap. ADR 0017 fully accepted; ADR 0024 written for the mechanism.]**
+
 **ADR 0023 (navigation IA) is still `Status: proposed` but is fully implemented.** T18.10
 shipped the 7→4 tab bar and the Skills/Library hubs against it; `TabBar.tsx:20-23` has exactly
 the four destinations it specifies. Shipping against an unratified ADR inverts the intended
