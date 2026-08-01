@@ -27,6 +27,11 @@ interface OverviewPageProps {
 export default async function OverviewPage({ searchParams }: OverviewPageProps) {
   const params = await searchParams;
 
+  // One clock read per render, hoisted out of the filter maths below.
+  // `Date.now()` inline there tripped react-hooks/purity ("cannot call impure
+  // function during render"); same pattern as today/page.tsx.
+  const now = new Date();
+
   // SOTA (T5.2): age-independent by construction — no publishedAfter/onlyNew
   // filter applied here. showWeak:true because isSota's own quality>=70 floor
   // already supersedes (and is stricter than) the feed's default
@@ -40,7 +45,7 @@ export default async function OverviewPage({ searchParams }: OverviewPageProps) 
   const periodDays = params.period ? Number(params.period) : undefined;
   const publishedAfter =
     periodDays !== undefined && Number.isFinite(periodDays)
-      ? new Date(Date.now() - periodDays * 86_400_000)
+      ? new Date(now.getTime() - periodDays * 86_400_000)
       : undefined;
   const minRelevance = params.minRelevance ? Number(params.minRelevance) : undefined;
 
