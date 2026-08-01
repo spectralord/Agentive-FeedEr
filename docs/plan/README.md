@@ -77,6 +77,7 @@
 | Variable | Pflicht | Default | Zweck |
 |---|---|---|---|
 | `DATABASE_URL` | ja | — | Postgres-Verbindung |
+| `TEST_DATABASE_URL` | nur `npm test` | — | Separate Test-Datenbank (`feedr_test`). Integrationstests machen `TRUNCATE`, laufen deshalb nie gegen `DATABASE_URL`; vitest bricht ab statt zurückzufallen. Wird beim ersten Testlauf angelegt und migriert. Siehe `docs/LOCAL_SETUP.md`. |
 | `ANTHROPIC_API_KEY` | nur Job/Enrichment | — | Claude API. Web-Prozess bootet auch ohne (leer = ungesetzt); Enrichment/Cron brauchen ihn. |
 | `ANTHROPIC_MODEL` | nein | `claude-haiku-4-5-20251001` | Enrichment-Modell |
 | `DEEPEN_MODEL` | nein | `claude-sonnet-5` | Vertiefen (Epic 8) |

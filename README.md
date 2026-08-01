@@ -18,7 +18,7 @@ Rauschunterdrückung, Handlungsbezug und tatsächliches Anwenden.
 
 ```bash
 npm install
-cp .env.example .env      # DATABASE_URL + ANTHROPIC_API_KEY eintragen
+cp .env.example .env      # DATABASE_URL + TEST_DATABASE_URL + ANTHROPIC_API_KEY eintragen
 npm run db:migrate        # Migrationen ausführen
 npm run dev               # App auf http://localhost:3000
 npm run job:daily         # tägliche Pipeline manuell ausführen
