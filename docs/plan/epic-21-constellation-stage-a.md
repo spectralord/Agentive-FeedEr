@@ -48,13 +48,21 @@ wrote friendly display strings straight into a free-form `text` column and bypas
 **Do:**
 1. **`THEME_LABELS`** in `src/lib/skills.ts` — a `Record<Theme, string>` of user-facing labels, e.g.
    `prompting → "Prompting & Context"`, `agents → "Agentic Workflows"`. The DB stores the **slug**;
-   the UI shows the **label**. Cover all 8.
-2. **Migrate the data.** Map the existing rows onto slugs — proposed mapping, **confirm it reads
-   sensibly before applying**:
+   the UI shows the **label**. Cover all 8. Pick reasonable labels and move on — they are display
+   strings with no data dependency, so they are trivially changed later.
+2. **Migrate the data.** Use this mapping — **just apply it, do not deliberate**:
    - `Agentic Workflows` → `agents` (all three rows)
-   - `Cost & Performance` → `prompting` *(`prompt-caching` is prompt-construction/caching, which is
-     what `prompting` covers per the comment at `skills.ts:18-19`)*
+   - `Cost & Performance` → `prompting`
    Write it as a **drizzle migration** so it is reproducible, not a manual `psql` edit.
+
+   > **Owner decision 2026-08-01: the slug set does not need to be right yet.** The goal is a running
+   > constellation; which categories *actually* make sense will be judged once it can be seen with
+   > real data. So: do **not** redesign `THEMES`, do **not** open a question about whether
+   > `Cost & Performance` deserves its own category, and do **not** block on confirming the mapping.
+   > Any mapping that puts every row on a valid slug is good enough for this task. Renaming or
+   > re-cutting the vocabulary later is a cheap follow-up — it is a `THEMES` edit plus one migration,
+   > and `THEME_LABELS` (below) already decouples the display text from the stored key, so labels can
+   > change without touching data at all.
 3. **Fix `scripts/seed-dev.sql:55-62`** to use slugs. Otherwise the next `npm run db:seed`
    reintroduces the exact problem.
 4. **Constrain the column** so this cannot recur: `skill_nodes.theme` becomes a Postgres enum (or a

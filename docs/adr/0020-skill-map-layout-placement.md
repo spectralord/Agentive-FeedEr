@@ -97,6 +97,14 @@ buildable:
    choice per decision 1, and auto-placing unknown regions gives that away for flexibility this
    product does not need (themes change "rarely and deliberately").
 
+   > **The 8 slug *values* are explicitly not settled (owner, 2026-08-01).** What matters here is that
+   > the vocabulary is **closed and constrained**, not that it is well-chosen. Which categories
+   > actually make sense will be judged once the constellation renders with real data. Re-cutting the
+   > set later is cheap by construction: a `THEMES` edit plus one migration, and because
+   > `THEME_LABELS` decouples display text from the stored key, *renaming* what the user sees costs
+   > nothing at all. Do not treat the current 8 values, or the migration mapping onto them, as a
+   > decision requiring defence.
+
 7. **The layout pass is gated on signal density; the hash tier ships first.** Decisions 2–5 are
    accepted, but the *incremental relaxation pass* (decision 3) only earns its keep once
    co-occurrence can actually move a node. Until then it is machinery around what is effectively
