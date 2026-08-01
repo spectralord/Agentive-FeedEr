@@ -29,17 +29,23 @@ Local startup: `npm run db:up` (Docker Desktop must be running) → `npm run dev
 
 ---
 
-## 1. ⚠️ Blocking user action — the push failed
+## 1. Git auth — resolved, but note the local-only setup
 
-**7 commits are merged into local `main` and NOT pushed.** `git push` returns 403: the stored
-HTTPS credential authenticates as `TJesgarz`, but the repo is `spectralord/Agentive-FeedEr`. SSH
-is not configured for GitHub either (`Permission denied (publickey)`).
+Everything is **pushed**; `origin/main` is at `4a6d265`. Railway has the fixes.
 
-Nothing is lost — the merge commit is `6e48ba5` and everything is committed locally. But
-**Railway has not deployed any of it**, so production still has both BLOCKERs described in §3.
+How it works on this machine, because it is not the default and a fresh clone will not inherit it:
+- **The remote is SSH** (`git@github.com:spectralord/…`), not HTTPS. HTTPS is unusable here — the
+  macOS keychain hands git a `tjesgarz` work credential, and GitHub 403s it against the personal
+  `spectralord` repo.
+- **`~/.ssh/config` forces `IdentityFile ~/.ssh/id_ed25519` for `Host *`**, which is *not* the key
+  registered with GitHub. The working key is **`cfp_key`**. Rather than edit the user's global SSH
+  config, this repo carries a local override:
+  `core.sshCommand = ssh -i ~/.ssh/cfp_key -o IdentitiesOnly=yes`
+  (`git config --local`). If pushes suddenly fail with `Permission denied (publickey)`, that
+  setting is the first thing to check — and it lives in `.git/config`, so it is **not** cloned.
 
-Ask the user how they want to authenticate (correct account in the keychain, an SSH key, or a
-PAT). Do not attempt to create credentials for them.
+Commits from this machine are authored `tjesgarz <tristan.jesgarz@cofinpro.de>` (work identity).
+The user was asked and explicitly did not care. Do not "fix" this retroactively.
 
 ---
 
