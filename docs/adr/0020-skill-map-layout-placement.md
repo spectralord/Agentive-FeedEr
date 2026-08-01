@@ -1,6 +1,12 @@
 # ADR 0020 — Skill Map layout: fixed theme regions, stored incremental placement, manual override
 
-- Status: proposed (needs strong-model grill — schema addition)
+- Status: proposed (needs strong-model grill — schema addition).
+  **Dependency clarified 2026-08-01:** ADR 0018 (Skill Guides) is **accepted**, so the design
+  dependency is satisfied and this ADR is now grillable. Sequencing caution still stands, though —
+  design doc §9.9: *"the constellation without them is a beautiful shell over thin content… don't
+  build 4 before 3 and expect it to feel finished."* Guides are decided but not built
+  (ADR 0018 decision 6), so building this first would render an elaborate layout over nodes with
+  1–3 items each.
 - Date: 2026-07-24
 - Related: ADR 0012/0013 (grounded computation preferred over LLM judgment — the pattern this
   follows), `src/lib/skills.ts` (`THEMES`), `src/lib/sources.ts` (code-as-source-of-truth pattern)
