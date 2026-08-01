@@ -86,7 +86,7 @@ race, not a failure.
 
 ---
 
-### ☐ T21.2 — `THEME_LAYOUT`: hand-placed theme regions (code constant)
+### ☒ T21.2 — `THEME_LAYOUT`: hand-placed theme regions (code constant)
 
 **Do:** a `THEME_LAYOUT: Record<Theme, { cx: number; cy: number; r: number }>` in
 `src/lib/skills/layout.ts` — centre + radius per theme in an abstract coordinate space (e.g. 0–1000
