@@ -8,6 +8,15 @@
   (manually declared nodes), ADR 0005 (sourced-only), ADR 0015 (executor seam, binding),
   ADR 0009/Epic 12 (SkillTagger — how nodes are created today)
 
+> **Scope widened 2026-08-01 (ADR 0020 grill).** The owner wants the same capability at the
+> **theme/root level**, not only for individual skill nodes: declare a new root category, have it
+> search already-ingested content, *then* fetch new material from the web for it. ADR 0020
+> decision 8 establishes that **themes are the root nodes**, so "create a new root" and "create a
+> declared node" are the same feature at two levels of the same hierarchy. Both inherit the
+> whitelist-anchor problem below and the ADR 0001 collision. Whatever this ADR decides must therefore
+> work for a declared *theme* as well as a declared *node* — a theme has even less to anchor to,
+> since it has no slug-level topic to search for beyond its own name.
+
 ## Context / Problem
 
 The owner wants to **declare a topic/node and have a deep-dive fetch content to fill it** — rather
