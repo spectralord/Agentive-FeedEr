@@ -36,6 +36,12 @@ function FeedEmptyState({ hasFilters }: { hasFilters: boolean }) {
   );
 }
 
+// The feed is recomputed per request (same reasoning as /today, /overview and
+// /saved). It was already dynamic in practice — `searchParams` is awaited, and
+// the build reports it as `ƒ` — but it was the only primary surface not saying
+// so explicitly, which made the guarantee incidental rather than stated.
+export const dynamic = "force-dynamic";
+
 export default async function FeedPage({ searchParams }: FeedPageProps) {
   const params = await searchParams;
   const hasFilters = Boolean(params.category || params.new || params.weak || params.caveat);

@@ -22,7 +22,11 @@ export function ResurfaceCard({ reels, now }: { reels: SavedReel[]; now: Date })
   if (reels.length === 0) return null;
 
   return (
-    <div className="reel flex min-h-dvh snap-start items-center justify-center [scroll-snap-stop:always]">
+    /* min-h is the feed's card formula, not plain dvh: this card sits inside
+       the same snap container as the Reels, which reserves space for the fixed
+       bottom tab bar. A full-viewport height here ran the card under the bar.
+       Matches ReelCardShell.tsx / today/page.tsx / skeletons.tsx. */
+    <div className="reel flex min-h-[calc(100dvh-var(--tabbar-h))] snap-start items-center justify-center [scroll-snap-stop:always]">
       <div className="mx-auto flex w-full max-w-xl flex-col gap-4 px-6">
         <h2 className="text-center text-lg font-semibold text-ink">🔁 Keep at it</h2>
         <ol className="flex flex-col gap-3">
