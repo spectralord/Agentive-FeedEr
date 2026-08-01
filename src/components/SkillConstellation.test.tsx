@@ -102,4 +102,23 @@ describe("SkillConstellation", () => {
     const html = renderToStaticMarkup(<SkillConstellation themes={farThemes} />);
     expect(html).not.toContain("margin-top:16px");
   });
+
+  // T21.5 (ADR 0020 decision 5): edit mode — and therefore the drag
+  // affordance — is a desktop/iPad-only surface. The toggle button carries
+  // Tailwind's `hidden md:inline-flex` so it never renders (interactively)
+  // below the `md` breakpoint; mobile parity is explicitly not required.
+  it("renders the edit-positions toggle hidden by default and only shown from the md breakpoint up", () => {
+    const html = renderToStaticMarkup(<SkillConstellation themes={themes} />);
+    expect(html).toContain("Edit positions");
+    expect(html).toMatch(/class="[^"]*\bhidden\b[^"]*\bmd:inline-flex\b[^"]*"[^>]*>Edit positions/);
+  });
+
+  it("does not show a reset affordance for a locked node before entering edit mode", () => {
+    const html = renderToStaticMarkup(<SkillConstellation themes={themes} />);
+    // "Manually placed" (the pin marker) always shows; "reset" (the text of
+    // the reset button) is edit-mode-only and must not leak into the
+    // default, non-editing render.
+    expect(html).toContain("Manually placed");
+    expect(html).not.toContain(">reset<");
+  });
 });

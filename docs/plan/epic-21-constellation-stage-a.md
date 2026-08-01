@@ -156,7 +156,7 @@ project), no white background. Source review is not acceptable evidence for this
 
 ---
 
-### ☐ T21.5 — Manual override (desktop/iPad only)
+### ☒ T21.5 — Manual override (desktop/iPad only)
 
 **Do:** drag-to-place a node, which writes `position_x/y` and sets `position_locked = true`.
 

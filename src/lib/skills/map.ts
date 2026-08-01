@@ -262,3 +262,51 @@ export async function setProgressBySlug(
   const row = await setProgress(node.id, status, note);
   return { row, previousStatus };
 }
+
+/**
+ * Epic 21, T21.5 (ADR 0020 decision 5): drag-to-place writes an explicit
+ * `position_x/y` and marks it `position_locked = true` — the manual
+ * override tier `resolveNodePosition` checks first, ahead of any stored
+ * computed layout or the hash fallback. Locked nodes are pinned forever:
+ * nothing else in this codebase should ever set `positionLocked` back to
+ * false except `resetNodePositionBySlug` below, and no future layout pass
+ * (stage b, out of scope this epic) may touch a locked node at all — that
+ * invariant is the entire point of "lock" as a concept here.
+ *
+ * `x`/`y` are stored as given, in the same abstract 0-1000 coordinate space
+ * as `THEME_LAYOUT` — the caller (the drag UI) is responsible for
+ * converting a pointer position back into that space before calling this.
+ * Only resolves `active` nodes, same restriction as every other slug-keyed
+ * write here. Returns `undefined` for an unknown/inactive slug so the route
+ * can 404.
+ */
+export async function setNodePositionBySlug(
+  slug: string,
+  x: number,
+  y: number,
+): Promise<SkillNode | undefined> {
+  const [row] = await db()
+    .update(skillNodes)
+    .set({ positionX: x, positionY: y, positionLocked: true })
+    .where(and(eq(skillNodes.slug, slug), eq(skillNodes.status, "active")))
+    .returning();
+  return row;
+}
+
+/**
+ * "Reset to computed" (T21.5): clears a manual override so the node falls
+ * back down `resolveNodePosition`'s tiers — to a stored computed layout if
+ * one exists (no producer yet this epic, ADR 0020 decision 7), otherwise
+ * the deterministic hash fallback. Clears all three position columns
+ * (rather than just `positionLocked`) so a stale `position_x/y` can never
+ * resurface as a "stored computed layout" hit in `resolveNodePosition`'s
+ * middle tier once stage (b) exists.
+ */
+export async function resetNodePositionBySlug(slug: string): Promise<SkillNode | undefined> {
+  const [row] = await db()
+    .update(skillNodes)
+    .set({ positionX: null, positionY: null, positionLocked: false })
+    .where(and(eq(skillNodes.slug, slug), eq(skillNodes.status, "active")))
+    .returning();
+  return row;
+}

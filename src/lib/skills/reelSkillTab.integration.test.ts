@@ -128,7 +128,7 @@ describe("pickSkillTabPreview (pure)", () => {
     const info = {
       slug: "agent-skills",
       title: "Agent Skills",
-      theme: "Agentic Development",
+      theme: "agents",
       description: "…",
       status: "seen" as const,
       items: [

@@ -8,7 +8,7 @@ import { experienceReports, rawItems, reels, skillNodes, sources } from "@/db/sc
 import { toggleActionable } from "@/lib/actionables";
 import { resolveNodePosition, THEME_LAYOUT } from "@/lib/skills/layout";
 import { setProgress } from "./progress";
-import { getNodeDetail, getSkillMap, setProgressBySlug } from "./map";
+import { getNodeDetail, getSkillMap, resetNodePositionBySlug, setNodePositionBySlug, setProgressBySlug } from "./map";
 
 async function seedReel(
   slug: string,
@@ -246,8 +246,8 @@ describe("skill map (integration)", () => {
     const [mastered] = await db()
       .insert(skillNodes)
       .values([
-        { slug: "mastered-no-evidence", title: "Mastered No Evidence", theme: "Agentic Development", description: "…", status: "active" },
-        { slug: "untouched-with-evidence", title: "Untouched With Evidence", theme: "Agentic Development", description: "…", status: "active" },
+        { slug: "mastered-no-evidence", title: "Mastered No Evidence", theme: "agents", description: "…", status: "active" },
+        { slug: "untouched-with-evidence", title: "Untouched With Evidence", theme: "agents", description: "…", status: "active" },
       ])
       .returning();
 
@@ -275,7 +275,7 @@ describe("skill map (integration)", () => {
   it("T20.3: getNodeDetail carries the To-Try list and evidenceCount, independent of status", async () => {
     const [node] = await db()
       .insert(skillNodes)
-      .values({ slug: "sub-agents", title: "Sub-Agents", theme: "Agentic Development", description: "…", status: "active" })
+      .values({ slug: "sub-agents", title: "Sub-Agents", theme: "agents", description: "…", status: "active" })
       .returning();
     const done = await seedReel("done", "sub-agents", false, "Do the thing.");
     await seedReel("not-done", "sub-agents", false, "Do another thing.");
@@ -294,11 +294,68 @@ describe("skill map (integration)", () => {
   it("T20.3: getNodeDetail's evidenceCount is 0 and actionables list is empty for a node with neither", async () => {
     await db()
       .insert(skillNodes)
-      .values({ slug: "untouched", title: "Untouched", theme: "Agentic Development", description: "…", status: "active" });
+      .values({ slug: "untouched", title: "Untouched", theme: "agents", description: "…", status: "active" });
 
     const detail = await getNodeDetail("untouched");
     expect(detail!.status).toBe("untouched");
     expect(detail!.evidenceCount).toBe(0);
     expect(detail!.actionables).toEqual([]);
+  it("Epic 21 T21.5: setNodePositionBySlug writes an override that resolveNodePosition (via getSkillMap) then prefers over the hash tier", async () => {
+    await db()
+      .insert(skillNodes)
+      .values({ slug: "sub-agents", title: "Sub-Agents", theme: "agents", description: "…", status: "active" });
+
+    const row = await setNodePositionBySlug("sub-agents", 111, 222);
+    expect(row).toMatchObject({ slug: "sub-agents", positionX: 111, positionY: 222, positionLocked: true });
+
+    const map = await getSkillMap();
+    const node = map.flatMap((t) => t.nodes).find((n) => n.slug === "sub-agents")!;
+    expect(node.position).toEqual({ x: 111, y: 222 });
+    expect(node.positionLocked).toBe(true);
+
+    expect(await setNodePositionBySlug("does-not-exist", 1, 1)).toBeUndefined();
+  });
+
+  it("Epic 21 T21.5: resetNodePositionBySlug clears the override, and the node survives (falls back to the hash tier) rather than erroring", async () => {
+    await db()
+      .insert(skillNodes)
+      .values({
+        slug: "sub-agents",
+        title: "Sub-Agents",
+        theme: "agents",
+        description: "…",
+        status: "active",
+        positionX: 111,
+        positionY: 222,
+        positionLocked: true,
+      });
+
+    const reset = await resetNodePositionBySlug("sub-agents");
+    expect(reset).toMatchObject({ slug: "sub-agents", positionX: null, positionY: null, positionLocked: false });
+
+    const map = await getSkillMap();
+    const node = map.flatMap((t) => t.nodes).find((n) => n.slug === "sub-agents")!;
+    expect(node.positionLocked).toBe(false);
+    // No longer {111, 222} — fell through to the deterministic hash tier.
+    expect(node.position).not.toEqual({ x: 111, y: 222 });
+
+    expect(await resetNodePositionBySlug("does-not-exist")).toBeUndefined();
+  });
+
+  it("Epic 21 T21.5: a locked position survives being read again later (simulates surviving a page reload)", async () => {
+    await db()
+      .insert(skillNodes)
+      .values({ slug: "sub-agents", title: "Sub-Agents", theme: "agents", description: "…", status: "active" });
+    await setNodePositionBySlug("sub-agents", 50, 60);
+
+    // Two independent reads, as two separate page loads would each be.
+    const firstLoad = await getSkillMap();
+    const secondLoad = await getSkillMap();
+    const a = firstLoad.flatMap((t) => t.nodes).find((n) => n.slug === "sub-agents")!;
+    const b = secondLoad.flatMap((t) => t.nodes).find((n) => n.slug === "sub-agents")!;
+    expect(a.position).toEqual({ x: 50, y: 60 });
+    expect(b.position).toEqual({ x: 50, y: 60 });
+    expect(a.positionLocked).toBe(true);
+    expect(b.positionLocked).toBe(true);
   });
 });
