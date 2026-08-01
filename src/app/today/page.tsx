@@ -3,6 +3,7 @@ import { EmptyState } from "@/components/EmptyState";
 import { ReelCard } from "@/components/ReelCard";
 import { ResurfaceCard } from "@/components/ResurfaceCard";
 import { env } from "@/lib/env";
+import { getActionableCompletionFlags } from "@/lib/actionables";
 import { getInteractionFlags, getResurfacingCandidates } from "@/lib/interactions";
 import { getSkillTabInfoForSlugs } from "@/lib/skills/reelSkillTab";
 import { getTodayTopReels } from "@/lib/today";
@@ -34,6 +35,8 @@ export default async function TodayPage() {
   const skillTabMap = await getSkillTabInfoForSlugs(
     reels.map((r) => r.skill).filter((s): s is string => s !== null),
   );
+  // T20.4: same batching pattern, for the Skill tab's tick control.
+  const completionFlags = await getActionableCompletionFlags(reels.map((r) => r.id));
   // T19.4 (ADR 0024 decision 3): same resolve-once-per-page rule as
   // src/app/page.tsx.
   const canGenerateWriteup = writeupGenerationAvailable();
@@ -66,6 +69,7 @@ export default async function TodayPage() {
             skillTabInfo={reel.skill ? skillTabMap.get(reel.skill) : undefined}
             newDays={env().NEW_DAYS}
             canGenerateWriteup={canGenerateWriteup}
+            actionableCompletion={completionFlags.get(reel.id)}
           />
         ))}
 

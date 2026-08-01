@@ -4,7 +4,7 @@
 import { afterAll, beforeEach, describe, expect, it } from "vitest";
 import { eq, sql } from "drizzle-orm";
 import { db, getPool } from "@/db/client";
-import { actionableCompletions, rawItems, reels, skillNodes, sources } from "@/db/schema";
+import { actionableCompletions, rawItems, reels, skillNodes, sources, topicClusters } from "@/db/schema";
 import {
   countEvidenceForNodes,
   listActionablesForNode,
@@ -18,6 +18,7 @@ async function seedReel(opts: {
   effortTag?: "5-min-test" | "afternoon" | "know-only" | null;
   skill?: string | null;
   publishedAt?: Date;
+  topicClusterId?: number | null;
 }) {
   const [source] = await db()
     .insert(sources)
@@ -47,6 +48,7 @@ async function seedReel(opts: {
       action: opts.action ?? null,
       effortTag: opts.effortTag ?? null,
       skill: opts.skill ?? null,
+      topicClusterId: opts.topicClusterId ?? null,
     })
     .returning();
   return reel;
@@ -63,7 +65,7 @@ async function seedNode(slug: string, status: "active" | "pending" = "active") {
 describe("actionables (integration)", () => {
   beforeEach(async () => {
     await db().execute(
-      sql`TRUNCATE actionable_completions, reels, raw_items, sources, skill_nodes RESTART IDENTITY CASCADE`,
+      sql`TRUNCATE actionable_completions, reels, raw_items, sources, skill_nodes, topic_clusters RESTART IDENTITY CASCADE`,
     );
   });
 
@@ -213,6 +215,66 @@ describe("actionables (integration)", () => {
 
     it("returns [] for an unknown node id", async () => {
       expect(await listActionablesForNode(999_999)).toEqual([]);
+    });
+
+    it(
+      "ADR 0019 resolved open question: labels a superseded Actionable with the reason, " +
+        "never hides or expires it",
+      async () => {
+        const node = await seedNode("sub-agents");
+        const [newerCluster] = await db().insert(topicClusters).values({ title: "Newer" }).returning();
+        const [oldCluster] = await db()
+          .insert(topicClusters)
+          .values({
+            title: "Old",
+            lifecycleState: "active",
+            supersededByClusterId: newerCluster.id,
+            supersedeReason: "A newer approach replaces this.",
+          })
+          .returning();
+        const superseded = await seedReel({
+          externalId: "r1",
+          action: "Try the old way.",
+          skill: "sub-agents",
+          topicClusterId: oldCluster.id,
+        });
+        await seedReel({ externalId: "r2", action: "Try the current way.", skill: "sub-agents" });
+
+        const list = await listActionablesForNode(node.id);
+        const supersededItem = list.find((i) => i.reelId === superseded.id)!;
+        expect(supersededItem.supersession).toEqual({
+          reason: "A newer approach replaces this.",
+          supersededByClusterId: newerCluster.id,
+        });
+        const currentItem = list.find((i) => i.action === "Try the current way.")!;
+        expect(currentItem.supersession).toBeNull();
+
+        // Still present in the list — supersession labels, never removes.
+        expect(list).toHaveLength(2);
+      },
+    );
+
+    it("does not label supersession once a human has confirmed it (lifecycleState deprecated)", async () => {
+      const node = await seedNode("sub-agents");
+      const [newerCluster] = await db().insert(topicClusters).values({ title: "Newer" }).returning();
+      const [oldCluster] = await db()
+        .insert(topicClusters)
+        .values({
+          title: "Old",
+          lifecycleState: "deprecated",
+          supersededByClusterId: newerCluster.id,
+          supersedeReason: "Confirmed superseded.",
+        })
+        .returning();
+      const reel = await seedReel({
+        externalId: "r1",
+        action: "Try the old way.",
+        skill: "sub-agents",
+        topicClusterId: oldCluster.id,
+      });
+
+      const list = await listActionablesForNode(node.id);
+      expect(list.find((i) => i.reelId === reel.id)!.supersession).toBeNull();
     });
   });
 

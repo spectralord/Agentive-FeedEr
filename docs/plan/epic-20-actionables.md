@@ -112,7 +112,7 @@ are tests pinning this (`src/lib/skills/map.integration.test.ts`).
 
 ---
 
-### ☐ T20.4 — UI: the To-Try list and the tick
+### ☒ T20.4 — UI: the To-Try list and the tick
 
 **Do:**
 - **Reel Detail Skill tab** (`ReelDetail.tsx`, the existing `skill.action` block at 239-245): add the

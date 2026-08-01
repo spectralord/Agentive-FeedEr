@@ -1,6 +1,6 @@
 import { and, desc, eq, inArray, sql } from "drizzle-orm";
 import { db } from "@/db/client";
-import { actionableCompletions, rawItems, reels, skillNodes } from "@/db/schema";
+import { actionableCompletions, rawItems, reels, skillNodes, topicClusters } from "@/db/schema";
 import type { ActionableCompletion } from "@/db/schema";
 
 /**
@@ -100,6 +100,16 @@ export interface ActionableListItem {
     note: string | null;
     doneAt: Date;
   } | null;
+  /**
+   * Epic 11 (ADR 0012) freshness/supersession, surfaced per ADR 0019's
+   * resolved open question: an Actionable is NEVER hidden or expired for
+   * this — its parent Reel's supersession state is labelled on it instead.
+   * Non-null only while the cluster's `lifecycleState` is still "active"
+   * (same gate `ReelCardBody.tsx` uses) — once a human confirms the
+   * supersession via the Epic-11 route, the cluster flips to "deprecated"
+   * and this reverts to null (the Reel-level UI treats that the same way).
+   */
+  supersession: { reason: string | null; supersededByClusterId: number } | null;
 }
 
 export interface ListActionablesOpts {
@@ -142,10 +152,14 @@ export async function listActionablesForNode(
       completionEffortTag: actionableCompletions.effortTag,
       completionNote: actionableCompletions.note,
       completionDoneAt: actionableCompletions.doneAt,
+      clusterLifecycleState: topicClusters.lifecycleState,
+      supersededByClusterId: topicClusters.supersededByClusterId,
+      supersedeReason: topicClusters.supersedeReason,
     })
     .from(reels)
     .innerJoin(rawItems, eq(reels.rawItemId, rawItems.id))
     .leftJoin(actionableCompletions, eq(actionableCompletions.reelId, reels.id))
+    .leftJoin(topicClusters, eq(reels.topicClusterId, topicClusters.id))
     .where(
       opts.effortTag
         ? and(eq(reels.skill, node.slug), eq(reels.effortTag, opts.effortTag))
@@ -169,6 +183,13 @@ export async function listActionablesForNode(
               note: r.completionNote,
               doneAt: r.completionDoneAt as Date,
             }
+          : null,
+      // Same gate as ReelCardBody.tsx: only "active" — once a human confirms
+      // supersession, lifecycleState flips to "deprecated" and the label
+      // (having done its job) stops showing, same as the Reel's own card.
+      supersession:
+        r.supersededByClusterId !== null && r.clusterLifecycleState === "active"
+          ? { reason: r.supersedeReason, supersededByClusterId: r.supersededByClusterId }
           : null,
     }));
 
@@ -203,6 +224,27 @@ export async function countEvidenceForNodes(nodeIds: number[]): Promise<Map<numb
     .groupBy(actionableCompletions.skillNodeId);
 
   for (const row of rows) map.set(row.skillNodeId, row.count);
+  return map;
+}
+
+/**
+ * Batch lookup of completion state for a set of reel ids — for hydrating the
+ * Reel Detail Skill tab's tick control (T20.4), same batching convention as
+ * `getInteractionFlags`. Reels with no completion are simply absent from the
+ * map; callers treat that as "not completed".
+ */
+export async function getActionableCompletionFlags(
+  reelIds: number[],
+): Promise<Map<number, ActionableCompletion>> {
+  const map = new Map<number, ActionableCompletion>();
+  if (reelIds.length === 0) return map;
+
+  const rows = await db()
+    .select()
+    .from(actionableCompletions)
+    .where(inArray(actionableCompletions.reelId, reelIds));
+
+  for (const row of rows) map.set(row.reelId, row);
   return map;
 }
 

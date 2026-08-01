@@ -1,5 +1,6 @@
 import Link from "next/link";
 import { env } from "@/lib/env";
+import { getActionableCompletionFlags } from "@/lib/actionables";
 import { DEFAULT_FEED_LIMIT, getReels, groupReelsForFeed } from "@/lib/feed";
 import { getInteractionFlags } from "@/lib/interactions";
 import { getSkillTabInfoForSlugs } from "@/lib/skills/reelSkillTab";
@@ -61,6 +62,8 @@ export default async function FeedPage({ searchParams }: FeedPageProps) {
   const skillTabMap = await getSkillTabInfoForSlugs(
     reels.map((r) => r.skill).filter((s): s is string => s !== null),
   );
+  // T20.4: same batching pattern, for the Skill tab's tick control.
+  const completionFlags = await getActionableCompletionFlags(reels.map((r) => r.id));
   // Epic 15 (T15.4): topic clusters with >= 2 displayed members bundle into
   // one stack card; everything else renders as a plain solo card, unchanged.
   const feedItems = groupReelsForFeed(reels);
@@ -92,6 +95,7 @@ export default async function FeedPage({ searchParams }: FeedPageProps) {
                   item.others,
                   item.primary.skill ? skillTabMap.get(item.primary.skill) : undefined,
                   canGenerateWriteup,
+                  completionFlags.get(item.primary.id),
                 )}
                 newDays={newDays}
               />
@@ -103,6 +107,7 @@ export default async function FeedPage({ searchParams }: FeedPageProps) {
                 skillTabInfo={item.reel.skill ? skillTabMap.get(item.reel.skill) : undefined}
                 newDays={newDays}
                 canGenerateWriteup={canGenerateWriteup}
+                actionableCompletion={completionFlags.get(item.reel.id)}
               />
             ),
           )}
