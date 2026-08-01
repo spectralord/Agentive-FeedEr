@@ -12,6 +12,7 @@ import { listAdoptionLog } from "@/lib/skills/progress";
 // ADR 0023's "existing routes can stay where they are" consequence.
 const SKILLS_HUB_ITEMS = [
   { href: "#skill-map", label: "Map" },
+  { href: "#new-skills", label: "New Skills" },
   { href: "#adoption-log", label: "Adoption Log" },
 ];
 
@@ -32,18 +33,34 @@ export default async function SkillsPage() {
     <>
       <HubSubnav items={SKILLS_HUB_ITEMS} />
       <div className="mx-auto max-w-xl px-4 py-6">
-        <h1 className="text-lg font-semibold text-zinc-100">
-          New Skills {pending.length > 0 && `(${pending.length})`}
-        </h1>
-        <p className="mt-1 text-xs text-zinc-500">
-          SkillTagger proposals (Match-or-Propose) — create, merge into an existing skill, or
-          discard. Confirmed skills are assigned automatically on the next run.
-        </p>
+        {/* The Skill Map leads this page. It used to sit third, below a
+            "New Skills" h1 whose 3-line explainer owned the top third of the
+            phone viewport and whose content is usually just "No open
+            proposals." — so an empty ops queue outranked the product thesis,
+            and the Map was pushed below the fold at half the type size. Same
+            inverted-hierarchy bug design doc §10.7 flagged for /saved. */}
+        <section id="skill-map" className="scroll-mt-[var(--header-h)]">
+          <h1 className="text-lg font-semibold text-ink">Skill Map ({active.length})</h1>
+          <p className="mt-1 text-xs text-ink-faint">
+            Confirmed skills, grouped by theme. Click a node for details, content, and to update
+            your status.
+          </p>
+          <SkillMap themes={themes} />
+        </section>
 
-        {pending.length === 0 ? (
-          <p className="mt-6 text-sm text-zinc-500">No open proposals.</p>
-        ) : (
-          <ul className="mt-4 flex flex-col gap-3">
+        <section id="new-skills" className="mt-10 scroll-mt-[var(--header-h)]">
+          <h2 className="text-sm font-medium text-ink-muted">
+            New Skills {pending.length > 0 && `(${pending.length})`}
+          </h2>
+          <p className="mt-1 text-xs text-ink-faint">
+            SkillTagger proposals (Match-or-Propose) — create, merge into an existing skill, or
+            discard. Confirmed skills are assigned automatically on the next run.
+          </p>
+
+          {pending.length === 0 ? (
+            <p className="mt-6 text-sm text-ink-faint">No open proposals.</p>
+          ) : (
+            <ul className="mt-4 flex flex-col gap-3">
             {pending.map((node) => (
               <li key={node.id} className="rounded-lg border border-zinc-800 bg-zinc-900/40 px-3 py-3">
                 <div className="flex items-baseline justify-between gap-2">
@@ -100,15 +117,7 @@ export default async function SkillsPage() {
               </li>
             ))}
           </ul>
-        )}
-
-        <section id="skill-map" className="mt-10 scroll-mt-[var(--header-h)]">
-          <h2 className="text-sm font-medium text-zinc-400">Skill Map ({active.length})</h2>
-          <p className="mt-1 text-xs text-zinc-500">
-            Confirmed skills, grouped by theme. Click a node for details, content, and to update
-            your status.
-          </p>
-          <SkillMap themes={themes} />
+          )}
         </section>
 
         <section id="adoption-log" className="mt-10 scroll-mt-[var(--header-h)]">
