@@ -1,6 +1,6 @@
 import { describe, expect, it } from "vitest";
 import { THEMES } from "@/lib/skills";
-import { LAYOUT_SPACE_SIZE, THEME_LAYOUT } from "./layout";
+import { LAYOUT_SPACE_SIZE, resolveNodePosition, THEME_LAYOUT, type PositionableNode } from "./layout";
 
 // Epic 21, T21.2 (ADR 0020 decisions 1 & 6): THEME_LAYOUT is a hand-placed
 // code constant, not derived/DB state, but it still needs to stay a valid
@@ -35,5 +35,85 @@ describe("THEME_LAYOUT", () => {
         expect(distance, `${nameA} vs ${nameB} must not overlap`).toBeGreaterThanOrEqual(a.r + b.r);
       }
     }
+  });
+});
+
+function node(overrides: Partial<PositionableNode> = {}): PositionableNode {
+  return {
+    slug: "some-skill",
+    theme: "agents",
+    positionX: null,
+    positionY: null,
+    positionLocked: false,
+    ...overrides,
+  };
+}
+
+// Epic 21, T21.3 (ADR 0020 decision 2): the three-tier resolution — locked
+// override, then stored computed layout, then the deterministic hash
+// fallback — is the mechanism that guarantees every node has *some* stable
+// position even before any layout pass exists.
+describe("resolveNodePosition", () => {
+  it("falls through to the hash tier when no position is stored", () => {
+    const pos = resolveNodePosition(node({ slug: "prompt-caching", theme: "prompting" }));
+    expect(pos.x).toBeTypeOf("number");
+    expect(pos.y).toBeTypeOf("number");
+  });
+
+  it("the hash tier is pure and stable: the same slug yields the identical point on every call", () => {
+    const a = resolveNodePosition(node({ slug: "mcp-servers", theme: "agents" }));
+    const b = resolveNodePosition(node({ slug: "mcp-servers", theme: "agents" }));
+    const c = resolveNodePosition(node({ slug: "mcp-servers", theme: "agents" }));
+    expect(a).toEqual(b);
+    expect(b).toEqual(c);
+  });
+
+  it("different slugs (even in the same theme) land on different points", () => {
+    const a = resolveNodePosition(node({ slug: "agentic-tool-use", theme: "agents" }));
+    const b = resolveNodePosition(node({ slug: "computer-use", theme: "agents" }));
+    expect(a).not.toEqual(b);
+  });
+
+  it("every hash-tier point lands inside its theme's circle, for every theme", () => {
+    for (const theme of THEMES) {
+      const region = THEME_LAYOUT[theme];
+      for (const slug of ["alpha", "beta", "gamma", "delta-skill", "z"]) {
+        const pos = resolveNodePosition(node({ slug: `${slug}-${theme}`, theme }));
+        const distanceFromCentre = Math.hypot(pos.x - region.cx, pos.y - region.cy);
+        expect(distanceFromCentre, `${theme}/${slug} must land inside its circle`).toBeLessThanOrEqual(region.r);
+      }
+    }
+  });
+
+  it("prefers the stored position over the hash fallback when present but not locked", () => {
+    const pos = resolveNodePosition(node({ positionX: 111, positionY: 222, positionLocked: false }));
+    expect(pos).toEqual({ x: 111, y: 222 });
+  });
+
+  it("prefers the locked manual override over everything else", () => {
+    const pos = resolveNodePosition(node({ positionX: 333, positionY: 444, positionLocked: true }));
+    expect(pos).toEqual({ x: 333, y: 444 });
+  });
+
+  it("precedence: locked beats stored beats hash — verified by observing which value wins", () => {
+    const hashOnly = resolveNodePosition(node({ slug: "prompt-caching", theme: "prompting" }));
+    const stored = resolveNodePosition(
+      node({ slug: "prompt-caching", theme: "prompting", positionX: 500, positionY: 500, positionLocked: false }),
+    );
+    const locked = resolveNodePosition(
+      node({ slug: "prompt-caching", theme: "prompting", positionX: 999, positionY: 999, positionLocked: true }),
+    );
+
+    // Stored overrides the hash tier...
+    expect(stored).not.toEqual(hashOnly);
+    expect(stored).toEqual({ x: 500, y: 500 });
+    // ...and a locked position overrides a merely-stored one.
+    expect(locked).not.toEqual(stored);
+    expect(locked).toEqual({ x: 999, y: 999 });
+  });
+
+  it("a node with x/y present but not locked still resolves from the stored tier (locked is not required to use stored data)", () => {
+    const pos = resolveNodePosition(node({ positionX: 42, positionY: 84, positionLocked: false }));
+    expect(pos).toEqual({ x: 42, y: 84 });
   });
 });

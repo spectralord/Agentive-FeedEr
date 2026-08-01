@@ -104,7 +104,7 @@ overlap given their radii.
 
 ---
 
-### ☐ T21.3 — Position schema + three-tier resolution
+### ☒ T21.3 — Position schema + three-tier resolution
 
 **Do:**
 1. Schema: `skill_nodes` gains `position_x` real nullable, `position_y` real nullable,

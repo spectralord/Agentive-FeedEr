@@ -13,6 +13,9 @@ const node: SkillNode = {
   description: "Splitting work across parallel agents.",
   status: "active",
   createdAt: new Date("2026-07-01T00:00:00Z"),
+  positionX: null,
+  positionY: null,
+  positionLocked: false,
 };
 
 const note: UserProgressNote = {

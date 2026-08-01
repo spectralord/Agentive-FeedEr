@@ -52,3 +52,97 @@ export const THEME_LAYOUT: Record<Theme, ThemeRegion> = {
  *  since it's a square. Exported so the renderer/tests don't hardcode 1000
  *  a second time. */
 export const LAYOUT_SPACE_SIZE = 1000;
+
+/** A resolved point in the same abstract coordinate space as THEME_LAYOUT. */
+export interface ResolvedPosition {
+  x: number;
+  y: number;
+}
+
+/** The minimal shape `resolveNodePosition` needs — a structural subset of
+ *  `SkillNode` (`src/db/schema.ts`) rather than the full row, so callers
+ *  (and tests) don't need a complete DB row just to resolve a point. */
+export interface PositionableNode {
+  slug: string;
+  theme: Theme;
+  positionX: number | null;
+  positionY: number | null;
+  positionLocked: boolean;
+}
+
+/**
+ * A small, deterministic 32-bit string hash (FNV-1a). Deliberately hand
+ * rolled rather than pulling in a hashing package — ADR 0020/T21.3 rule out
+ * a new runtime dependency for what only needs to be stable, not
+ * cryptographically strong. Pure function of the input string; same input
+ * always produces the same output, in this process or any other.
+ */
+function fnv1a(input: string): number {
+  let hash = 0x811c9dc5; // FNV offset basis
+  for (let i = 0; i < input.length; i++) {
+    hash ^= input.charCodeAt(i);
+    // FNV prime multiplication, done with shifts/adds to stay in 32-bit
+    // integer arithmetic (JS bitwise ops truncate to 32 bits, so this
+    // matches the standard FNV-1a reference algorithm exactly).
+    hash += (hash << 1) + (hash << 4) + (hash << 7) + (hash << 8) + (hash << 24);
+    hash >>>= 0; // keep it an unsigned 32-bit integer between rounds
+  }
+  return hash >>> 0;
+}
+
+/**
+ * Deterministic hash fallback tier (ADR 0020 decision 2/7): `slug` maps to
+ * an (angle, radius) pair inside the node's theme circle, purely — no DB
+ * read, no randomness, no Date/Math.random. The same slug always lands on
+ * the exact same point, forever, in this process or any other, which is the
+ * whole point: it guarantees every node has *some* stable position even
+ * before any layout pass (stage b, explicitly out of scope this epic) has
+ * ever run.
+ *
+ * Two independent hash values (the slug, and the slug with a suffix) drive
+ * angle and radius separately so nodes don't all land at the same distance
+ * from centre just because they got the same angle bucket by coincidence.
+ * Radius is scaled to keep points away from the exact center (a cluster of
+ * nodes all sitting on top of the centre dot would look wrong) and away
+ * from the outer edge (so a node never renders as if it's escaping its
+ * theme's circle at the boundary).
+ */
+function hashPositionInRegion(slug: string, region: ThemeRegion): ResolvedPosition {
+  const angleHash = fnv1a(slug);
+  const radiusHash = fnv1a(`${slug}:radius`);
+
+  const angle = (angleHash / 0xffffffff) * 2 * Math.PI;
+  // Keep the point within [15%, 85%] of the region's radius from its
+  // centre — see rationale above.
+  const radiusFraction = 0.15 + (radiusHash / 0xffffffff) * 0.7;
+  const radius = region.r * radiusFraction;
+
+  return {
+    x: region.cx + radius * Math.cos(angle),
+    y: region.cy + radius * Math.sin(angle),
+  };
+}
+
+/**
+ * Resolves a node's render position (ADR 0020 decision 2), in this
+ * precedence order:
+ *
+ *   manual override (position_locked && x,y present)
+ *     ?? stored computed layout (x,y present)
+ *     ?? deterministic hash fallback
+ *
+ * The middle tier (a layout pass writing `position_x/y` without locking it)
+ * has no producer yet — the incremental relaxation pass is stage (b),
+ * explicitly out of scope for this epic (ADR 0020 decision 7) — but the
+ * precedence is implemented now so stage (b) only ever needs to *write*
+ * `skill_nodes` rows, never touch this function.
+ */
+export function resolveNodePosition(node: PositionableNode): ResolvedPosition {
+  if (node.positionLocked && node.positionX !== null && node.positionY !== null) {
+    return { x: node.positionX, y: node.positionY };
+  }
+  if (node.positionX !== null && node.positionY !== null) {
+    return { x: node.positionX, y: node.positionY };
+  }
+  return hashPositionInRegion(node.slug, THEME_LAYOUT[node.theme]);
+}

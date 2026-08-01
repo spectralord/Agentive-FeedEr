@@ -4,6 +4,7 @@ import {
   integer,
   jsonb,
   pgTable,
+  real,
   serial,
   text,
   timestamp,
@@ -163,6 +164,15 @@ export const skillNodes = pgTable("skill_nodes", {
   description: text("description").notNull(),
   status: text("status", { enum: ["active", "pending"] }).notNull().default("pending"),
   createdAt: timestamp("created_at", { withTimezone: true }).notNull().defaultNow(),
+  // Epic 21 (T21.3, ADR 0020 decision 2): manual-override position within
+  // the node's THEME_LAYOUT circle. Nullable — an unplaced node (the normal
+  // case, since there is no layout pass yet, ADR 0020 decision 7) simply
+  // falls through to resolveNodePosition's deterministic hash tier. Only
+  // ever written by the drag-to-place UI (T21.5); nothing else should set
+  // positionLocked=true.
+  positionX: real("position_x"),
+  positionY: real("position_y"),
+  positionLocked: boolean("position_locked").notNull().default(false),
 });
 
 // Epic 7: self-declared progress per skill node (Skill-Map, Variante A — no

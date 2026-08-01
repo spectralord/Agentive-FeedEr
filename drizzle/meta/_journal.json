@@ -92,6 +92,13 @@
       "when": 1785615803978,
       "tag": "0012_skill_nodes_theme_migrate_and_constrain",
       "breakpoints": true
+    },
+    {
+      "idx": 13,
+      "version": "7",
+      "when": 1785616366830,
+      "tag": "0013_skill_nodes_position",
+      "breakpoints": true
     }
   ]
 }
