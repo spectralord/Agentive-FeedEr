@@ -134,11 +134,36 @@ Ein Epic ist fertig, wenn:
 | 16 — Refactoring-Agent (nächtl. Claude-Code-Cron) | `epic-16-refactoring-agent.md` | Tooling/Vision (erst grillen) | ☐ geparkt (teilt CC-Routine-Mechanik mit Epic 17) |
 | 17 — Ausführungs-Modi (Trigger × Executor) | `epic-17-execution-modes.md` | Tooling/Vision | ◑ in Umsetzung (ADR 0015): T17.1–T17.5+T17.7 fertig & getestet; T17.6 offen (Infra) |
 | 18 — UX-Implementierung (Design-Pass) | `epic-18-ux-implementation.md` | Fast-Follow | ✅ fertig (ADR 0016 akzeptiert). **Phase 1 fertig**: T18.1–T18.7 ✅ (Tokens/Font; Compact restyle; ReelActions/ResurfaceCard restyle; vier ehrliche Status; ein Ring-Component + `/skills`; Reel-Detail Push-Nav + Write-up/Context-Tab inkl. `reels.writeup`, ADR 0017 Entscheidung 1; Skill-Tab inkl. „Mark as tried" durch denselben `setProgress`-Pfad). **Phase 2 teilweise fertig**: T18.9–T18.11 + T18.13 ✅ (Header-Height-Token; Bottom-Tab-Bar 7→4 + Skills-/Library-Hubs, ADR 0023; Freshness-Indikator in der App-Bar; Back-Affordance-Regel für Non-Tab-Seiten). **Phase 2 fertig**: T18.8 (Route-Boundaries loading/error/not-found), T18.12 (Shared Empty-State), T18.14 (optimistische Mutations) ✅ — Epic 18 damit abgeschlossen (Build grün; 364 Tests zum Zeitpunkt des Epic-Abschlusses, Stand 2026-08-01: **377 Tests / 60 Files**). **Entblockt 2026-08-01:** ADR 0017 Entscheidungen 2–4 sind **akzeptiert**, und **ADR 0024** legt den Mechanismus fest — Write-up wird *nutzergetriggert pro Reel* über den bestehenden `claude-code`-Executor erzeugt (Claude-Code-Kontingent, nie die kostenpflichtige API), kein Batch, kein Gating. `writeup` bleibt NULL für alles, was niemand angefordert hat — das ist jetzt der **Soll-Zustand**, keine Lücke. Baubar, noch nicht gebaut. **Guides (ADR 0018) 2026-08-01 gegrillt + akzeptiert** — Design steht, **Bau aber bewusst gesperrt** (Entscheidung 6): die Knoten halten aktuell nur 1–3 getaggte Reels, daraus lässt sich nichts synthetisieren. Damit sind 0020 (Constellation) und 0022 (SOTA-Retirement) *entscheidungsseitig* entblockt, 0022 wartet aber weiter darauf, dass Guides wirklich *laufen*. **Actionables (ADR 0019) 2026-08-01 gegrillt + akzeptiert — und im Gegensatz zu 0018 sofort baubar**: die Prämisse wurde gegen die echten Daten geprüft und hält (8 Reels mit `action`, 7 davon actionable-ready, `action`/`effortTag` rendern bereits read-only im Detail-Skill-Tab). Netto-neu ist nur eine Completion-Tabelle + eine geteilte Mutation. **Constellation (ADR 0020) 2026-08-01 gegrillt + akzeptiert**, in zwei Stufen geteilt: (a) Position-Schema + Hash-Tier rendert schon eine echte Konstellation → **sofort baubar**, (b) der Relaxations-Pass ist auf Co-Occurrence-Dichte gesperrt (aktuell **ein** Paar im gesamten Korpus). **Vorbedingung:** `skill_nodes.theme` muss auf die 8 `THEMES`-Slugs migriert werden (Entscheidung 6) — die DB enthält freitextliche Themen („Agentic Workflows", „Cost & Performance"), für die es keine Map-Region gibt. Neu: drei View-Layer, Themes = Root-Nodes (Entscheidung 8). **Weiterhin blockiert**: Knowledge-Base, Trust-Tag. **Geparkt/vorgeschlagen:** ADR 0025 (Task-Queue), ADR 0026 (wiederverwendbarer Schreib-Assistenz-Service), ADR 0027 (Node-Seeding — kollidiert mit ADR 0001) — alle drei bewusst *nicht* gebaut, jeder braucht erst einen Grill |
+| 19 — Write-up on demand | `epic-19-writeup-on-demand.md` | Fast-Follow | 📋 **Plan fertig, delegierbar** (ADR 0024). Kein Schema-Change, keine neue Dependency — `reels.writeup` existiert schon. Button im Write-up-Tab → Route → **bestehender `claude-code`-Executor** (Abo-Kontingent, nie die bezahlte API). Kleinstes der drei Pakete; **unabhängig**, kann sofort starten |
+| 20 — Actionables & Evidence-Track | `epic-20-actionables.md` | Fast-Follow | 📋 **Plan fertig, delegierbar** (ADR 0019). Kein LLM-Pass nötig — `reels.action`/`effort_tag`/`skill` sind schon befüllt (8/16 bzw. 7/16) und rendern read-only im Detail-Skill-Tab. Netto-neu: `actionable_completions` (mit **Text-Snapshot**, Entscheidung 5), **eine** geteilte Mutation (§8.4), Evidence-Counts, `effort_tag`-Filter. **Unabhängig** von 19/21 |
+| 21 — Constellation Stufe (a) | `epic-21-constellation-stage-a.md` | Vision | 📋 **Plan fertig, delegierbar** (ADR 0020, nur Stufe a). **T21.1 ist Vorbedingung**: `skill_nodes.theme` enthält Freitext (`Agentic Workflows`, `Cost & Performance`), keiner der 8 `THEMES`-Slugs — ohne Migration hat **kein** Node eine Map-Region. Danach Position-Schema + `THEME_LAYOUT` + Hash-Tier + manuelles Override. **Relaxations-Pass, View-Layer und Root-Anlage sind ausdrücklich out of scope** |
 | — Vision-Backlog (optional) | `vision-backlog.md` | Vision | ☐ offen |
 
 **MVP = Epic 0–5 (fertig).** Danach Fast-Follow: 6 (Saves), 9 (Erfahrung), 12 (SkillTagger,
 vor 7). Vision: 7 (Skill-Map), 8 (Vertiefen), 10 (Verifier), 11 (SOTA-Re-Check). 7–12 nur
 nach explizitem Benutzer-Go; 10 und 11 zusätzlich erst nach eigenem Grill.
+
+### Delegations-Reihenfolge für Epics 19–21 (Stand 2026-08-01)
+
+Alle drei Pläne sind fertig und **fachlich unabhängig** — es gibt keine Reihenfolge-Pflicht zwischen
+ihnen. Praktische Empfehlung:
+
+1. **Epic 19 zuerst** — kleinstes Paket, kein Schema-Change, und macht den sichtbarsten Platzhalter
+   der App zu echtem Inhalt.
+2. **Epic 20 parallel dazu möglich** — berührt andere Dateien (Skill-Tab-Action-Block + Node-Seite vs.
+   Write-up-Tab). Konfliktrisiko in `ReelDetail.tsx` ist real aber klein und liegt in verschiedenen
+   Tabs; bei Parallelbetrieb zuerst mergen, dann rebasen.
+3. **Epic 21 zuletzt** — größtes Paket, enthält als einziges eine **Daten-Migration** (T21.1), und
+   §9.9 warnt ohnehin, die Konstellation nicht vor den Guides „fertig" zu erwarten.
+
+**Max. 2–3 gleichzeitige Subagenten** (CLAUDE.md, Design-Prozess), jeder auf eigenem Feature-Branch
+`claude/epic-<N>-<kurz>`. Vor dem Abzweigen `git fetch origin main`. Review durch das starke Modell
+vor jedem Merge: Build grün, Tests grün, Task-Verifikationen ausgeführt, keine ADR-Verletzung, keine
+neuen Runtime-Deps, Diff auf das Epic begrenzt.
+
+**Für alle drei bindend:** Screenshot-Verifikation ist Teil der Definition of Done, nicht optional —
+in diesem Projekt haben zwei BLOCKER einen grünen Build, grünen Typecheck und 363 grüne Tests
+überlebt und wurden **nur** durch das Ansehen gerenderter PNGs gefunden.
 
 ### Revidierte Annahmen (Grill-Session 2026-07-22)
 Siehe `docs/specs/2026-07-22-experience-reports-design.md` → „Revidierte Annahmen". Kurz:
