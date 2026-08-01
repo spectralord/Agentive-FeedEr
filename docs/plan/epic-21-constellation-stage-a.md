@@ -185,6 +185,39 @@ survives a page reload.
 - [x] No new runtime dependencies
 - [x] Status table row updated in `docs/plan/README.md` §6
 
+## Review findings (strong model, 2026-08-01)
+
+**Accepted.** Every high-risk claim independently re-verified, not taken on report:
+
+- **Off-vocabulary insert genuinely fails.** Ran a raw `INSERT` with an invalid theme against
+  `feedr_dev`: `ERROR: new row for relation "skill_nodes" violates check constraint
+  "skill_nodes_theme_check"`. The failure mode that made T21.1 a prerequisite is now impossible at
+  the DB level, not merely discouraged in TypeScript.
+- **Data migrated:** `agents` ×3, `prompting` ×1 — only valid slugs remain.
+- **The out-of-scope gate held.** No relaxation/force-directed/attraction code exists; the single
+  grep hit is a comment explaining why the pass is *absent* (stage b). `assignLabelRows` was
+  checked specifically for being a disguised layout pass and is not one — it assigns a `labelRow`
+  integer and never touches `position`. Correct distinction, correctly drawn.
+- **`SkillRing` reused as a fourth call site**, not duplicated. No raw palette literals added.
+- **Gates re-run here:** typecheck clean, eslint 0 problems, 424 tests / 67 files.
+- **Rung 1 re-done independently at 375px:** body overflow **0**; all 8 region labels render as
+  **display labels** ("AGENTIC WORKFLOWS", "PROMPTING & CONTEXT"), not raw slugs, so `THEME_LABELS`
+  is genuinely wired; measured **zero** node-label overlaps.
+
+### MINOR — label crowding outside the region circle (not a blocker)
+
+In the `agents` region, the three node labels ("Computer Use", "Agentic Tool Use", "MCP Servers")
+extend well outside the region circle and crowd the neighbouring `integration` region. They are
+legible and provably non-overlapping — `assignLabelRows` does its job — but the *spatial grouping*
+reads as muddied, which matters for a design whose whole purpose is building spatial memory.
+
+Not fixed here because the honest fix is a layout question, not a rendering one: either the region
+radii need to account for label extent, or labels need truncation/hover-reveal at this density.
+Both interact with ADR 0020's existing open question about per-theme overflow, and with decision 8's
+layer 2 ("could become quite large"). **Note the subagent's own flagged uncertainty was exactly
+this** — whether the 8 hand-placed regions hold up as nodes accumulate. It does not, at 3 nodes.
+Fold into whatever answers per-theme overflow.
+
 ## Abweichungen / Fragen
 
 *(Subagent: record here rather than guessing — `README.md` §1.4.)*
