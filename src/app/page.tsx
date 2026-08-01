@@ -3,6 +3,7 @@ import { env } from "@/lib/env";
 import { DEFAULT_FEED_LIMIT, getReels, groupReelsForFeed } from "@/lib/feed";
 import { getInteractionFlags } from "@/lib/interactions";
 import { getSkillTabInfoForSlugs } from "@/lib/skills/reelSkillTab";
+import { writeupGenerationAvailable } from "@/lib/writeup/run";
 import { EmptyState } from "@/components/EmptyState";
 import { ReelCard } from "@/components/ReelCard";
 import { ReelStackCard } from "@/components/ReelStackCard";
@@ -66,6 +67,10 @@ export default async function FeedPage({ searchParams }: FeedPageProps) {
   // Resolved here (Server Component) and passed down: `ReelStackCard` is a
   // Client Component, so nothing beneath it may call `env()` in the browser.
   const newDays = env().NEW_DAYS;
+  // T19.4 (ADR 0024 decision 3): resolved once per page, same boundary rule
+  // as newDays — hides the "Generate write-up" button entirely rather than
+  // showing one that would 503 under APP_PROFILE=cloud.
+  const canGenerateWriteup = writeupGenerationAvailable();
 
   return (
     <>
@@ -86,6 +91,7 @@ export default async function FeedPage({ searchParams }: FeedPageProps) {
                   item.primary,
                   item.others,
                   item.primary.skill ? skillTabMap.get(item.primary.skill) : undefined,
+                  canGenerateWriteup,
                 )}
                 newDays={newDays}
               />
@@ -96,6 +102,7 @@ export default async function FeedPage({ searchParams }: FeedPageProps) {
                 interactions={interactionFlags.get(item.reel.id)}
                 skillTabInfo={item.reel.skill ? skillTabMap.get(item.reel.skill) : undefined}
                 newDays={newDays}
+                canGenerateWriteup={canGenerateWriteup}
               />
             ),
           )}

@@ -6,6 +6,7 @@ import { env } from "@/lib/env";
 import { getInteractionFlags, getResurfacingCandidates } from "@/lib/interactions";
 import { getSkillTabInfoForSlugs } from "@/lib/skills/reelSkillTab";
 import { getTodayTopReels } from "@/lib/today";
+import { writeupGenerationAvailable } from "@/lib/writeup/run";
 
 // The 24h/48h ingestion window and the ranking both depend on "now" — this
 // page must be computed per request, never statically prerendered at build
@@ -33,6 +34,9 @@ export default async function TodayPage() {
   const skillTabMap = await getSkillTabInfoForSlugs(
     reels.map((r) => r.skill).filter((s): s is string => s !== null),
   );
+  // T19.4 (ADR 0024 decision 3): same resolve-once-per-page rule as
+  // src/app/page.tsx.
+  const canGenerateWriteup = writeupGenerationAvailable();
 
   return (
     <>
@@ -61,6 +65,7 @@ export default async function TodayPage() {
             interactions={interactionFlags.get(reel.id)}
             skillTabInfo={reel.skill ? skillTabMap.get(reel.skill) : undefined}
             newDays={env().NEW_DAYS}
+            canGenerateWriteup={canGenerateWriteup}
           />
         ))}
 

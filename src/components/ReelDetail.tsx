@@ -1,6 +1,7 @@
 "use client";
 
 import { useState } from "react";
+import { useRouter } from "next/navigation";
 import { submitFormOptimistic } from "@/lib/optimisticForm";
 import { EFFORT_LABELS } from "./labels";
 import { SkillRing } from "./SkillRing";
@@ -55,6 +56,66 @@ function skillStatusTextClass(status: string): string {
   return "text-ink-faint"; // untouched
 }
 
+type GenerateState = "idle" | "pending" | "error";
+
+/**
+ * T19.4 (ADR 0024): the "Generate write-up" action, shown only inside the
+ * `writeup === null` branch and only when `canGenerateWriteup` (the cloud
+ * guard, ADR 0024 decision 3) is true. Three visible states — idle ->
+ * pending ("Generating…", disabled) -> done (the parent re-renders with real
+ * prose via router.refresh(), so this component is simply gone from the
+ * next render) or error (a short honest message + the button re-enabled to
+ * retry). Neutral action styling only: `--accent` for the button itself,
+ * plain ink/surface tokens elsewhere — never `--caution` (caveat/freshness
+ * only) or `--gold` (mastered only), per ADR 0016.
+ */
+function GenerateWriteupButton({ reelId }: { reelId: number }) {
+  const router = useRouter();
+  const [state, setState] = useState<GenerateState>("idle");
+
+  async function handleGenerate() {
+    setState("pending");
+    try {
+      const res = await fetch(`/api/reels/${reelId}/writeup`, { method: "POST" });
+      if (!res.ok) {
+        setState("error");
+        return;
+      }
+      const body = (await res.json()) as { status: string };
+      if (body.status === "generated") {
+        router.refresh();
+        return;
+      }
+      // "already-present"/"empty"/"not-found"/"failed" all land here — none
+      // of them produced new prose to show, so this is an error state from
+      // the button's point of view (ADR 0003: null/failed is never silently
+      // treated as success).
+      setState("error");
+    } catch {
+      setState("error");
+    }
+  }
+
+  return (
+    <div className="mt-3.5">
+      <button
+        type="button"
+        onClick={handleGenerate}
+        disabled={state === "pending"}
+        // Touch target >= 40px on both axes (src/components/ReelActions.tsx
+        // pattern) — min-h-10 (40px) plus generous horizontal padding rather
+        // than a tight pill, since this button carries a full label.
+        className="inline-flex min-h-10 items-center justify-center rounded-full border border-accent px-4 text-[12.5px] font-semibold text-accent transition-colors hover:bg-accent/10 disabled:cursor-not-allowed disabled:opacity-60"
+      >
+        {state === "pending" ? "Generating…" : "Generate write-up"}
+      </button>
+      {state === "error" && (
+        <p className="mt-2 text-xs text-ink-muted">Couldn&apos;t generate a write-up — try again.</p>
+      )}
+    </div>
+  );
+}
+
 function WriteupPanel({ data }: { data: ReelDetailData }) {
   return (
     <>
@@ -75,11 +136,12 @@ function WriteupPanel({ data }: { data: ReelDetailData }) {
         </div>
       ) : (
         <div className="mt-3.5">
-          {/* ADR 0017 (T18.6): writeup stays NULL until the enrichment pass
-              ships. Explicit, unmistakable placeholder — never invented
-              prose, never a silent re-show of `summary` (ADR 0016 point 3
-              as amended). The italic bordered lines below exist only so the
-              tab's scroll/flow can be felt on a real phone screen. */}
+          {/* ADR 0017/0024 (T18.6, T19.4): writeup stays NULL until the
+              reader explicitly requests one via the button below. Explicit,
+              unmistakable placeholder — never invented prose, never a
+              silent re-show of `summary` (ADR 0016 point 3 as amended). The
+              italic bordered lines below exist only so the tab's
+              scroll/flow can be felt on a real phone screen. */}
           {/* No ADR/epic number in user-facing copy (design doc §10.7: no
               developer-facing empty states). The reference belongs in the
               comment above, not on the reader's screen. */}
@@ -87,6 +149,7 @@ function WriteupPanel({ data }: { data: ReelDetailData }) {
             Long-form write-up not generated yet. What follows is placeholder filler, not real
             content.
           </p>
+          {data.canGenerateWriteup && <GenerateWriteupButton reelId={data.id} />}
           <div aria-label="Placeholder filler, not real content" className="mt-3.5 space-y-3.5 opacity-50">
             {[0, 1, 2].map((i) => (
               <p
