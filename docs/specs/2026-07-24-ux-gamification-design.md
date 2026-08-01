@@ -529,8 +529,10 @@ a *continuous* feed, but with `scroll-snap-stop: always` every swipe is a discre
 the bar would toggle on every card advance and overlap content sized for the full height. See ADR
 0023 decision 5.
 
-**Open, worth deciding separately:** `/` is currently the Feed, but the daily ritual is Today.
-Making Today the landing route matches actual use — Today already links onward to the full feed.
+**DECIDED 2026-08-01 (user): `/` stays the Feed.** Today is one tap away on the tab bar, and Feed
+is the better browsing default. The case for Today rests on it being a destination with a payoff,
+and §10.4's completion moment is not built yet — Today currently just ends. Revisit when §10.4
+ships. See ADR 0023 "Open questions".
 
 ### 10.2 No loading, error, or not-found boundaries anywhere
 

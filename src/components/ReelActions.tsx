@@ -28,8 +28,12 @@ async function postInteraction(reelId: number, type: InteractionType): Promise<b
 // T18.3 (§3): restyled onto the token system — inactive = surface-raised/
 // ink-muted, active = ink/ground. Semantics unchanged; this bar's job is
 // small and already right, so this is styling only, no functional change.
+// Sized to the ~40px touch floor: these measured exactly 38x26px, and 26px of
+// height on the card's primary actions is under two-thirds of the floor. A
+// min-w/min-h pair plus grid centring rather than more padding, so the pill
+// keeps its shape and the emoji stays optically centred.
 function actionButtonClass(active: boolean): string {
-  return `rounded-full px-2.5 py-1.5 text-sm leading-none transition-colors ${
+  return `grid min-h-10 min-w-10 place-items-center rounded-full px-2.5 text-sm leading-none transition-colors ${
     active ? "bg-ink text-ground" : "bg-surface-raised text-ink-muted hover:bg-hairline-strong"
   }`;
 }

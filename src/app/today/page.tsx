@@ -45,7 +45,11 @@ export default async function TodayPage() {
             <span className="font-semibold text-zinc-100">Important today ({reels.length})</span>
             <span className="text-xs text-zinc-400">{formatToday(now)}</span>
           </div>
-          {usedFallback && <p className="text-xs text-amber-300">incl. yesterday</p>}
+          {/* ADR 0016 pt 1: this is a neutral scope note, not a warning. It used
+              to render in amber — the exact "non-warning text wearing the caution
+              colour" bug the reserved-colour rule was written to prevent, and
+              visually the loudest element on the page. --ink-muted, not caution. */}
+          {usedFallback && <p className="text-xs text-ink-muted">incl. yesterday</p>}
         </div>
       </nav>
 

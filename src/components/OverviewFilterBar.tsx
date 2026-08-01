@@ -150,13 +150,12 @@ export function OverviewFilterBar({ current }: { current: OverviewFilterState })
           >
             ⚠️ Caveats {hideCaveats ? "show" : "hide"}
           </Link>
+          {/* ADR 0016 pt 1: neutral on/off filter — same chipClass as its
+              siblings. The bespoke amber it used to carry implied
+              caution/supersession, which this toggle does not mean. */}
           <Link
             href={buildOverviewHref(current, { experimental: hideExperimental ? undefined : "0" })}
-            className={`ml-auto shrink-0 rounded-full px-3 py-1 transition-colors ${
-              hideExperimental
-                ? "bg-amber-900/60 text-amber-200"
-                : "bg-zinc-800 text-zinc-300 hover:bg-zinc-700"
-            }`}
+            className={`ml-auto shrink-0 ${chipClass(hideExperimental)}`}
           >
             🧪 experimental {hideExperimental ? "show" : "hide"}
           </Link>

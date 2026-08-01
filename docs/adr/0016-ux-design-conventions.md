@@ -4,6 +4,8 @@
   found no conflict with ADR 0003/0004/0005/0013). Implemented by **Epic 18**
   (`docs/plan/epic-18-ux-implementation.md`). Was: proposed (design-expert session, ADR 0014
   tier 2; user/strong-model override always possible).
+  **Amended 2026-08-01:** decision 4 (dark-only, no light variant) added — it was a real decision
+  that lived only in `prototypes/README.md`, and its absence here caused a shipped BLOCKER.
 - Date: 2026-07-24
 - Related: `docs/specs/2026-07-24-ux-gamification-design.md` (full rationale + mockup history),
   ADR 0004 (derived labels), ADR 0014 (three-tier design process)
@@ -54,6 +56,23 @@ built UI against invented long-form content that doesn't match what enrichment a
    > thing least visible in a static prototype. Placeholders must be obvious as placeholders —
    > never real-looking invented content, and never silently reused text passed off as new
    > (ADR 0003's "null over hallucination" applies to the UI layer too: be honest that it's empty).
+
+4. **The app is dark-only. There is no light variant.** All fourteen tokens carry their dark
+   values unconditionally; `globals.css` must contain **no `prefers-color-scheme` override**, and
+   `:root` must not hold light values for a dark-mode override to flip. A light theme is not
+   "unbuilt", it is **out of scope** — no light variant was ever designed, so there is no source
+   of truth to build one from (`docs/specs/prototypes/README.md`).
+
+   > **Added 2026-08-01, and the omission was expensive.** This ADR previously defined fourteen
+   > tokens without ever stating the app is dark-only. The decision existed, but only in
+   > `prototypes/README.md`. That is precisely why T18.1 deliberately left Epic 0's
+   > `:root` + `prefers-color-scheme` pair alone — nothing in the ADR it was implementing said
+   > the pair was wrong — and shipped a **BLOCKER**: `globals.css`'s unlayered `body` rule beats
+   > Tailwind's layered `.bg-ground`, so the app rendered on a **white** background for every
+   > visitor whose OS was not in dark mode, with `--color-ink` (#eef1f2) text on it. Invisible to
+   > `npm run build`, to typecheck, and to 363 passing tests; caught only by a screenshot.
+   > A convention that lives only in a prototype README is not a convention the next
+   > implementer will honour.
 
 ## Alternatives
 

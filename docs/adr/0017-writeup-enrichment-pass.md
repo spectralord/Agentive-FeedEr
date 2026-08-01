@@ -1,11 +1,15 @@
 # ADR 0017 — Write-up: a second enrichment pass for long-form Reel content
 
-- Status: **partially accepted** 2026-07-25 (user go-ahead). **Decision 1 (the `reels.writeup`
-  field) and the Write-up tab are accepted and built now** — Epic 18 T18.6. **Decisions 2–4 (the
-  second enrichment pass that fills the field) remain proposed** and still want a grill; until
-  then `writeup` stays `NULL` and the tab renders an explicit placeholder. See the amendment
-  below.
-- Date: 2026-07-24 (amended 2026-07-25)
+- Status: **accepted** 2026-08-01 (user decision). Decision 1 (the `reels.writeup` field) and the
+  Write-up tab were accepted 2026-07-25 and built as Epic 18 T18.6. **Decisions 2–4 — the second
+  pass that fills the field — are now accepted as written**: a decoupled pass (2), sourced-only
+  from the already-stored `raw_items.raw_content` (3), through the injected Executor seam (4). All
+  three open questions are resolved in the section at the bottom; the resolution is that generation
+  is **user-triggered on demand**, whose mechanism is **ADR 0024**. `writeup` remains `NULL` — and
+  the tab keeps its explicit placeholder — for any Reel nobody has requested a write-up for, which
+  is now the expected steady state rather than a temporary gap.
+  Was: partially accepted 2026-07-25.
+- Date: 2026-07-24 (amended 2026-07-25, 2026-08-01)
 - Related: `docs/specs/2026-07-24-ux-gamification-design.md` §2.2/§8.1 (the Detail view's
   Write-up tab this backs), ADR 0002 (decoupled ingestion/enrichment), ADR 0003 (structured
   single-pass enrichment), ADR 0005 (sourced-only), ADR 0015 (executor seam, binding)
@@ -85,14 +89,26 @@ this ADR is that change, proposed for grill/review rather than assumed.
   with real content — tracked as task #10 in that doc's priority list, explicitly independent of
   tasks #1–9.
 
-## Open questions (for the strong model / next grill)
+## Open questions — all three RESOLVED 2026-08-01 (user decision)
 
-- **Generation scope:** every enriched Reel, or gated (e.g. only above `QUALITY_THRESHOLD`, or only
-  Top-N/day)? Ungated is simplest and keeps Detail predictable; gated saves cost on Reels nobody
-  will open. No strong recommendation here — this is a cost/predictability trade-off, not a UX
-  call.
-- **Model choice:** default enrichment uses Haiku for cost; a longer, more discursive write-up
-  might warrant a stronger model given it's user-facing prose someone actually reads end to end,
-  not just scored. Worth deciding deliberately rather than defaulting silently.
-- **Lazy vs. batch generation** (Alternatives above) — leaning batch for the latency reason, but
-  flagged as a real open call, not a settled one.
+The resolution is a single decision that answers all three at once: **generation is
+user-triggered, on demand, from the Write-up tab.** See **ADR 0024** for the mechanism.
+
+- ~~**Generation scope:**~~ **Resolved: ungated, but nothing is generated until asked for.** Both
+  proposed gates were rejected on the same ground — this is a **single-user** app, so
+  `QUALITY_THRESHOLD` and "Top-N/day" are proxies for "content someone might open" in a product
+  where the user *is* the only someone, and where the act of opening a Reel is itself the signal.
+  Gating on a popularity heuristic to predict the interest of the one person who can just press a
+  button is strictly worse than the button. There is no per-Reel cost question left: quota is spent
+  only on items actually being read.
+- ~~**Model choice:**~~ **Resolved: the executor decides, not this pass.** Under ADR 0024 the
+  write-up runs through the `claude-code` executor, i.e. the Claude Code **subscription**, not the
+  metered API — so the "Haiku for cost" reasoning that governs batch enrichment does not transfer.
+  The pass names no model of its own; it inherits whatever the executor resolves.
+- ~~**Lazy vs. batch:**~~ **Resolved: lazy.** The Alternatives section leaned batch to avoid making
+  the user wait. That trade-off inverts once generation is an explicit, user-initiated action: a
+  visible "generating…" state on a button the user just pressed is understood latency, not a stall.
+  Batch would also spend quota ahead of demand — the thing lazy generation exists to avoid.
+
+`writeup` is a persisted column, so this stays a one-time cost per Reel: once generated it is
+cached for every subsequent read (and, in a multi-user future, for every user).

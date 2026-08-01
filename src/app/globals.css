@@ -84,6 +84,45 @@ body {
    Tailwind class directly, typically combined with `font-mono` per §1 (mono for
    meta/data, sans for reading). */
 
+/* Focus-visible states (ADR 0016: --accent = links/focus/"tried").
+
+   Before this, the app had ZERO `focus-visible` rules — the feed, the tab bar,
+   the Detail tabs and every filter chip were keyboard-unnavigable, and --accent
+   was documented as the focus colour while never being used as one. The ADR
+   described a system the code did not have.
+
+   Deliberately ONE global rule rather than a class per component: ~222 raw
+   palette literals still live on the legacy surfaces (/admin, /skills ops
+   block, /clusters, /experience), and those elements need focus rings just as
+   much as the tokenised ones. A global rule covers them without waiting on the
+   retokenisation decision (ADR 0016's open scope question).
+
+   `:focus-visible`, not `:focus` — pointer clicks must not leave a ring. The
+   two-part outline+offset gives a visible ring on both --ground and --surface
+   without depending on each element's own background.
+
+   NOT written with :where(): that selector has zero specificity, so Tailwind's
+   per-element utilities won the outline-color cascade and the ring rendered in
+   each element's own text colour instead of --accent.
+
+   Measurement trap, recorded because it cost real time: Tailwind's
+   `transition-colors` includes `outline-color`, so the ring ANIMATES from
+   currentColor to --accent over ~150ms. Sampling getComputedStyle immediately
+   after focusing reads a mid-transition grey and looks exactly like a broken
+   cascade. Verify with `reducedMotion: 'reduce'` (the guard below zeroes the
+   duration) or wait out the transition first. Confirmed 2px --accent on all of
+   /, /skills, /today, /saved, /overview, /experience. */
+a:focus-visible,
+button:focus-visible,
+input:focus-visible,
+select:focus-visible,
+textarea:focus-visible,
+summary:focus-visible,
+[tabindex]:not([tabindex="-1"]):focus-visible {
+  outline: 2px solid var(--color-accent) !important;
+  outline-offset: 2px;
+}
+
 /* Global reduced-motion guard (mirrors docs/specs/prototypes/reel-card-and-detail.html).
    Neutralizes transitions/animations everywhere rather than requiring each future
    component to opt in individually. */

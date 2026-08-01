@@ -80,9 +80,12 @@ function WriteupPanel({ data }: { data: ReelDetailData }) {
               prose, never a silent re-show of `summary` (ADR 0016 point 3
               as amended). The italic bordered lines below exist only so the
               tab's scroll/flow can be felt on a real phone screen. */}
+          {/* No ADR/epic number in user-facing copy (design doc §10.7: no
+              developer-facing empty states). The reference belongs in the
+              comment above, not on the reader's screen. */}
           <p className="text-xs italic text-ink-faint">
-            Long-form write-up not generated yet — the enrichment pass that fills this tab hasn&apos;t
-            run yet (ADR 0017). What follows is placeholder filler, not real content.
+            Long-form write-up not generated yet. What follows is placeholder filler, not real
+            content.
           </p>
           <div aria-label="Placeholder filler, not real content" className="mt-3.5 space-y-3.5 opacity-50">
             {[0, 1, 2].map((i) => (

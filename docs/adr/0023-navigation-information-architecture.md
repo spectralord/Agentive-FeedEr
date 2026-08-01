@@ -1,6 +1,13 @@
 # ADR 0023 — Navigation IA: four destinations, hubs, and the rule that keeps it that way
 
-- Status: proposed (design-expert session, ADR 0014 tier 2)
+- Status: **accepted** 2026-08-01 (user decision). Implemented by Epic 18 **T18.10**, which shipped
+  the 7→4 tab bar and the Skills/Library hubs — i.e. **the code landed before this ADR was
+  ratified**, which is recorded here rather than tidied away: it is the same governance gap that
+  produced the Detail-vs-chrome BLOCKER (decision 6 below now closes that one). All five original
+  decisions were verified against the implementation at ratification time: four destinations
+  (`TabBar.tsx`), Admin as an app-bar gear, bottom tab bar, the hub rule, and the persistent
+  (never auto-hiding) tab bar with cards sized to `calc(100dvh - var(--tabbar-h))`.
+  Was: proposed (design-expert session, ADR 0014 tier 2).
 - Date: 2026-07-24
 - Related: ADR 0022 (`/overview` → Archive, which this ADR relocates), design doc §10.1
 - Prototype: `docs/specs/prototypes/nav-ia.html`
@@ -62,6 +69,34 @@ the overflow alone (scroll the row, shrink the text) treats the symptom.
    real visible area instead costs ~56px of card height, keeps navigation permanently reachable,
    and makes snap points align exactly. Do not reintroduce auto-hide here.
 
+6. **Reel Detail covers the app bar, but never the tab bar.** Detail is `fixed` at `top-0` with
+   `bottom: var(--tabbar-h)` and `z-30` — it paints over the app bar and the FilterBar (both
+   `z-20`), and stops exactly at the top edge of the tab bar, which stays visible and interactive.
+
+   Measured on a 375×812 viewport with Detail open: overlay spans y=0…756, tab bar occupies the
+   remaining 56px and is hit-testable.
+
+   **Rationale.** Detail should own the screen for *reading* — the app bar's contextual title and
+   freshness indicator are feed-level chrome with nothing to say about the item you opened, so
+   covering them buys reading space at no cost. The tab bar is different: decision 5 already
+   makes it persistent *everywhere*, and honouring that here means you can leave a Reel by tapping
+   Skills or Library directly instead of going Back first. Detail carries its own Back affordance
+   as well, so there are two exits rather than one.
+
+   > **Added 2026-08-01 (user decision), closing a real gap.** Nothing in this ADR, §10.1, §10.9
+   > or the design doc previously said which of Detail and the shell chrome was on top. That
+   > omission shipped a **BLOCKER**: Detail was `absolute` inside a `relative` `<article>`, so it
+   > painted *beneath* the app bar and FilterBar and every control — Back and all three tabs — was
+   > covered. A Playwright `click()` on Back timed out. The fix (`fixed … z-30`) was correct but
+   > unratified; this decision ratifies it and states the boundary explicitly so the next
+   > implementer does not have to infer it.
+   >
+   > Rejected alternatives: **full-frame** (also covering the tab bar) matches the prototype, where
+   > Detail fills the whole phone screen — but the prototype has no app bar outside `.reel-slot`,
+   > so it cannot speak to this question, and full-frame contradicts decision 5. **Docked beneath
+   > the app bar** keeps feed chrome visible that is irrelevant to the open item, and costs 48px
+   > of reading space on the primary 375px target.
+
 ## Alternatives
 
 - **Keep the top bar, make it horizontally scrollable:** smallest change, fixes the overflow,
@@ -92,10 +127,11 @@ the overflow alone (scroll the row, shrink the text) treats the symptom.
 
 ## Open questions
 
-- **Should `/` become Today rather than Feed?** The daily ritual is Today; the root route is
-  currently the Feed. Making Today the landing page matches how the product is actually used, but
-  it changes the meaning of an existing URL and is worth deciding deliberately rather than folding
-  into this ADR.
+- ~~**Should `/` become Today rather than Feed?**~~ **DECIDED 2026-08-01 (user): `/` stays the
+  Feed.** Today is one tap away on the tab bar, and Feed is the better default for browsing. The
+  argument *for* Today — that it matches actual use — depends on Today being a destination with a
+  payoff, and design doc **§10.4's completion moment is unbuilt**: Today currently just ends. Worth
+  revisiting once §10.4 ships; until then this is settled, not open.
 - **Desktop treatment.** Bottom bars are a mobile convention. On a wide viewport a persistent side
   rail or a top bar may serve better — the four-destination structure holds either way, but the
   rendering is unresolved and should not be assumed to be "the mobile bar, wider".

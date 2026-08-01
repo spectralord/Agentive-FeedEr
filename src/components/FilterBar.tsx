@@ -98,13 +98,13 @@ export function FilterBar({ current }: { current: FilterState }) {
         >
           ⚠️ Caveats {hideCaveats ? "show" : "hide"}
         </Link>
+        {/* ADR 0016 pt 1: a neutral on/off filter, so it wears the same
+            chipClass as every other chip in this row. It used to have bespoke
+            amber styling, which read as caution/supersession — a meaning this
+            toggle does not carry. */}
         <Link
           href={buildFilterHref(current, { weak: isWeak ? undefined : "1" })}
-          className={`ml-auto shrink-0 rounded-full px-3 py-1 transition-colors ${
-            isWeak
-              ? "bg-amber-900/60 text-amber-200"
-              : "bg-zinc-800 text-zinc-300 hover:bg-zinc-700"
-          }`}
+          className={`ml-auto shrink-0 ${chipClass(isWeak)}`}
         >
           Weak signal {isWeak ? "hide" : "show"}
         </Link>

@@ -30,7 +30,12 @@ export function SkillMap({ themes }: { themes: SkillMapTheme[] }) {
           <h3 className="mb-2 font-mono text-xs font-medium tracking-wide text-ink-faint uppercase">
             {theme.theme}
           </h3>
-          <div className="grid grid-cols-2 gap-2 sm:grid-cols-3">
+          {/* One column on a narrow phone, two from 400px, three from sm.
+              At grid-cols-2 on a 375px screen each tile had ~120px of text
+              room, so `truncate` cut every real skill name to ~14 characters
+              ("Agentic Tool…", "Computer U…", "Prompt Cac…") — a skill map
+              whose labels are unreadable undercuts its own purpose. */}
+          <div className="grid grid-cols-1 gap-2 min-[400px]:grid-cols-2 sm:grid-cols-3">
             {theme.nodes.map((node) => (
               <Link
                 key={node.slug}
@@ -39,7 +44,10 @@ export function SkillMap({ themes }: { themes: SkillMapTheme[] }) {
               >
                 <SkillRing status={node.status} size={GRID_RING_SIZE} />
                 <div className="min-w-0 flex-1">
-                  <div className="truncate text-sm font-medium text-ink">{node.title}</div>
+                  {/* line-clamp-2, not truncate: at the narrower two- and
+                      three-column widths a long name still needs to wrap
+                      rather than lose its distinguishing tail. */}
+                  <div className="line-clamp-2 text-sm font-medium text-ink">{node.title}</div>
                   <div className="mt-1 font-mono text-xs text-ink-muted">
                     {node.contentCount} item{node.contentCount === 1 ? "" : "s"}
                   </div>

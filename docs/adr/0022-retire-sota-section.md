@@ -1,6 +1,11 @@
 # ADR 0022 — Retire the SOTA section; `/overview` becomes Archive
 
-- Status: proposed (needs strong-model grill — removes a shipped Epic 5 feature)
+- Status: proposed (needs strong-model grill — removes a shipped Epic 5 feature).
+  **Dependency clarified 2026-08-01:** ADR 0018 (Skill Guides) is now **accepted**, so this ADR is
+  no longer waiting on a *decision*. But decision 1 below gates retirement on Guides having
+  **shipped**, and ADR 0018 decision 6 gates *its* build on a corpus that does not exist yet — so
+  this remains genuinely blocked, one step further out than it looks. Do not retire SOTA before
+  Guides are live and demonstrably carrying the comparative load SOTA carries today.
 - Date: 2026-07-24
 - Related: ADR 0004 (derived labels — this ADR does **not** overturn it), Epic 5 (`/overview`),
   ADR 0011/0012 (verifier, topic-knowledge-check), ADR 0018 (Skill Guides — the replacement)
