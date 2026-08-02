@@ -43,6 +43,32 @@ a genuine **lifecycle state** to Reels.
 The other two parts are cheap by comparison: `reels.created_at` already exists (requirement 1), and
 manual override (requirement 3) is a mutation over columns that already exist.
 
+## Two feedback moments, not one (owner, 2026-08-02)
+
+The idea has **two distinct surfaces**, and separating them resolves several of the questions below:
+
+| | **Pre-publication queue** | **Post-publication input** |
+|---|---|---|
+| When | Before an item is visible | On content already in the feed |
+| Scope | **Per registered curator** — each has their own queue | Shared, on live content |
+| Act | Approve / override / reject | Rate, correct, comment |
+| Blocks visibility? | Yes, for that curator | No |
+
+This is what makes **T7 composable with T8 rather than a duplicate of it**. T7 supplies *who* is
+giving input (registered curators with differing trust); T8 supplies *when* — before or after
+publication. Multiple curators can then give feedback on the same item, and their judgements can be
+weighted by T7's trust model rather than treated as one anonymous voice.
+
+**It also defuses the "curator is away" problem** (question 3 below): if queues are per-curator, one
+absent curator does not starve anyone else's feed. In the current single-user reality there is
+exactly one queue, so the risk remains until a second curator exists — but the design does not bake
+the failure in.
+
+**Consequence for sequencing:** the post-publication surface is **much cheaper** and independent. It
+needs no lifecycle state, no rationale back-fill, and no holding area — it is feedback on content
+that already exists, and `src/lib/feedback/run.ts` is the natural seam. The pre-publication queue is
+the expensive half. They should be scoped as separate deliverables, and the cheap one can ship first.
+
 ## Open questions for the design session
 
 **Product / architecture (tier 1):**

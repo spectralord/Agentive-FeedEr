@@ -163,10 +163,17 @@ today. The existing `author_type` enum already encodes the two ends:
 those judgements, and (d) an explicit approve step. Unapproved items sit in a holding area instead
 of the main feed.
 
-**Not the same thing as T7 above — do not conflate them.** T7 is about *who* content came from
-(multi-user trust weighting: a known colleague's report outranks a web-harvested one). T8 is about
-*whether the single user has personally vetted an item* before it appears. They could compose
-later, but they answer different questions and neither depends on the other.
+**T7 and T8 compose — clarified by the owner 2026-08-02.** They answer different questions
+(T7: *who* is giving input; T8: *when* — before or after publication), and combining them gives
+per-curator queues whose judgements are weighted by T7's trust model, so several curators can
+review the same item without their votes counting equally. Still keep the concepts distinct when
+designing: neither depends on the other, and T8's post-publication half works with a single user.
+
+**Two surfaces, very different cost:**
+- **Pre-publication queue** (per registered curator) — the expensive half: lifecycle state, a
+  rationale field, a holding area.
+- **Post-publication input** on already-visible content — **cheap and independent**: no lifecycle
+  state, no back-fill, no holding area. `src/lib/feedback/run.ts` is the natural seam. Ship first.
 
 **Why it needs a grill rather than an epic plan** (detail in ADR 0028):
 - Enrichment emits **no rationale field** today, so (b) changes ADR 0003's output contract and
