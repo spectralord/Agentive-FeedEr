@@ -5,6 +5,7 @@ import { sql } from "drizzle-orm";
 import { db, getPool } from "@/db/client";
 import { rawItems, reels, skillNodes, sources } from "@/db/schema";
 import { toggleActionable } from "@/lib/actionables";
+import type { Theme } from "@/lib/skills";
 import {
   DEFAULT_PROGRESS_STATUS,
   getProgress,
@@ -15,7 +16,7 @@ import {
   setProgress,
 } from "./progress";
 
-async function seedNode(slug: string, theme = "Tooling & Workflow") {
+async function seedNode(slug: string, theme: Theme = "tooling") {
   const [node] = await db()
     .insert(skillNodes)
     .values({ slug, title: slug, theme, description: "…", status: "active" })

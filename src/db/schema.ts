@@ -4,11 +4,13 @@ import {
   integer,
   jsonb,
   pgTable,
+  real,
   serial,
   text,
   timestamp,
   uniqueIndex,
 } from "drizzle-orm/pg-core";
+import { THEMES } from "@/lib/skills";
 
 export const sources = pgTable("sources", {
   id: serial("id").primaryKey(),
@@ -153,10 +155,24 @@ export const skillNodes = pgTable("skill_nodes", {
   id: serial("id").primaryKey(),
   slug: text("slug").notNull().unique(),
   title: text("title").notNull(),
-  theme: text("theme").notNull(),
+  // Epic 21 (T21.1, ADR 0020 decision 6): constrained to the 8 THEMES slugs
+  // — was bare text().notNull(), which let scripts/seed-dev.sql drift onto
+  // free-text values ("Agentic Workflows", "Cost & Performance") that matched
+  // none of them. THEME_LAYOUT (T21.2) keys off THEMES, so an off-vocabulary
+  // theme has no map region; the DB now rejects one outright.
+  theme: text("theme", { enum: THEMES }).notNull(),
   description: text("description").notNull(),
   status: text("status", { enum: ["active", "pending"] }).notNull().default("pending"),
   createdAt: timestamp("created_at", { withTimezone: true }).notNull().defaultNow(),
+  // Epic 21 (T21.3, ADR 0020 decision 2): manual-override position within
+  // the node's THEME_LAYOUT circle. Nullable — an unplaced node (the normal
+  // case, since there is no layout pass yet, ADR 0020 decision 7) simply
+  // falls through to resolveNodePosition's deterministic hash tier. Only
+  // ever written by the drag-to-place UI (T21.5); nothing else should set
+  // positionLocked=true.
+  positionX: real("position_x"),
+  positionY: real("position_y"),
+  positionLocked: boolean("position_locked").notNull().default(false),
 });
 
 // Epic 7: self-declared progress per skill node (Skill-Map, Variante A — no

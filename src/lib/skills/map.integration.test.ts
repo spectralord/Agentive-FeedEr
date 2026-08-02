@@ -6,8 +6,9 @@ import { sql } from "drizzle-orm";
 import { db, getPool } from "@/db/client";
 import { experienceReports, rawItems, reels, skillNodes, sources } from "@/db/schema";
 import { toggleActionable } from "@/lib/actionables";
+import { resolveNodePosition, THEME_LAYOUT } from "@/lib/skills/layout";
 import { setProgress } from "./progress";
-import { getNodeDetail, getSkillMap, setProgressBySlug } from "./map";
+import { getNodeDetail, getSkillMap, resetNodePositionBySlug, setNodePositionBySlug, setProgressBySlug } from "./map";
 
 async function seedReel(
   slug: string,
@@ -62,30 +63,61 @@ describe("skill map (integration)", () => {
     await db()
       .insert(skillNodes)
       .values([
-        { slug: "sub-agents", title: "Sub-Agents", theme: "Agentic Development", description: "…", status: "active" },
-        { slug: "mcp", title: "MCP", theme: "Tooling & Workflow", description: "…", status: "active" },
-        { slug: "not-yet", title: "Not Yet", theme: "Tooling & Workflow", description: "…", status: "pending" },
+        { slug: "sub-agents", title: "Sub-Agents", theme: "agents", description: "…", status: "active" },
+        { slug: "mcp", title: "MCP", theme: "tooling", description: "…", status: "active" },
+        { slug: "not-yet", title: "Not Yet", theme: "tooling", description: "…", status: "pending" },
       ]);
     await seedReel("r1", "sub-agents");
     await seedReel("r2", "sub-agents");
     await seedReel("r3", "mcp");
 
     const map = await getSkillMap();
-    expect(map.map((t) => t.theme).sort()).toEqual(["Agentic Development", "Tooling & Workflow"]);
+    expect(map.map((t) => t.theme).sort()).toEqual(["agents", "tooling"]);
 
-    const agentic = map.find((t) => t.theme === "Agentic Development")!;
+    const agentic = map.find((t) => t.theme === "agents")!;
     expect(agentic.nodes).toHaveLength(1);
     expect(agentic.nodes[0]).toMatchObject({ slug: "sub-agents", contentCount: 2, status: "untouched" });
 
-    const tooling = map.find((t) => t.theme === "Tooling & Workflow")!;
+    const tooling = map.find((t) => t.theme === "tooling")!;
     expect(tooling.nodes.map((n) => n.slug)).toEqual(["mcp"]); // "not-yet" (pending) excluded
     expect(tooling.nodes[0].contentCount).toBe(1);
+  });
+
+  it("Epic 21 T21.4: resolves each node's position via resolveNodePosition — hash fallback by default, locked override when set", async () => {
+    await db()
+      .insert(skillNodes)
+      .values([
+        { slug: "sub-agents", title: "Sub-Agents", theme: "agents", description: "…", status: "active" },
+        {
+          slug: "pinned-node",
+          title: "Pinned Node",
+          theme: "agents",
+          description: "…",
+          status: "active",
+          positionX: 42,
+          positionY: 84,
+          positionLocked: true,
+        },
+      ]);
+
+    const map = await getSkillMap();
+    const nodes = map.flatMap((t) => t.nodes);
+
+    const hashFallback = nodes.find((n) => n.slug === "sub-agents")!;
+    expect(hashFallback.positionLocked).toBe(false);
+    expect(hashFallback.position).toEqual(resolveNodePosition({ ...hashFallback, positionX: null, positionY: null, positionLocked: false }));
+    const region = THEME_LAYOUT.agents;
+    expect(Math.hypot(hashFallback.position.x - region.cx, hashFallback.position.y - region.cy)).toBeLessThanOrEqual(region.r);
+
+    const pinned = nodes.find((n) => n.slug === "pinned-node")!;
+    expect(pinned.positionLocked).toBe(true);
+    expect(pinned.position).toEqual({ x: 42, y: 84 });
   });
 
   it("reflects the current self-declared status per node", async () => {
     const [node] = await db()
       .insert(skillNodes)
-      .values({ slug: "prompt-caching", title: "Prompt Caching", theme: "Claude & Models", description: "…", status: "active" })
+      .values({ slug: "prompt-caching", title: "Prompt Caching", theme: "models", description: "…", status: "active" })
       .returning();
     await setProgress(node.id, "mastered", "Using it in production.");
 
@@ -97,8 +129,8 @@ describe("skill map (integration)", () => {
     const [untouchedNode, seenNode] = await db()
       .insert(skillNodes)
       .values([
-        { slug: "never-opened", title: "Never Opened", theme: "Agentic Development", description: "…", status: "active" },
-        { slug: "explicitly-seen", title: "Explicitly Seen", theme: "Agentic Development", description: "…", status: "active" },
+        { slug: "never-opened", title: "Never Opened", theme: "agents", description: "…", status: "active" },
+        { slug: "explicitly-seen", title: "Explicitly Seen", theme: "agents", description: "…", status: "active" },
       ])
       .returning();
     // untouchedNode: no user_progress row at all — never call setProgress for it.
@@ -117,7 +149,7 @@ describe("skill map (integration)", () => {
   it("getNodeDetail returns the node, labeled Reels + active Experience Reports, status, and note history", async () => {
     const [node] = await db()
       .insert(skillNodes)
-      .values({ slug: "sub-agents", title: "Sub-Agents", theme: "Agentic Development", description: "Splitting work across agents.", status: "active" })
+      .values({ slug: "sub-agents", title: "Sub-Agents", theme: "agents", description: "Splitting work across agents.", status: "active" })
       .returning();
     await seedReel("r1", "sub-agents");
     await db().insert(experienceReports).values({
@@ -155,7 +187,7 @@ describe("skill map (integration)", () => {
   it("getNodeDetail returns undefined for a pending node or unknown slug", async () => {
     await db()
       .insert(skillNodes)
-      .values({ slug: "pending-one", title: "Pending", theme: "Tooling & Workflow", description: "…", status: "pending" });
+      .values({ slug: "pending-one", title: "Pending", theme: "tooling", description: "…", status: "pending" });
 
     expect(await getNodeDetail("pending-one")).toBeUndefined();
     expect(await getNodeDetail("does-not-exist")).toBeUndefined();
@@ -165,9 +197,9 @@ describe("skill map (integration)", () => {
     await db()
       .insert(skillNodes)
       .values([
-        { slug: "mostly-experimental", title: "Mostly Experimental", theme: "Tooling & Workflow", description: "…", status: "active" },
-        { slug: "half-experimental", title: "Half Experimental", theme: "Tooling & Workflow", description: "…", status: "active" },
-        { slug: "no-experimental", title: "No Experimental", theme: "Tooling & Workflow", description: "…", status: "active" },
+        { slug: "mostly-experimental", title: "Mostly Experimental", theme: "tooling", description: "…", status: "active" },
+        { slug: "half-experimental", title: "Half Experimental", theme: "tooling", description: "…", status: "active" },
+        { slug: "no-experimental", title: "No Experimental", theme: "tooling", description: "…", status: "active" },
       ]);
     // 2/3 experimental — above threshold.
     await seedReel("me1", "mostly-experimental", true);
@@ -190,7 +222,7 @@ describe("skill map (integration)", () => {
   it("T18.5: setProgressBySlug reports the previous status (untouched when no row existed) alongside the new row", async () => {
     await db()
       .insert(skillNodes)
-      .values({ slug: "sub-agents", title: "Sub-Agents", theme: "Agentic Development", description: "…", status: "active" });
+      .values({ slug: "sub-agents", title: "Sub-Agents", theme: "agents", description: "…", status: "active" });
 
     const first = await setProgressBySlug("sub-agents", "tried");
     expect(first).toMatchObject({ previousStatus: "untouched", row: { status: "tried" } });
@@ -214,8 +246,8 @@ describe("skill map (integration)", () => {
     const [mastered] = await db()
       .insert(skillNodes)
       .values([
-        { slug: "mastered-no-evidence", title: "Mastered No Evidence", theme: "Agentic Development", description: "…", status: "active" },
-        { slug: "untouched-with-evidence", title: "Untouched With Evidence", theme: "Agentic Development", description: "…", status: "active" },
+        { slug: "mastered-no-evidence", title: "Mastered No Evidence", theme: "agents", description: "…", status: "active" },
+        { slug: "untouched-with-evidence", title: "Untouched With Evidence", theme: "agents", description: "…", status: "active" },
       ])
       .returning();
 
@@ -243,7 +275,7 @@ describe("skill map (integration)", () => {
   it("T20.3: getNodeDetail carries the To-Try list and evidenceCount, independent of status", async () => {
     const [node] = await db()
       .insert(skillNodes)
-      .values({ slug: "sub-agents", title: "Sub-Agents", theme: "Agentic Development", description: "…", status: "active" })
+      .values({ slug: "sub-agents", title: "Sub-Agents", theme: "agents", description: "…", status: "active" })
       .returning();
     const done = await seedReel("done", "sub-agents", false, "Do the thing.");
     await seedReel("not-done", "sub-agents", false, "Do another thing.");
@@ -262,11 +294,70 @@ describe("skill map (integration)", () => {
   it("T20.3: getNodeDetail's evidenceCount is 0 and actionables list is empty for a node with neither", async () => {
     await db()
       .insert(skillNodes)
-      .values({ slug: "untouched", title: "Untouched", theme: "Agentic Development", description: "…", status: "active" });
+      .values({ slug: "untouched", title: "Untouched", theme: "agents", description: "…", status: "active" });
 
     const detail = await getNodeDetail("untouched");
     expect(detail!.status).toBe("untouched");
     expect(detail!.evidenceCount).toBe(0);
     expect(detail!.actionables).toEqual([]);
+  });
+
+  it("Epic 21 T21.5: setNodePositionBySlug writes an override that resolveNodePosition (via getSkillMap) then prefers over the hash tier", async () => {
+    await db()
+      .insert(skillNodes)
+      .values({ slug: "sub-agents", title: "Sub-Agents", theme: "agents", description: "…", status: "active" });
+
+    const row = await setNodePositionBySlug("sub-agents", 111, 222);
+    expect(row).toMatchObject({ slug: "sub-agents", positionX: 111, positionY: 222, positionLocked: true });
+
+    const map = await getSkillMap();
+    const node = map.flatMap((t) => t.nodes).find((n) => n.slug === "sub-agents")!;
+    expect(node.position).toEqual({ x: 111, y: 222 });
+    expect(node.positionLocked).toBe(true);
+
+    expect(await setNodePositionBySlug("does-not-exist", 1, 1)).toBeUndefined();
+  });
+
+  it("Epic 21 T21.5: resetNodePositionBySlug clears the override, and the node survives (falls back to the hash tier) rather than erroring", async () => {
+    await db()
+      .insert(skillNodes)
+      .values({
+        slug: "sub-agents",
+        title: "Sub-Agents",
+        theme: "agents",
+        description: "…",
+        status: "active",
+        positionX: 111,
+        positionY: 222,
+        positionLocked: true,
+      });
+
+    const reset = await resetNodePositionBySlug("sub-agents");
+    expect(reset).toMatchObject({ slug: "sub-agents", positionX: null, positionY: null, positionLocked: false });
+
+    const map = await getSkillMap();
+    const node = map.flatMap((t) => t.nodes).find((n) => n.slug === "sub-agents")!;
+    expect(node.positionLocked).toBe(false);
+    // No longer {111, 222} — fell through to the deterministic hash tier.
+    expect(node.position).not.toEqual({ x: 111, y: 222 });
+
+    expect(await resetNodePositionBySlug("does-not-exist")).toBeUndefined();
+  });
+
+  it("Epic 21 T21.5: a locked position survives being read again later (simulates surviving a page reload)", async () => {
+    await db()
+      .insert(skillNodes)
+      .values({ slug: "sub-agents", title: "Sub-Agents", theme: "agents", description: "…", status: "active" });
+    await setNodePositionBySlug("sub-agents", 50, 60);
+
+    // Two independent reads, as two separate page loads would each be.
+    const firstLoad = await getSkillMap();
+    const secondLoad = await getSkillMap();
+    const a = firstLoad.flatMap((t) => t.nodes).find((n) => n.slug === "sub-agents")!;
+    const b = secondLoad.flatMap((t) => t.nodes).find((n) => n.slug === "sub-agents")!;
+    expect(a.position).toEqual({ x: 50, y: 60 });
+    expect(b.position).toEqual({ x: 50, y: 60 });
+    expect(a.positionLocked).toBe(true);
+    expect(b.positionLocked).toBe(true);
   });
 });

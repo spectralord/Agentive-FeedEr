@@ -57,7 +57,7 @@ async function seedReel(opts: {
 async function seedNode(slug: string, status: "active" | "pending" = "active") {
   const [node] = await db()
     .insert(skillNodes)
-    .values({ slug, title: slug, theme: "Tooling & Workflow", description: "…", status })
+    .values({ slug, title: slug, theme: "tooling", description: "…", status })
     .returning();
   return node;
 }

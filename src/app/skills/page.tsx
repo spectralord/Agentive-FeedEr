@@ -1,5 +1,7 @@
+import Link from "next/link";
 import { AdoptionLog } from "@/components/AdoptionLog";
 import { HubSubnav } from "@/components/HubSubnav";
+import { SkillConstellation } from "@/components/SkillConstellation";
 import { SkillMap } from "@/components/SkillMap";
 import { listActiveNodes, listPendingNodes } from "@/lib/skilltagger/nodes";
 import { getSkillMap } from "@/lib/skills/map";
@@ -21,7 +23,20 @@ const SKILLS_HUB_ITEMS = [
 // (same reasoning as /overview, /experience).
 export const dynamic = "force-dynamic";
 
-export default async function SkillsPage() {
+interface SkillsPageProps {
+  searchParams: Promise<{ view?: string }>;
+}
+
+export default async function SkillsPage({ searchParams }: SkillsPageProps) {
+  const { view } = await searchParams;
+  // Epic 21 (T21.4, ADR 0020 stage a): the constellation ships *alongside*
+  // the existing grouped-list view, not instead of it — the list works
+  // today and stays the default; the constellation is the speculative part
+  // (see the epic file's out-of-scope list / sequencing caution). A plain
+  // `?view=` link, matching this app's established toggle pattern
+  // (FilterBar's `?caveat=0`) rather than new client state, so the page
+  // stays server-rendered.
+  const showConstellation = view === "constellation";
   const [pending, active, themes, adoptionLog] = await Promise.all([
     listPendingNodes(),
     listActiveNodes(),
@@ -40,12 +55,20 @@ export default async function SkillsPage() {
             and the Map was pushed below the fold at half the type size. Same
             inverted-hierarchy bug design doc §10.7 flagged for /saved. */}
         <section id="skill-map" className="scroll-mt-[var(--header-h)]">
-          <h1 className="text-lg font-semibold text-ink">Skill Map ({active.length})</h1>
+          <div className="flex items-baseline justify-between gap-2">
+            <h1 className="text-lg font-semibold text-ink">Skill Map ({active.length})</h1>
+            <Link
+              href={showConstellation ? "/skills" : "/skills?view=constellation#skill-map"}
+              className="shrink-0 rounded-full border border-hairline-strong bg-surface-raised px-3 py-1 text-xs text-ink-muted transition-colors hover:bg-hairline"
+            >
+              {showConstellation ? "List view" : "Constellation view"}
+            </Link>
+          </div>
           <p className="mt-1 text-xs text-ink-faint">
             Confirmed skills, grouped by theme. Click a node for details, content, and to update
             your status.
           </p>
-          <SkillMap themes={themes} />
+          {showConstellation ? <SkillConstellation themes={themes} /> : <SkillMap themes={themes} />}
         </section>
 
         <section id="new-skills" className="mt-10 scroll-mt-[var(--header-h)]">

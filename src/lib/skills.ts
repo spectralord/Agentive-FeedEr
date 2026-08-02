@@ -28,3 +28,22 @@ export const THEMES = [
 ] as const;
 
 export type Theme = (typeof THEMES)[number];
+
+/**
+ * User-facing display labels for the `THEMES` slugs (Epic 21, T21.1 /
+ * ADR 0020 decision 6). The DB/code always stores the slug; the UI always
+ * shows the label — this is the seam that lets the label copy change freely
+ * without touching any data. Picked to read well as headings; not treated as
+ * a settled design decision (ADR 0020: "the 8 slug values are explicitly not
+ * settled" — only the vocabulary being closed and constrained matters yet).
+ */
+export const THEME_LABELS: Record<Theme, string> = {
+  parallelization: "Parallelization",
+  agents: "Agentic Workflows",
+  tooling: "Tooling",
+  prompting: "Prompting & Context",
+  evaluation: "Evaluation",
+  models: "Models",
+  integration: "Integration",
+  industry: "Industry",
+};

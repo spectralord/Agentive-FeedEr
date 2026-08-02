@@ -1,31 +1,34 @@
 import { renderToStaticMarkup } from "react-dom/server";
 import { describe, expect, it } from "vitest";
+import { THEME_LABELS } from "@/lib/skills";
 import type { SkillMapTheme } from "@/lib/skills/map";
 import { SkillMap } from "./SkillMap";
 
 const themes: SkillMapTheme[] = [
   {
-    theme: "Agentic Development",
+    theme: "agents",
     nodes: [
       {
         id: 1,
         slug: "sub-agents",
         title: "Sub-Agents",
-        theme: "Agentic Development",
+        theme: "agents",
         description: "…",
         contentCount: 3,
         status: "tried",
         experimentalDot: false,
         evidenceCount: 0,
+        position: { x: 100, y: 100 },
+        positionLocked: false,
       },
     ],
   },
 ];
 
 describe("SkillMap", () => {
-  it("renders theme headings and node tiles with title, content count, and a status ring", () => {
+  it("renders theme headings (as THEME_LABELS, not the raw slug) and node tiles with title, content count, and a status ring", () => {
     const html = renderToStaticMarkup(<SkillMap themes={themes} />);
-    expect(html).toContain("Agentic Development");
+    expect(html).toContain(THEME_LABELS.agents);
     expect(html).toContain("Sub-Agents");
     expect(html).toContain("3 items");
     expect(html).toContain('href="/skills/sub-agents"');
@@ -38,18 +41,20 @@ describe("SkillMap", () => {
       <SkillMap
         themes={[
           {
-            theme: "Tooling & Workflow",
+            theme: "tooling",
             nodes: [
               {
                 id: 2,
                 slug: "mcp",
                 title: "MCP",
-                theme: "Tooling & Workflow",
+                theme: "tooling",
                 description: "…",
                 contentCount: 1,
                 status: "seen",
                 experimentalDot: false,
                 evidenceCount: 0,
+                position: { x: 100, y: 100 },
+                positionLocked: false,
               },
             ],
           },
@@ -70,18 +75,20 @@ describe("SkillMap", () => {
       <SkillMap
         themes={[
           {
-            theme: "Tooling & Workflow",
+            theme: "tooling",
             nodes: [
               {
                 id: 3,
                 slug: "never-opened",
                 title: "Never Opened",
-                theme: "Tooling & Workflow",
+                theme: "tooling",
                 description: "…",
                 contentCount: 0,
                 status: "untouched",
                 experimentalDot: false,
                 evidenceCount: 0,
+                position: { x: 100, y: 100 },
+                positionLocked: false,
               },
             ],
           },
@@ -98,18 +105,20 @@ describe("SkillMap", () => {
       <SkillMap
         themes={[
           {
-            theme: "Tooling & Workflow",
+            theme: "tooling",
             nodes: [
               {
                 id: 4,
                 slug: "mostly-experimental",
                 title: "Mostly Experimental",
-                theme: "Tooling & Workflow",
+                theme: "tooling",
                 description: "…",
                 contentCount: 5,
                 status: "seen",
                 experimentalDot: true,
                 evidenceCount: 0,
+                position: { x: 100, y: 100 },
+                positionLocked: false,
               },
             ],
           },

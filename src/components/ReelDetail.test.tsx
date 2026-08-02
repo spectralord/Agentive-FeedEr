@@ -15,7 +15,7 @@ const baseData: ReelDetailData = {
   skill: {
     slug: "sub-agents",
     title: "Sub-Agents",
-    theme: "Agentic Development",
+    theme: "agents",
     status: "seen",
     description: "Splitting work across parallel agents.",
     action: "Try splitting this into two sub-agents.",

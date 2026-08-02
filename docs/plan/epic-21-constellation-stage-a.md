@@ -43,7 +43,7 @@ wrote friendly display strings straight into a free-form `text` column and bypas
 
 ## Tasks
 
-### ☐ T21.1 — Theme vocabulary: constrain, migrate, and add display labels
+### ☒ T21.1 — Theme vocabulary: constrain, migrate, and add display labels
 
 **Do:**
 1. **`THEME_LABELS`** in `src/lib/skills.ts` — a `Record<Theme, string>` of user-facing labels, e.g.
@@ -86,7 +86,7 @@ race, not a failure.
 
 ---
 
-### ☐ T21.2 — `THEME_LAYOUT`: hand-placed theme regions (code constant)
+### ☒ T21.2 — `THEME_LAYOUT`: hand-placed theme regions (code constant)
 
 **Do:** a `THEME_LAYOUT: Record<Theme, { cx: number; cy: number; r: number }>` in
 `src/lib/skills/layout.ts` — centre + radius per theme in an abstract coordinate space (e.g. 0–1000
@@ -104,7 +104,7 @@ overlap given their radii.
 
 ---
 
-### ☐ T21.3 — Position schema + three-tier resolution
+### ☒ T21.3 — Position schema + three-tier resolution
 
 **Do:**
 1. Schema: `skill_nodes` gains `position_x` real nullable, `position_y` real nullable,
@@ -127,7 +127,7 @@ its theme circle; a node with no stored position still resolves; the precedence 
 
 ---
 
-### ☐ T21.4 — Render the constellation
+### ☒ T21.4 — Render the constellation
 
 **Do:** render nodes at resolved positions inside their theme regions, reusing the **existing shared
 `SkillRing`** component for node state — **do not write a second ring.** It has exactly three call
@@ -156,7 +156,7 @@ project), no white background. Source review is not acceptable evidence for this
 
 ---
 
-### ☐ T21.5 — Manual override (desktop/iPad only)
+### ☒ T21.5 — Manual override (desktop/iPad only)
 
 **Do:** drag-to-place a node, which writes `position_x/y` and sets `position_locked = true`.
 
@@ -172,18 +172,106 @@ survives a page reload.
 
 ## Definition of done
 
-- [ ] `npm run build` clean · `npx tsc --noEmit` clean
-- [ ] `npm test` green — **≥ 377 tests** at plan time
-- [ ] `npx eslint src` reports **zero** problems (currently zero — do not regress)
-- [ ] `SELECT DISTINCT theme FROM skill_nodes` returns only `THEMES` values, and off-vocabulary
-      inserts are rejected by the DB
-- [ ] Screenshots reviewed at **both** `--vp phone` and `--vp desktop`; body overflow 0
-- [ ] No new runtime dependencies
-- [ ] Status table row updated in `docs/plan/README.md` §6
+- [x] `npm run build` clean · `npx tsc --noEmit` clean
+- [x] `npm test` green — **≥ 377 tests** at plan time (final: **424 tests / 67 files**)
+- [x] `npx eslint src` reports **zero** problems (currently zero — do not regress)
+- [x] `SELECT DISTINCT theme FROM skill_nodes` returns only `THEMES` values, and off-vocabulary
+      inserts are rejected by the DB (verified explicitly twice — once after T21.1's migration, once
+      again at epic end after `npm run db:seed` re-ran — both times a raw off-vocabulary INSERT threw
+      `violates check constraint "skill_nodes_theme_check"`)
+- [x] Screenshots reviewed at **both** `--vp phone` and `--vp desktop`; body overflow 0 (script prints
+      an overflow warning only when > 0px; none printed at either viewport, both before and after the
+      hash-tier/label-collision fixes below)
+- [x] No new runtime dependencies
+- [x] Status table row updated in `docs/plan/README.md` §6
+
+## Review findings (strong model, 2026-08-01)
+
+**Accepted.** Every high-risk claim independently re-verified, not taken on report:
+
+- **Off-vocabulary insert genuinely fails.** Ran a raw `INSERT` with an invalid theme against
+  `feedr_dev`: `ERROR: new row for relation "skill_nodes" violates check constraint
+  "skill_nodes_theme_check"`. The failure mode that made T21.1 a prerequisite is now impossible at
+  the DB level, not merely discouraged in TypeScript.
+- **Data migrated:** `agents` ×3, `prompting` ×1 — only valid slugs remain.
+- **The out-of-scope gate held.** No relaxation/force-directed/attraction code exists; the single
+  grep hit is a comment explaining why the pass is *absent* (stage b). `assignLabelRows` was
+  checked specifically for being a disguised layout pass and is not one — it assigns a `labelRow`
+  integer and never touches `position`. Correct distinction, correctly drawn.
+- **`SkillRing` reused as a fourth call site**, not duplicated. No raw palette literals added.
+- **Gates re-run here:** typecheck clean, eslint 0 problems, 424 tests / 67 files.
+- **Rung 1 re-done independently at 375px:** body overflow **0**; all 8 region labels render as
+  **display labels** ("AGENTIC WORKFLOWS", "PROMPTING & CONTEXT"), not raw slugs, so `THEME_LABELS`
+  is genuinely wired; measured **zero** node-label overlaps.
+
+### MINOR — label crowding outside the region circle (not a blocker)
+
+In the `agents` region, the three node labels ("Computer Use", "Agentic Tool Use", "MCP Servers")
+extend well outside the region circle and crowd the neighbouring `integration` region. They are
+legible and provably non-overlapping — `assignLabelRows` does its job — but the *spatial grouping*
+reads as muddied, which matters for a design whose whole purpose is building spatial memory.
+
+Not fixed here because the honest fix is a layout question, not a rendering one: either the region
+radii need to account for label extent, or labels need truncation/hover-reveal at this density.
+Both interact with ADR 0020's existing open question about per-theme overflow, and with decision 8's
+layer 2 ("could become quite large"). **Note the subagent's own flagged uncertainty was exactly
+this** — whether the 8 hand-placed regions hold up as nodes accumulate. It does not, at 3 nodes.
+Fold into whatever answers per-theme overflow.
 
 ## Abweichungen / Fragen
 
 *(Subagent: record here rather than guessing — `README.md` §1.4.)*
+
+1. **T21.1 — DB-level enum constraint needed hand-written SQL, not `drizzle-kit generate`.**
+   `text("theme", { enum: THEMES })` is a TypeScript-only narrowing in this Drizzle version — it
+   generates no DB-level constraint, and no other "enum" column in this codebase (`reels.category`,
+   `reels.maturity`, `sources.type`, ...) has one either. But T21.1 explicitly requires "an
+   off-vocabulary insert fails at the DB level" as an *explicit check*, not just a TS-level guard, so
+   a real constraint was necessary. Used `drizzle-kit generate --custom` and hand-wrote the data
+   migration + a plain `CHECK` constraint (not a Postgres `ENUM` type — `CHECK` is a one-line
+   drop/add if the vocabulary is re-cut later, `ENUM` would need its own `ALTER TYPE` migration).
+   Conservative interpretation taken: this is a new, narrower pattern than the rest of the codebase,
+   applied only to this one column because the task explicitly demanded it, not applied retroactively
+   to other "enum" columns.
+2. **T21.1 — the pre-existing test DB (`feedr_test`) held a leftover off-vocabulary theme row**
+   (`"Tooling & Workflow"`) from before this fix, which blocked the new migration's `ADD CONSTRAINT`
+   from applying (`feedr_test` is never wiped between `npm test` runs — see
+   `src/test/globalSetup.ts`). Manually `TRUNCATE`d the affected tables in the test DB once,
+   one-time-only; no test code relies on that stale row surviving, and every integration test that
+   touches `skill_nodes` already `TRUNCATE`s it in its own `beforeEach`.
+3. **T21.4 — two real bugs found only by the required screenshot review, not by source reading.**
+   (a) The initial hash-tier implementation (independent continuous angle+radius per slug) let this
+   project's actual seeded `agents`-theme nodes land close enough to visibly overlap their rendered
+   rings. Fixed by replacing it with a sunflower/Fibonacci spiral (`hashSlotCount` sized per region
+   radius) — see `src/lib/skills/layout.ts`'s docstrings for the full reasoning and the regression
+   test in `layout.test.ts`. (b) Even with rings separated, permanently-visible text labels wide
+   enough to stay fully readable can still collide at 375px purely from label-pixel-width vs.
+   achievable-hash-spacing arithmetic — this is a real geometric tension, not a bug I could tune away
+   (worked through the actual numbers; a label wide enough to guarantee zero overlap at 375px would
+   need to be wider than several theme circles). Resolved with `assignLabelRows`: deterministic
+   label-only collision avoidance (stacks a close label into a lower row; never moves the underlying
+   node) — explicitly **not** the banned relaxation/force-directed pass, since it only ever touches
+   where a label's *text* renders, never a node's resolved position.
+4. **T21.5 — a real interaction bug found only by actually dragging a node in a live browser**, not
+   by source review or automated tests (this project has no `@testing-library/react`/jsdom, and
+   adding one was avoided as an unnecessary new devDependency for a single interaction test — see
+   point 5). The "reset" `<button>` was nested inside the draggable `<Link>`; a pointerdown landing on
+   the button still bubbled to the anchor's own `onPointerDown` first, so every "reset" click was
+   silently treated as the start of a new (zero-distance) drag instead of a reset. Fixed by making the
+   ring+label `<Link>` and the reset `<button>` siblings inside a plain positioning `<div>`, never
+   nested (also fixes invalid HTML — an interactive element inside an `<a>`). Verified the fix by
+   dragging, resetting, and reloading live in the browser, confirmed against `SELECT ... FROM
+   skill_nodes` at each step.
+5. **T21.5 — no interaction-level automated test for the drag gesture itself.** This project's test
+   suite is 100% `renderToStaticMarkup`-based (no jsdom, no `@testing-library/react`); adding either
+   would be a new devDependency for one feature's interaction test, which README §1.3's dependency
+   rule reads as requiring the same "technically necessary, documented under Abweichungen" bar as a
+   runtime dependency would. Took the conservative path: unit-tested everything `renderToStaticMarkup`
+   *can* observe (the edit-mode toggle's `md:` gating, the reset button's absence outside edit mode,
+   the DB write/reset functions via a real integration test, the route's request validation with
+   mocked lib calls) and verified the actual drag/reset/reload-survival flow by hand in the live
+   browser (documented in the commit message and this report) rather than skipping that verification
+   or adding a new dependency to automate it.
 
 ## Explicitly out of scope — do not build these
 

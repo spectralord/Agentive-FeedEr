@@ -2,8 +2,10 @@ import { desc, eq, and, inArray, sql } from "drizzle-orm";
 import { db } from "@/db/client";
 import { experienceReports, rawItems, reels, skillNodes } from "@/db/schema";
 import type { SkillNode, UserProgress, UserProgressNote } from "@/db/schema";
+import type { Theme } from "@/lib/skills";
 import { listActiveNodes } from "@/lib/skilltagger/nodes";
 import { countEvidenceForNodes, listActionablesForNode, type ActionableListItem } from "@/lib/actionables";
+import { resolveNodePosition, type ResolvedPosition } from "@/lib/skills/layout";
 import {
   UNTOUCHED_STATUS,
   getProgress,
@@ -26,7 +28,7 @@ export interface SkillMapNode {
   id: number;
   slug: string;
   title: string;
-  theme: string;
+  theme: Theme;
   description: string;
   /** Reels + active experience reports tagged with this node's slug. Not
    *  quality/experimental-filtered — this is an index of everything
@@ -42,10 +44,18 @@ export interface SkillMapNode {
    *  (the DECLARED track) and never combined into one number: "mastered
    *  with zero evidence" must stay fully representable. */
   evidenceCount: number;
+  /** Epic 21 (T21.4): the node's resolved render position (ADR 0020
+   *  decision 2's three-tier precedence — see `resolveNodePosition`), in
+   *  the same abstract 0-1000 coordinate space as `THEME_LAYOUT`. */
+  position: ResolvedPosition;
+  /** Epic 21 (T21.5): whether `position` is a manual override rather than
+   *  the hash fallback — the constellation renders a locked node with a
+   *  slightly different affordance and offers "reset to computed". */
+  positionLocked: boolean;
 }
 
 export interface SkillMapTheme {
-  theme: string;
+  theme: Theme;
   nodes: SkillMapNode[];
 }
 
@@ -108,7 +118,7 @@ export async function getSkillMap(): Promise<SkillMapTheme[]> {
     countEvidenceForNodes(nodeIds),
   ]);
 
-  const byTheme = new Map<string, SkillMapNode[]>();
+  const byTheme = new Map<Theme, SkillMapNode[]>();
   for (const node of activeNodes) {
     const mapped: SkillMapNode = {
       id: node.id,
@@ -124,6 +134,8 @@ export async function getSkillMap(): Promise<SkillMapTheme[]> {
       // Epic 20: nodes with zero completions are absent from the map —
       // absent means 0, same convention as getInteractionFlags.
       evidenceCount: evidenceCounts.get(node.id) ?? 0,
+      position: resolveNodePosition(node),
+      positionLocked: node.positionLocked,
     };
     const bucket = byTheme.get(node.theme);
     if (bucket) bucket.push(mapped);
@@ -249,4 +261,52 @@ export async function setProgressBySlug(
 
   const row = await setProgress(node.id, status, note);
   return { row, previousStatus };
+}
+
+/**
+ * Epic 21, T21.5 (ADR 0020 decision 5): drag-to-place writes an explicit
+ * `position_x/y` and marks it `position_locked = true` — the manual
+ * override tier `resolveNodePosition` checks first, ahead of any stored
+ * computed layout or the hash fallback. Locked nodes are pinned forever:
+ * nothing else in this codebase should ever set `positionLocked` back to
+ * false except `resetNodePositionBySlug` below, and no future layout pass
+ * (stage b, out of scope this epic) may touch a locked node at all — that
+ * invariant is the entire point of "lock" as a concept here.
+ *
+ * `x`/`y` are stored as given, in the same abstract 0-1000 coordinate space
+ * as `THEME_LAYOUT` — the caller (the drag UI) is responsible for
+ * converting a pointer position back into that space before calling this.
+ * Only resolves `active` nodes, same restriction as every other slug-keyed
+ * write here. Returns `undefined` for an unknown/inactive slug so the route
+ * can 404.
+ */
+export async function setNodePositionBySlug(
+  slug: string,
+  x: number,
+  y: number,
+): Promise<SkillNode | undefined> {
+  const [row] = await db()
+    .update(skillNodes)
+    .set({ positionX: x, positionY: y, positionLocked: true })
+    .where(and(eq(skillNodes.slug, slug), eq(skillNodes.status, "active")))
+    .returning();
+  return row;
+}
+
+/**
+ * "Reset to computed" (T21.5): clears a manual override so the node falls
+ * back down `resolveNodePosition`'s tiers — to a stored computed layout if
+ * one exists (no producer yet this epic, ADR 0020 decision 7), otherwise
+ * the deterministic hash fallback. Clears all three position columns
+ * (rather than just `positionLocked`) so a stale `position_x/y` can never
+ * resurface as a "stored computed layout" hit in `resolveNodePosition`'s
+ * middle tier once stage (b) exists.
+ */
+export async function resetNodePositionBySlug(slug: string): Promise<SkillNode | undefined> {
+  const [row] = await db()
+    .update(skillNodes)
+    .set({ positionX: null, positionY: null, positionLocked: false })
+    .where(and(eq(skillNodes.slug, slug), eq(skillNodes.status, "active")))
+    .returning();
+  return row;
 }

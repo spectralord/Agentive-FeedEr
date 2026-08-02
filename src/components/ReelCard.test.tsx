@@ -209,7 +209,7 @@ describe("ReelCard Skill tab (T18.7, §5.2/§8.4)", () => {
   const skillInfo: SkillTabInfo = {
     slug: "agent-skills",
     title: "Agent Skills",
-    theme: "Agentic Development",
+    theme: "agents",
     description: "Building and structuring reusable Skills for Claude Code.",
     status: "seen",
     items: [
@@ -243,7 +243,7 @@ describe("ReelCard Skill tab (T18.7, §5.2/§8.4)", () => {
     expect(html).toContain("data-open-skill");
     expect(html).toContain(">Skill<");
     expect(html).toContain("Agent Skills");
-    expect(html).toContain("Agentic Development");
+    expect(html).toContain("agents");
     expect(html).toContain("Building and structuring reusable Skills for Claude Code.");
     // SkillRing (T18.5's ONE ring component) is reused, not reinvented.
     expect(html).toContain("var(--color-ink-muted)"); // "seen" rung
