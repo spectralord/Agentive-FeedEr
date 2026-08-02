@@ -168,35 +168,46 @@ reason — nothing else asserted it, so a silent flip would not have failed any 
       per standard hand-back (the row already correctly says "Plan fertig, delegierbar"; it needs
       a status flip to done, which the strong model does at merge review per CLAUDE.md's QA step)
 
-## Owner feedback after first real use (2026-08-02) — BLOCKED ON CLI AUTH, NOT A CODE DEFECT
+## Owner feedback + root cause (2026-08-02) — RESOLVED, but a seed-data gap remains
 
-The button always reports "Couldn't generate a write-up — try again". Diagnosed against the running
-server; the route, runner and executor wiring are correct.
+The button reported failure for every Reel. Two separate causes, found in sequence.
 
-**Root cause:** the `claude` CLI subprocess is **not logged in**. Reproduced directly —
-`echo "..." | claude -p --output-format json` returns
-`{"is_error": true, "result": "Not logged in · Please run /login"}` — and it reproduces **outside
-this repo entirely** (from `/tmp`), so it is the CLI's own credential store, not a project setting.
+### Cause 1 (resolved by the owner): the CLI was not logged in
 
-**Why starting an interactive Claude session did not fix it:** an interactive session and a plain
-`claude -p` subprocess spawned by the dev server resolve credentials differently. The subprocess
-does not inherit the session's auth.
+`claude -p` returned `Not logged in`, reproducible from outside the repo, so it was the CLI's own
+credential store rather than a project setting. Workspace trust was a **red herring** — the stderr
+warning names it, but `hasTrustDialogAccepted` was already `true`. Fixed by `/login`; verified
+afterwards (`is_error: false`).
 
-**Workspace trust is NOT the problem** (an early stderr line suggests it, and is a red herring):
-`~/.claude.json` already has `hasTrustDialogAccepted: true` for this repo — verified.
+### Cause 2 (the real one): `raw_items.raw_content` is EMPTY for every seeded item
 
-**Fix:** run `claude` and complete `/login` so the CLI's stored credentials are valid for
-non-interactive use, then restart `npm run dev` so the server spawns subprocesses under the new
-state.
+After login, the endpoint returned `{"status":"empty"}` with no error at all — the model was
+answering `{"writeup": null}` **correctly**. Measured: all **17** rows in `raw_items` have
+`raw_content` of length **0**, and `scripts/seed-dev.sql` never populates the column (zero
+occurrences).
 
-### Defect found while diagnosing (worth fixing)
+The write-up pass elaborates on stored `raw_content` (ADR 0017 decision 3 / ADR 0024 decision 5 —
+sourced-only, no fetching). With no source text there is nothing to elaborate on, so `null` is the
+honest answer and ADR 0003 is being respected. The prompt builder even has a fallback string for it
+(`"(no content beyond the title)"`, `prompt.ts:38`).
 
-The API returned `{"status":"empty"}` on one CLI failure. `"empty"` means "the source was too thin,
-nothing written" — a legitimate, expected outcome — whereas a CLI crash must surface as `"failed"`.
-Conflating them makes an infrastructure failure look like a content judgement, and the UI cannot
-tell the user which happened. `runWriteupForReel`'s own branching is correct
-(`run.ts:125-134`), so the mis-mapping is upstream of it, in how a rejected/failed caller result is
-turned into a parsed value. **Needs a small fix plus a test pinning failure ≠ empty.**
+**Proven end to end:** populating `raw_content` for one Reel and re-calling the endpoint returned
+`{"status":"generated"}` and wrote several paragraphs of real, sourced prose to `reels.writeup`.
+**The feature is correct.** The blocker is data.
+
+### Follow-up work this creates
+
+1. **`scripts/seed-dev.sql` must populate `raw_content`** — otherwise every Write-up tab in a
+   freshly seeded dev DB shows the placeholder forever, and the feature looks broken. This is the
+   same class of problem as the ADR 0018 corpus gate and the ADR 0020 theme drift: a surface built
+   against content the data does not carry.
+2. **Check the real ingestion path actually stores `raw_content`.** The seed omitting it may be
+   masking the same omission in `src/lib/ingestion/`. If RSS ingestion also stores nothing, no
+   *real* Reel will ever get a write-up either — verify before assuming this is seed-only.
+3. **`"empty"` and `"failed"` must be distinguishable in the UI.** Both currently surface as
+   "Couldn't generate a write-up — try again", which is wrong for `"empty"`: nothing failed, the
+   source was too thin, and retrying cannot help. Separately, an earlier CLI crash also surfaced as
+   `"empty"` rather than `"failed"`, which hid a real error behind a benign status.
 
 ## Abweichungen / Fragen
 
