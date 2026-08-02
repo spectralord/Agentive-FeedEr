@@ -153,3 +153,27 @@ today. The existing `author_type` enum already encodes the two ends:
 - **The deferred `curated` echo judgment (ADR 0021):** once web-harvested reports can
   actually be created, they need the Reel-style `is_primary` echo check that own/colleague
   reports do not. Same grill.
+
+## T8 — Curator inbox: an approval gate before content becomes visible
+> Owner idea 2026-08-02. **Flagged for a design session** → **ADR 0028** (proposed, ungrilled).
+> New docs are English per README §2.
+
+**Motive:** a review surface listing every newly-arrived item with (a) the date it was added,
+(b) a short explanation of *why* that relevance/quality level was chosen, (c) manual override of
+those judgements, and (d) an explicit approve step. Unapproved items sit in a holding area instead
+of the main feed.
+
+**Not the same thing as T7 above — do not conflate them.** T7 is about *who* content came from
+(multi-user trust weighting: a known colleague's report outranks a web-harvested one). T8 is about
+*whether the single user has personally vetted an item* before it appears. They could compose
+later, but they answer different questions and neither depends on the other.
+
+**Why it needs a grill rather than an epic plan** (detail in ADR 0028):
+- Enrichment emits **no rationale field** today, so (b) changes ADR 0003's output contract and
+  cannot be back-filled without re-running enrichment.
+- Visibility is currently a pure computed threshold with **no lifecycle state**, so (d) is a real
+  schema and pipeline change, not a UI addition.
+- It is in tension with **ADR 0004** (derive labels, don't stamp them) and with ADR 0023's rule
+  that new surfaces go into a hub, never onto the fixed four-item tab bar.
+- Sharpest open question: **what happens when the curator is away?** An approval gate turns
+  "signal over noise" into "nothing at all" during absence.

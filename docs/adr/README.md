@@ -47,5 +47,6 @@ yields), but it is cheap to avoid and expensive to untangle once other docs cite
 | 0025 | Deferred task queue + typed handlers (**parked**, needs a grill) |
 | 0026 | Reusable writing-assistance service (**proposed**) |
 | 0027 | Node seeding by fetching for a declared node (**proposed** — collides with ADR 0001) |
+| 0028 | Curator inbox / approval gate (**proposed — flagged for a design session**) |
 
-Not reserved blocks, just a record of what is taken. Next free: **0028**.
+Not reserved blocks, just a record of what is taken. Next free: **0029**.
