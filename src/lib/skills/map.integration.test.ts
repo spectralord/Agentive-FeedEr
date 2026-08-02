@@ -300,6 +300,8 @@ describe("skill map (integration)", () => {
     expect(detail!.status).toBe("untouched");
     expect(detail!.evidenceCount).toBe(0);
     expect(detail!.actionables).toEqual([]);
+  });
+
   it("Epic 21 T21.5: setNodePositionBySlug writes an override that resolveNodePosition (via getSkillMap) then prefers over the hash tier", async () => {
     await db()
       .insert(skillNodes)
