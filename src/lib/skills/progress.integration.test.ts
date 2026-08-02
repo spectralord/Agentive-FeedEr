@@ -3,7 +3,8 @@
 import { afterAll, beforeEach, describe, expect, it } from "vitest";
 import { sql } from "drizzle-orm";
 import { db, getPool } from "@/db/client";
-import { skillNodes } from "@/db/schema";
+import { rawItems, reels, skillNodes, sources } from "@/db/schema";
+import { toggleActionable } from "@/lib/actionables";
 import {
   DEFAULT_PROGRESS_STATUS,
   getProgress,
@@ -22,10 +23,45 @@ async function seedNode(slug: string, theme = "Tooling & Workflow") {
   return node;
 }
 
+/** T20.5: a Reel with an action, tagged to `skill`, for exercising
+ *  toggleActionable in these Adoption-Log tests. */
+async function seedActionableReel(externalId: string, skill: string, action: string) {
+  const [source] = await db()
+    .insert(sources)
+    .values({ name: `source-${externalId}`, type: "rss", url: "https://example.com/feed" })
+    .returning();
+  const [item] = await db()
+    .insert(rawItems)
+    .values({
+      sourceId: source.id,
+      externalId,
+      title: `Reel ${externalId}`,
+      url: `https://example.com/${externalId}`,
+      rawContent: "content",
+      publishedAt: new Date("2026-07-20T10:00:00Z"),
+    })
+    .returning();
+  const [reel] = await db()
+    .insert(reels)
+    .values({
+      rawItemId: item.id,
+      summary: "A reel.",
+      category: "tooling",
+      maturity: "established",
+      experimental: false,
+      relevanceScore: 70,
+      qualityScore: 70,
+      action,
+      skill,
+    })
+    .returning();
+  return reel;
+}
+
 describe("skill progress (integration)", () => {
   beforeEach(async () => {
     await db().execute(
-      sql`TRUNCATE user_progress_notes, user_progress, skill_nodes RESTART IDENTITY CASCADE`,
+      sql`TRUNCATE actionable_completions, reels, raw_items, sources, user_progress_notes, user_progress, skill_nodes RESTART IDENTITY CASCADE`,
     );
   });
 
@@ -93,5 +129,37 @@ describe("skill progress (integration)", () => {
     expect(log.map((e) => e.note)).toEqual(["Third note.", "Second note.", "First note."]);
     expect(log[0].nodeSlug).toBe("node-a");
     expect(log[0].nodeTitle).toBe("node-a");
+    expect(log.every((e) => e.source === "progress")).toBe(true);
+  });
+
+  // Epic 20 (T20.5, ADR 0019 decision 4): the Log's second source.
+  it("listAdoptionLog interleaves completed-Actionable notes with progress notes, newest first", async () => {
+    const node = await seedNode("prompt-caching");
+    const reel = await seedActionableReel("r1", "prompt-caching", "Add cache_control to your prompt.");
+
+    await setProgress(node.id, "tried", "First: declared tried.");
+    await toggleActionable(reel.id, "Second: completed the action.");
+    await setProgress(node.id, "mastered", "Third: declared mastered.");
+
+    const log = await listAdoptionLog();
+    expect(log.map((e) => e.note)).toEqual([
+      "Third: declared mastered.",
+      "Second: completed the action.",
+      "First: declared tried.",
+    ]);
+    expect(log.map((e) => e.source)).toEqual(["progress", "actionable", "progress"]);
+
+    const actionableEntry = log[1];
+    if (actionableEntry.source !== "actionable") throw new Error("expected actionable entry");
+    expect(actionableEntry.actionText).toBe("Add cache_control to your prompt.");
+    expect(actionableEntry.nodeSlug).toBe("prompt-caching");
+  });
+
+  it("listAdoptionLog excludes completions with no note (a bare tick isn't 'adopted' either)", async () => {
+    await seedNode("prompt-caching");
+    const reel = await seedActionableReel("r1", "prompt-caching", "Add cache_control to your prompt.");
+    await toggleActionable(reel.id); // no note
+
+    expect(await listAdoptionLog()).toEqual([]);
   });
 });

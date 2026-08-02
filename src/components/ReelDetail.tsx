@@ -3,6 +3,7 @@
 import { useState } from "react";
 import { useRouter } from "next/navigation";
 import { submitFormOptimistic } from "@/lib/optimisticForm";
+import { ActionableTick } from "./ActionableTick";
 import { EFFORT_LABELS } from "./labels";
 import { SkillRing } from "./SkillRing";
 import { SourceAvatar } from "./SourceAvatar";
@@ -250,6 +251,12 @@ function SkillPanel({ data }: { data: ReelDetailData }) {
   const [status, setStatus] = useState<SkillTabView["status"] | undefined>(skill?.status);
   const [justMarked, setJustMarked] = useState(false);
   const [errorText, setErrorText] = useState<string | null>(null);
+  // T20.4 (ADR 0019 resolved open question): a completion may offer a
+  // dismissible, one-time SUGGESTION to also mark the skill as tried — never
+  // an automatic write. Starts false; only `handleActionableCompleted` (a
+  // real 0->1 completion, not a page load) turns it on, and only when the
+  // declared status isn't already at/past "tried" (nothing to suggest).
+  const [showTriedSuggestion, setShowTriedSuggestion] = useState(false);
   if (!skill) return null;
   const originalStatus = skill.status;
   const currentStatus = status ?? originalStatus;
@@ -259,6 +266,7 @@ function SkillPanel({ data }: { data: ReelDetailData }) {
     const form = event.currentTarget;
     setErrorText(null);
     setJustMarked(false);
+    setShowTriedSuggestion(false);
     setStatus("tried");
 
     const ok = await submitFormOptimistic({
@@ -273,6 +281,12 @@ function SkillPanel({ data }: { data: ReelDetailData }) {
       return;
     }
     setJustMarked(true);
+  }
+
+  function handleActionableCompleted() {
+    if (currentStatus === "untouched" || currentStatus === "seen") {
+      setShowTriedSuggestion(true);
+    }
   }
 
   return (
@@ -304,10 +318,22 @@ function SkillPanel({ data }: { data: ReelDetailData }) {
           <p className="font-mono text-[9.5px] uppercase tracking-wide text-action">Action</p>
           <p className="mt-1 text-xs text-ink">{skill.action}</p>
           {skill.effortTag && <p className="mt-1 text-[10.5px] text-ink-faint">{EFFORT_LABELS[skill.effortTag]}</p>}
+          {/* T20.4 (ADR 0019): the Actionable tick, in the same box as the
+              action it checks off. */}
+          <ActionableTick
+            reelId={data.id}
+            initialDone={skill.completion !== null}
+            onCompleted={handleActionableCompleted}
+          />
         </div>
       )}
 
-      {currentStatus === "seen" && (
+      {/* T20.4 (ADR 0019 resolved open question): a ONE-TIME, DISMISSIBLE
+          suggestion right after a completion — never an automatic write.
+          Takes priority over the standing "Tried this already?" quick
+          action below (T18.7) so the two don't stack; dismissing it falls
+          back to that standing action, which stays available regardless. */}
+      {showTriedSuggestion ? (
         <form
           method="post"
           action={`/skills/${skill.slug}/progress`}
@@ -316,14 +342,43 @@ function SkillPanel({ data }: { data: ReelDetailData }) {
           className="mt-4 flex items-center justify-between gap-2.5 rounded-xl border border-action/30 bg-action-soft p-3"
         >
           <input type="hidden" name="status" value="tried" />
-          <span className="text-xs text-ink">Tried this already?</span>
-          <button
-            type="submit"
-            className="shrink-0 rounded-full bg-action px-3.5 py-1.5 text-[11.5px] font-semibold text-ground"
-          >
-            Mark as tried
-          </button>
+          <span className="text-xs text-ink">You completed something here — mark this skill as tried?</span>
+          <span className="flex shrink-0 items-center gap-2">
+            <button
+              type="button"
+              onClick={() => setShowTriedSuggestion(false)}
+              className="grid min-h-8 min-w-8 place-items-center rounded-full text-ink-faint hover:text-ink-muted"
+              aria-label="Dismiss"
+            >
+              ✕
+            </button>
+            <button
+              type="submit"
+              className="rounded-full bg-action px-3.5 py-1.5 text-[11.5px] font-semibold text-ground"
+            >
+              Mark as tried
+            </button>
+          </span>
         </form>
+      ) : (
+        currentStatus === "seen" && (
+          <form
+            method="post"
+            action={`/skills/${skill.slug}/progress`}
+            data-no-open
+            onSubmit={handleMarkTried}
+            className="mt-4 flex items-center justify-between gap-2.5 rounded-xl border border-action/30 bg-action-soft p-3"
+          >
+            <input type="hidden" name="status" value="tried" />
+            <span className="text-xs text-ink">Tried this already?</span>
+            <button
+              type="submit"
+              className="shrink-0 rounded-full bg-action px-3.5 py-1.5 text-[11.5px] font-semibold text-ground"
+            >
+              Mark as tried
+            </button>
+          </form>
+        )
       )}
       {justMarked && currentStatus === "tried" && (
         <p className="mt-4 text-xs text-ink-muted">Marked as tried.</p>

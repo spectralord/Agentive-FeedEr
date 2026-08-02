@@ -1,4 +1,5 @@
 import type { FeedReel } from "@/lib/feed";
+import type { ActionableCompletion } from "@/db/schema";
 import { formatRelativeTime } from "@/lib/relativeTime";
 import { pickSkillTabPreview, type SkillTabInfo } from "@/lib/skills/reelSkillTab";
 
@@ -45,6 +46,16 @@ export interface SkillTabView {
    *  row already excluded — see `pickSkillTabPreview`. */
   otherItems: SkillTabPreviewItemView[];
   moreCount: number;
+  /** Epic 20 (ADR 0019): this Reel's Actionable completion snapshot, or null
+   *  if not yet ticked. Note this is the SNAPSHOT (decision 5) once
+   *  completed — `action`/`effortTag` above stay live views of the Reel's
+   *  current columns either way. */
+  completion: {
+    actionText: string;
+    effortTag: "5-min-test" | "afternoon" | "know-only" | null;
+    note: string | null;
+    doneAt: string;
+  } | null;
 }
 
 export interface ReelDetailData {
@@ -90,12 +101,15 @@ export interface ReelDetailData {
  *  when the reel has no skill, or the slug wasn't found in that map.
  *  `canGenerateWriteup` (T19.4) is the page-level `writeupGenerationAvailable()`
  *  result — the same value for every card on a page, resolved once by the
- *  calling Server Component and threaded through here. */
+ *  calling Server Component and threaded through here. `completion` (T20.4)
+ *  is this reel's row from the page-level `getActionableCompletionFlags`
+ *  batch map — omit/pass `undefined` when not yet completed. */
 export function buildReelDetailData(
   reel: FeedReel,
   clusterMembers: FeedReel[],
   skillTabInfo?: SkillTabInfo,
   canGenerateWriteup = false,
+  completion?: ActionableCompletion,
 ): ReelDetailData {
   const skill: SkillTabView | undefined =
     reel.skill && skillTabInfo
@@ -115,6 +129,14 @@ export function buildReelDetailData(
               timeLabel: formatRelativeTime(it.date),
             })),
             moreCount,
+            completion: completion
+              ? {
+                  actionText: completion.actionText,
+                  effortTag: completion.effortTag,
+                  note: completion.note,
+                  doneAt: completion.doneAt.toISOString(),
+                }
+              : null,
           };
         })()
       : undefined;

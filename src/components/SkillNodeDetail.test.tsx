@@ -30,6 +30,8 @@ const baseDetail: SkillNodeDetailData = {
   ],
   status: "tried",
   notes: [note],
+  actionables: [],
+  evidenceCount: 0,
 };
 
 describe("SkillNodeDetail", () => {
@@ -100,5 +102,137 @@ describe("SkillNodeDetail", () => {
   it("T18.5: shows no confirmation line when previousStatus equals the current status", () => {
     const html = renderToStaticMarkup(<SkillNodeDetail detail={baseDetail} previousStatus="tried" />);
     expect(html).not.toContain("Marked as");
+  });
+
+  // Epic 20 (ADR 0019 decision 2): the two tracks, side by side.
+  it("T20.4: shows the evidenced count alongside the declared status, independently", () => {
+    const html = renderToStaticMarkup(<SkillNodeDetail detail={{ ...baseDetail, evidenceCount: 3 }} />);
+    expect(html).toContain("3 items");
+    expect(html).toContain("Evidenced");
+    expect(html).toContain("Declared");
+  });
+
+  it("T20.4: 'mastered with zero evidence' renders both honestly, not collapsed into one number", () => {
+    const html = renderToStaticMarkup(
+      <SkillNodeDetail detail={{ ...baseDetail, status: "mastered", evidenceCount: 0 }} />,
+    );
+    expect(html).toContain("mastered");
+    expect(html).toContain("0 items");
+  });
+
+  it("T20.4: shows a 'No sourced actions' empty state when the node has no Actionables", () => {
+    const html = renderToStaticMarkup(<SkillNodeDetail detail={{ ...baseDetail, actionables: [] }} />);
+    expect(html).toContain("To-Try (0)");
+    expect(html).toContain("No sourced actions for this skill yet.");
+  });
+
+  it("T20.4: lists Actionables with title, action text, effort label, and a tick control", () => {
+    const html = renderToStaticMarkup(
+      <SkillNodeDetail
+        detail={{
+          ...baseDetail,
+          actionables: [
+            {
+              reelId: 10,
+              title: "A reel about sub-agents",
+              url: "https://example.com/reel",
+              publishedAt: new Date("2026-07-19T00:00:00Z"),
+              action: "Try splitting into two agents.",
+              effortTag: "afternoon",
+              completion: null,
+              supersession: null,
+            },
+          ],
+        }}
+      />,
+    );
+    expect(html).toContain("To-Try (1)");
+    expect(html).toContain("Try splitting into two agents.");
+    expect(html).toContain("Afternoon");
+    expect(html).toContain("Mark as done");
+  });
+
+  it("T20.4: an already-completed Actionable shows the snapshotted text and 'Done'", () => {
+    const html = renderToStaticMarkup(
+      <SkillNodeDetail
+        detail={{
+          ...baseDetail,
+          actionables: [
+            {
+              reelId: 10,
+              title: "A reel about sub-agents",
+              url: "https://example.com/reel",
+              publishedAt: new Date("2026-07-19T00:00:00Z"),
+              action: "Try Y (rewritten since).",
+              effortTag: "afternoon",
+              completion: {
+                actionText: "Try X (as originally ticked).",
+                effortTag: "afternoon",
+                note: null,
+                doneAt: new Date("2026-07-20T00:00:00Z"),
+              },
+              supersession: null,
+            },
+          ],
+        }}
+      />,
+    );
+    // Decision 5: the row shows the SNAPSHOT, not the live (possibly
+    // rewritten) reels.action.
+    expect(html).toContain("Try X (as originally ticked).");
+    expect(html).not.toContain("Try Y (rewritten since).");
+  });
+
+  it("T20.4 (ADR 0019 resolved open question): labels supersession with --caution, never hides the row", () => {
+    const html = renderToStaticMarkup(
+      <SkillNodeDetail
+        detail={{
+          ...baseDetail,
+          actionables: [
+            {
+              reelId: 10,
+              title: "A reel about sub-agents",
+              url: "https://example.com/reel",
+              publishedAt: new Date("2026-07-19T00:00:00Z"),
+              action: "Try the old way.",
+              effortTag: null,
+              completion: null,
+              supersession: { reason: "A newer approach replaces this.", supersededByClusterId: 5 },
+            },
+          ],
+        }}
+      />,
+    );
+    expect(html).toContain("Newer available: A newer approach replaces this.");
+    expect(html).toContain("text-caution");
+    // Still listed, not hidden.
+    expect(html).toContain("Try the old way.");
+  });
+
+  it("T20.4: filter buttons render one per effort tag plus All, and a sort toggle", () => {
+    const html = renderToStaticMarkup(
+      <SkillNodeDetail
+        detail={{
+          ...baseDetail,
+          actionables: [
+            {
+              reelId: 10,
+              title: "R",
+              url: "https://example.com/reel",
+              publishedAt: new Date("2026-07-19T00:00:00Z"),
+              action: "Do it.",
+              effortTag: "5-min-test",
+              completion: null,
+              supersession: null,
+            },
+          ],
+        }}
+      />,
+    );
+    expect(html).toContain("All");
+    expect(html).toContain("5-min test");
+    expect(html).toContain("Afternoon");
+    expect(html).toContain("Know only");
+    expect(html).toContain("Sort:");
   });
 });

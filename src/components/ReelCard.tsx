@@ -1,3 +1,4 @@
+import type { ActionableCompletion } from "@/db/schema";
 import type { FeedReel } from "@/lib/feed";
 import type { ReelActionFlags } from "@/lib/interactions";
 import type { SkillTabInfo } from "@/lib/skills/reelSkillTab";
@@ -29,14 +30,24 @@ export interface ReelCardProps {
   /** T19.4 (ADR 0024 decision 3): `writeupGenerationAvailable()`, resolved
    *  by the page. Same server/client boundary rule as `newDays` above. */
   canGenerateWriteup?: boolean;
+  /** T20.4: this reel's row from the page-level batch
+   *  `getActionableCompletionFlags` map — undefined when not completed. */
+  actionableCompletion?: ActionableCompletion;
 }
 
 /** One reel card, sized to fill the viewport (see .reel/.feed scroll-snap in page.tsx). */
-export function ReelCard({ reel, interactions, skillTabInfo, newDays, canGenerateWriteup }: ReelCardProps) {
+export function ReelCard({
+  reel,
+  interactions,
+  skillTabInfo,
+  newDays,
+  canGenerateWriteup,
+  actionableCompletion,
+}: ReelCardProps) {
   // T18.6: a solo card has nothing beyond the primary by definition (no
   // cluster, or a cluster reduced to one visible member) — the Context
   // tab's cluster-members list is always empty here.
-  const detail = buildReelDetailData(reel, [], skillTabInfo, canGenerateWriteup);
+  const detail = buildReelDetailData(reel, [], skillTabInfo, canGenerateWriteup, actionableCompletion);
   return (
     <ReelCardShell reelId={reel.id} initial={interactions ?? NO_INTERACTIONS} detail={detail}>
       <ReelCardBody reel={reel} newDays={newDays} />

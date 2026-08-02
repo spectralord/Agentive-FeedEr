@@ -5,10 +5,16 @@ import { afterAll, beforeEach, describe, expect, it } from "vitest";
 import { sql } from "drizzle-orm";
 import { db, getPool } from "@/db/client";
 import { experienceReports, rawItems, reels, skillNodes, sources } from "@/db/schema";
+import { toggleActionable } from "@/lib/actionables";
 import { setProgress } from "./progress";
 import { getNodeDetail, getSkillMap, setProgressBySlug } from "./map";
 
-async function seedReel(slug: string, skill: string | null, experimental = false) {
+async function seedReel(
+  slug: string,
+  skill: string | null,
+  experimental = false,
+  action: string | null = null,
+) {
   const [source] = await db()
     .insert(sources)
     .values({ name: `source-${slug}`, type: "rss", url: "https://example.com/feed" })
@@ -35,6 +41,7 @@ async function seedReel(slug: string, skill: string | null, experimental = false
       relevanceScore: 70,
       qualityScore: 70,
       skill,
+      action,
     })
     .returning()
     .then(([r]) => r);
@@ -43,7 +50,7 @@ async function seedReel(slug: string, skill: string | null, experimental = false
 describe("skill map (integration)", () => {
   beforeEach(async () => {
     await db().execute(
-      sql`TRUNCATE user_progress_notes, user_progress, experience_reports, reels, raw_items, sources, skill_nodes RESTART IDENTITY CASCADE`,
+      sql`TRUNCATE actionable_completions, user_progress_notes, user_progress, experience_reports, reels, raw_items, sources, skill_nodes RESTART IDENTITY CASCADE`,
     );
   });
 
@@ -198,5 +205,68 @@ describe("skill map (integration)", () => {
 
     expect(await setProgressBySlug("does-not-exist", "tried")).toBeUndefined();
     expect(await setProgressBySlug("sub-agents", "not-a-status")).toBeUndefined();
+  });
+
+  // Epic 20 (ADR 0019 decision 2): the two tracks (declared status, evidenced
+  // completions) are parallel and independent — neither test above should
+  // ever need to change for these to pass, and vice versa.
+  it("T20.3: getSkillMap carries an evidenceCount alongside status, independent of it", async () => {
+    const [mastered] = await db()
+      .insert(skillNodes)
+      .values([
+        { slug: "mastered-no-evidence", title: "Mastered No Evidence", theme: "Agentic Development", description: "…", status: "active" },
+        { slug: "untouched-with-evidence", title: "Untouched With Evidence", theme: "Agentic Development", description: "…", status: "active" },
+      ])
+      .returning();
+
+    // "Mastered with zero evidence" must remain representable (ADR 0019
+    // decision 2's headline case) — no seeded Actionable, no completion.
+    await setProgress(mastered.id, "mastered");
+
+    // The reverse: evidence exists but the node was never explicitly
+    // declared anything — status stays "untouched", evidenceCount is not 0.
+    const reel = await seedReel("r1", "untouched-with-evidence", false, "Try the thing.");
+    await toggleActionable(reel.id);
+
+    const map = await getSkillMap();
+    const nodes = map.flatMap((t) => t.nodes);
+    expect(nodes.find((n) => n.slug === "mastered-no-evidence")).toMatchObject({
+      status: "mastered",
+      evidenceCount: 0,
+    });
+    expect(nodes.find((n) => n.slug === "untouched-with-evidence")).toMatchObject({
+      status: "untouched",
+      evidenceCount: 1,
+    });
+  });
+
+  it("T20.3: getNodeDetail carries the To-Try list and evidenceCount, independent of status", async () => {
+    const [node] = await db()
+      .insert(skillNodes)
+      .values({ slug: "sub-agents", title: "Sub-Agents", theme: "Agentic Development", description: "…", status: "active" })
+      .returning();
+    const done = await seedReel("done", "sub-agents", false, "Do the thing.");
+    await seedReel("not-done", "sub-agents", false, "Do another thing.");
+    await seedReel("no-action", "sub-agents", false, null); // excluded — no action to check off
+    await toggleActionable(done.id, "Went well.");
+    await setProgress(node.id, "mastered"); // declared track set; must not collapse with evidence
+
+    const detail = await getNodeDetail("sub-agents");
+    expect(detail!.status).toBe("mastered");
+    expect(detail!.evidenceCount).toBe(1);
+    expect(detail!.actionables).toHaveLength(2); // no-action reel excluded
+    const doneItem = detail!.actionables.find((a) => a.reelId === done.id)!;
+    expect(doneItem.completion).toMatchObject({ actionText: "Do the thing.", note: "Went well." });
+  });
+
+  it("T20.3: getNodeDetail's evidenceCount is 0 and actionables list is empty for a node with neither", async () => {
+    await db()
+      .insert(skillNodes)
+      .values({ slug: "untouched", title: "Untouched", theme: "Agentic Development", description: "…", status: "active" });
+
+    const detail = await getNodeDetail("untouched");
+    expect(detail!.status).toBe("untouched");
+    expect(detail!.evidenceCount).toBe(0);
+    expect(detail!.actionables).toEqual([]);
   });
 });
