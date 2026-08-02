@@ -168,6 +168,36 @@ reason — nothing else asserted it, so a silent flip would not have failed any 
       per standard hand-back (the row already correctly says "Plan fertig, delegierbar"; it needs
       a status flip to done, which the strong model does at merge review per CLAUDE.md's QA step)
 
+## Owner feedback after first real use (2026-08-02) — BLOCKED ON CLI AUTH, NOT A CODE DEFECT
+
+The button always reports "Couldn't generate a write-up — try again". Diagnosed against the running
+server; the route, runner and executor wiring are correct.
+
+**Root cause:** the `claude` CLI subprocess is **not logged in**. Reproduced directly —
+`echo "..." | claude -p --output-format json` returns
+`{"is_error": true, "result": "Not logged in · Please run /login"}` — and it reproduces **outside
+this repo entirely** (from `/tmp`), so it is the CLI's own credential store, not a project setting.
+
+**Why starting an interactive Claude session did not fix it:** an interactive session and a plain
+`claude -p` subprocess spawned by the dev server resolve credentials differently. The subprocess
+does not inherit the session's auth.
+
+**Workspace trust is NOT the problem** (an early stderr line suggests it, and is a red herring):
+`~/.claude.json` already has `hasTrustDialogAccepted: true` for this repo — verified.
+
+**Fix:** run `claude` and complete `/login` so the CLI's stored credentials are valid for
+non-interactive use, then restart `npm run dev` so the server spawns subprocesses under the new
+state.
+
+### Defect found while diagnosing (worth fixing)
+
+The API returned `{"status":"empty"}` on one CLI failure. `"empty"` means "the source was too thin,
+nothing written" — a legitimate, expected outcome — whereas a CLI crash must surface as `"failed"`.
+Conflating them makes an infrastructure failure look like a content judgement, and the UI cannot
+tell the user which happened. `runWriteupForReel`'s own branching is correct
+(`run.ts:125-134`), so the mis-mapping is upstream of it, in how a rejected/failed caller result is
+turned into a parsed value. **Needs a small fix plus a test pinning failure ≠ empty.**
+
 ## Abweichungen / Fragen
 
 *(Subagent: record deviations and questions here rather than guessing — `README.md` §1.4.)*

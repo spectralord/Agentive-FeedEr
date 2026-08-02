@@ -185,6 +185,37 @@ survives a page reload.
 - [x] No new runtime dependencies
 - [x] Status table row updated in `docs/plan/README.md` §6
 
+## Owner feedback after first real use (2026-08-02) — REWORK NEEDED
+
+Tested against the running app. Three findings; the first two are defects against the accepted
+prototype, the third is a design change.
+
+1. **No connections between nodes.** `docs/specs/prototypes/skill-constellation.html` defines a
+   `.link` class (line 56: `stroke: var(--hairline-strong); opacity: .35`) plus a `.link.hot`
+   accent state for the selected node's edges. `SkillConstellation.tsx` renders **zero** `<line>`
+   elements. The prototype wins on *look* (design-review agent's precedence rule), so this is a
+   conformance gap, not a preference.
+
+2. **Cannot drag.** T21.5 shipped drag-to-place gated to desktop/iPad, and the reset-button nesting
+   bug was fixed — but the owner could not drag in practice. **Unverified by me at the time**: the
+   T21.5 review checked the write path and a locked position surviving reload, not the pointer
+   interaction itself. Needs reproduction before a fix.
+
+3. **The region circles are unwanted, and the desired model is different.** Owner wants **one
+   identifiable key node per theme** (e.g. "Agentic Workflows") with **connections radiating to its
+   related nodes** — a hub-and-spoke reading — rather than dotted circles enclosing scattered
+   points. Note the prototype's `.theme-ring` (line 54, `stroke-dasharray: 2 6`) *is* the circle
+   that shipped, so this supersedes the prototype too, and therefore needs an **ADR 0020
+   amendment**, not just a code change.
+
+   This lands close to ADR 0020 decision 8's layer model, where **themes are the roots**. A theme
+   rendered as a real node with spokes is arguably that decision made visible one layer earlier.
+
+**Sequencing caution — item 3 partly depends on gated work.** Drawing meaningful edges needs a
+relatedness signal, and ADR 0020 decision 7 gated the relaxation pass because co-occurrence is
+currently **one pair corpus-wide**. Hub-to-member spokes (theme → its own nodes) are structural and
+need no signal; member-to-member edges do. Split accordingly.
+
 ## Review findings (strong model, 2026-08-01)
 
 **Accepted.** Every high-risk claim independently re-verified, not taken on report:

@@ -81,6 +81,31 @@ the gap described is genuine.
    Bringing it into scope here turns a decorative column into the thing that makes a To-Try list
    usable, at the cost of one filter control.
 
+### Owner feedback after first real use (2026-08-02)
+
+Visually accepted. One substantive gap: **the actionable currently reads as "go look at the Reel's
+source", not as a meaningful task.** The owner wants genuine tasks *derived from* the source
+material.
+
+This is the v1 design working exactly as specified — decision 1 deliberately promotes the existing
+`reels.action` string with **no new LLM pass**, and `reels.action` is a one-line prompt produced by
+the core enrichment pass, not a worked task. So the limitation is in the *content*, not the
+mechanism: the tick, the snapshot, the roll-up and the evidence track all function.
+
+Improving it is a **prompt/generation** question, and there are three separable options — none
+decided here:
+1. Strengthen the `action` prompt inside core enrichment (cheapest; affects every Reel; changes
+   ADR 0003's existing output, so it needs care).
+2. A dedicated task-derivation pass, on the ADR 0024 pattern — user-triggered, through the
+   `claude-code` executor, writing a richer task alongside the terse `action`.
+3. Multi-step checklists — **already rejected for v1** in the Alternatives below, and the rejection
+   said "revisit only if single-step actionables prove too coarse in real use". That condition has
+   now been met, so the rejection is reopenable.
+
+Note `future-todos.md` **T2** ("the current action prompts are still too weak") recorded precisely
+this in July, and this ADR's own note there says the *structural* half is addressed while
+**formulation quality remains a separate prompt question**. This feedback confirms that split.
+
 ## Alternatives
 
 - **Reinstate a reel-level `tried` interaction:** simpler (the `interactions` table exists), but
