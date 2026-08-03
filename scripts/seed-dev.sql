@@ -1,3 +1,25 @@
+-- ⚠️ FIXTURE DATA — NOT the normal way to run this app (owner decision 2026-08-03).
+--
+-- The app's real mode is **live data**: `npm run job:cc` ingests the curated RSS
+-- sources and enriches them on Claude Code quota. Use that to evaluate content
+-- quality. See `npm run setup:live`.
+--
+-- This file exists only for **UI verification against a known fixed dataset** —
+-- reviewing a redesign, reproducing a layout bug, or demoing offline. It is
+-- **not** used by the test suite: integration tests build their own fixtures per
+-- test against `feedr_test` (`src/test/globalSetup.ts`) and never read this file.
+--
+-- Two things this seed does that real data does not, and which caused real
+-- confusion on 2026-08-02:
+--   1. It plants **five fake sources pointing at `example.com`**, which 404 on
+--      every ingestion run and clutter the log with errors that look like source
+--      failures. They were deleted from the dev DB on 2026-08-03; re-running this
+--      file brings them back.
+--   2. It leaves **`raw_items.raw_content` empty**, so the on-demand Write-up
+--      feature (ADR 0024) correctly returns "nothing to elaborate on" for every
+--      seeded Reel and appears broken. Real ingestion populates it
+--      (`src/lib/ingestion/run.ts:74`).
+--
 -- Dev/verification seed data (NOT used in production). DESTRUCTIVE: the
 -- TRUNCATE below wipes every table listed and restarts identity sequences,
 -- then reloads a fixed, hand-authored dataset. Safe to run repeatedly

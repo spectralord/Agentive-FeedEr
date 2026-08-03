@@ -12,7 +12,10 @@
     "db:up": "docker compose up -d --wait",
     "db:down": "docker compose down",
     "db:seed": "docker compose exec -T db psql -U feedr -d feedr_dev -v ON_ERROR_STOP=1 < scripts/seed-dev.sql",
-    "setup": "npm run db:up && npm run db:migrate && npm run db:seed",
+    "db:requeue": "docker compose exec -T db psql -U feedr -d feedr_dev -v ON_ERROR_STOP=1 < scripts/requeue-unenriched.sql",
+    "setup": "npm run db:up && npm run db:migrate",
+    "setup:live": "npm run db:up && npm run db:migrate && npm run job:cc",
+    "setup:fixtures": "npm run db:up && npm run db:migrate && npm run db:seed",
     "job:daily": "tsx --env-file-if-exists=.env src/jobs/daily.ts",
     "job:cc": "APP_PROFILE=local PIPELINE_TRIGGER=manual tsx --env-file-if-exists=.env src/jobs/daily.ts",
     "test": "vitest run"
