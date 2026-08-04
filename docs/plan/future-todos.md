@@ -184,3 +184,24 @@ designing: neither depends on the other, and T8's post-publication half works wi
   that new surfaces go into a hub, never onto the fixed four-item tab bar.
 - Sharpest open question: **what happens when the curator is away?** An approval gate turns
   "signal over noise" into "nothing at all" during absence.
+
+## T9 — Click-to-explain glossary with inline term highlighting
+> Owner idea 2026-08-03. **Rough note only — no ADR, not grilled.**
+
+**Motive:** click any word or term in the app to trigger an explanation workflow. The result is saved
+into a **glossary / knowledge base**. Reels and other text then render already-known terms
+**highlighted**, and hovering one shows a short pop-up explanation.
+
+**Reference for the feel:** *Warhammer 40k: Rogue Trader* does this well for setting-specific terms.
+
+**First thoughts (not decisions):**
+- Distinct from **Skill Nodes**: a skill is a competency you progress on; a glossary term is just a
+  definition. Overlap is possible but conflating them would repeat the T7/T8 naming trap.
+- There are already two glossary files (`CONTEXT.md` DE, `CONTEXT.en.md` EN) — those are *developer*
+  docs, not user-facing. Decide whether this is a third store or a promotion of those.
+- Highlighting means matching term occurrences inside rendered prose — a text-processing pass, and
+  the first thing in the app to modify Reel text at render time.
+- Explanation generation should go through the executor seam (ADR 0015) and, following ADR 0024,
+  probably user-triggered on the Claude Code subscription rather than a batch pass.
+- Sourced-only (ADR 0005) needs thought: a definition of "MCP" is general knowledge, not something
+  the source text supports. That is a genuine tension with the app's trust model.
