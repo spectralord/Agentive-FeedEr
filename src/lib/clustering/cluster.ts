@@ -62,7 +62,16 @@ export async function assignCluster(
 function toResult(output: ClusterOutput): ClusterResult {
   if (output.decision === "match") {
     // Non-null guaranteed by clusterOutputSchema's refine.
-    return { match: { clusterId: output.match_cluster_id as number, isPrimary: output.is_primary } };
+    // `is_primary ?? true` follows the field's own prompt instruction ("When in
+    // doubt, true") and ADR 0013 point 4's deliberately coarse few/some/strong
+    // scale, which is designed so a misclassified echo barely matters. The
+    // schema allows null because the model legitimately returns it when
+    // proposing (where the value is ignored) — see clusterOutputSchema's
+    // docstring; defaulting here keeps a null from silently reading as `false`,
+    // which would understate corroboration.
+    return {
+      match: { clusterId: output.match_cluster_id as number, isPrimary: output.is_primary ?? true },
+    };
   }
   // ADR 0013 point 4: the first member of a newly-proposed cluster is primary
   // by definition — the model's is_primary judgement is not consulted here

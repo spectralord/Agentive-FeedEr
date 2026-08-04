@@ -8,18 +8,26 @@ import { z } from "zod";
  * mapping onto the narrower `{ match } | { propose }` result type ADR 0009 /
  * ADR 0013 describe.
  *
- * `is_primary` is always present in the raw output (the forced tool schema
- * requires it), but ./cluster.ts only honours it for `decision=match` — for
- * `decision=propose` the first member of a brand-new cluster is primary by
- * definition (ADR 0013 point 4), so the model's judgement is intentionally
- * not consulted there (see toResult in ./cluster.ts).
+ * `is_primary` is required by the forced tool schema, but ./cluster.ts only
+ * honours it for `decision=match` — for `decision=propose` the first member of
+ * a brand-new cluster is primary by definition (ADR 0013 point 4), so the
+ * model's judgement is intentionally not consulted there (see toResult in
+ * ./cluster.ts).
+ *
+ * It is therefore **nullable**: the field's own description tells the model it is
+ * "Ignored when decision=propose", and on the real corpus (2026-08-03) the model
+ * took that at its word and returned `null` when proposing — which a
+ * `z.boolean()` rejected, failing the whole item with a ZodError even though the
+ * value would have been discarded. Accepting null here costs nothing (the
+ * propose branch never reads it) and stops a well-behaved response from being
+ * treated as a content-level failure.
  */
 export const clusterOutputSchema = z
   .object({
     decision: z.enum(["match", "propose"]),
     match_cluster_id: z.number().int().positive().nullable(),
     propose_title: z.string().min(1).nullable(),
-    is_primary: z.boolean(),
+    is_primary: z.boolean().nullable(),
   })
   .refine((o) => o.decision !== "match" || o.match_cluster_id !== null, {
     message: "decision=match requires match_cluster_id",

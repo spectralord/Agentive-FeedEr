@@ -78,6 +78,36 @@ describe("assignCluster (mocked caller — no real API call)", () => {
     expect(Object.keys((result as { propose: object }).propose)).toEqual(["title"]);
   });
 
+  it("accepts a null is_primary on propose — the prompt says it is ignored there (real-corpus regression, 2026-08-03)", async () => {
+    // The field's own description tells the model "Ignored when decision=propose".
+    // On the real corpus the model took that at its word and returned null, which
+    // a z.boolean() rejected — failing the whole item with a ZodError even though
+    // the value is discarded in this branch.
+    const caller: StructuredCaller = vi.fn().mockResolvedValue({
+      decision: "propose",
+      match_cluster_id: null,
+      propose_title: "Brand new topic",
+      is_primary: null,
+    });
+
+    const result = await assignCluster({ title: "x", summary: "y", sourceName: "z" }, [], caller);
+    expect(result).toEqual({ propose: { title: "Brand new topic" } });
+  });
+
+  it("defaults a null is_primary to true on match (ADR 0013 'when in doubt, true')", async () => {
+    // Never let null read as false: that would understate corroboration on a
+    // deliberately coarse few/some/strong scale.
+    const caller: StructuredCaller = vi.fn().mockResolvedValue({
+      decision: "match",
+      match_cluster_id: 7,
+      propose_title: null,
+      is_primary: null,
+    });
+
+    const result = await assignCluster({ title: "x", summary: "y", sourceName: "z" }, [], caller);
+    expect(result).toEqual({ match: { clusterId: 7, isPrimary: true } });
+  });
+
   it("rejects a malformed tool response (schema validation, no silent pass-through)", async () => {
     const caller: StructuredCaller = vi.fn().mockResolvedValue({
       decision: "match",
