@@ -205,3 +205,44 @@ into a **glossary / knowledge base**. Reels and other text then render already-k
   probably user-triggered on the Claude Code subscription rather than a batch pass.
 - Sourced-only (ADR 0005) needs thought: a definition of "MCP" is general knowledge, not something
   the source text supports. That is a genuine tension with the app's trust model.
+
+## T10 — Token/cost accounting per pipeline run
+> Owner idea 2026-08-03. **Rough note — no ADR yet.** Cheaper than it looks: the data already
+> exists and is being thrown away.
+
+**Motive:** see where tokens go. "If I run the daily task, how many tokens does that cost?" — to get
+a feel for the cost of each pass and each interaction.
+
+**The data is already there, on both executors (verified 2026-08-03):**
+- **API path** — `client.messages.create()` returns `response.usage`
+  (`input_tokens`, `output_tokens`, cache read/creation counts). `callStructured`
+  (`src/lib/claude.ts:33`) returns **only** `toolUse.input` and discards the rest.
+- **Claude Code path** — the CLI's `--output-format json` envelope carries `usage` **and**
+  `total_cost_usd`. `extractResultJson` (`src/lib/executor/claudeCode.ts`) pulls out `result` and
+  discards the envelope, including usage.
+
+So no new LLM calls are needed — just stop dropping what comes back.
+
+**The one real design obstacle:** `Executor` is typed
+`(opts: StructuredCallOptions) => Promise<unknown>` (`src/lib/executor/executor.ts:11`). Usage has
+nowhere to travel without changing that seam, which is **ADR 0015 territory** and touches all six
+LLM steps. Options, none chosen:
+1. Widen the return to `{ result, usage }` — honest, but a breaking change across every step and
+   every mocked-caller test.
+2. An out-of-band collector (an injected counter the executor writes to) — leaves the seam alone,
+   but is implicit state.
+3. Wrap the executor in a metering decorator at the one place it is resolved
+   (`pipeline.ts:53`) — no signature change, and the natural home for a per-run total.
+
+Option 3 looks cheapest and matches how the executor is already resolved exactly once per run.
+
+**Where to store it:** `pipeline_runs.summary` is already `jsonb` and already holds per-phase
+counts, so a `tokens`/`cost` block fits with no migration. The admin console already renders run
+summaries, so it is also the natural place to display it.
+
+**Also worth surfacing:** per-*item* cost (which Reels were expensive), and the on-demand features
+(write-up, ADR 0024) where the user presses a button and might want to know what it cost.
+
+**Caveat on the cost figure:** under `APP_PROFILE=local` the spend is Claude Code **subscription
+quota**, not money — `total_cost_usd` from the CLI is what the same work *would* have cost on the
+API. Label it as such or it will read as a bill.
