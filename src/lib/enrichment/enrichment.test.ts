@@ -106,7 +106,20 @@ describe("prompt", () => {
 
 describe("loadProfile", () => {
   it("loads the repo profile.md", () => {
-    expect(loadProfile()).toContain("Developer-Profil");
+    // Asserts on a structural heading, not on prose. This previously asserted
+    // `toContain("Developer-Profil")` — the GERMAN heading — which meant the test
+    // was pinning the very defect that produced ~100 German summaries on
+    // 2026-08-03 (the profile is injected first into every enrichment prompt, so
+    // the model mirrors its language). Translating profile.md correctly broke this
+    // test. Do not re-couple it to profile prose.
+    expect(loadProfile()).toContain("## Stack & tools");
+  });
+
+  it("loads a profile that passes the English guard", () => {
+    // loadProfile() calls assertEnglishProfile — see profile.test.ts. This pins
+    // that the repo's own profile.md stays English, so the corpus-wide language
+    // regression cannot recur silently.
+    expect(() => loadProfile()).not.toThrow();
   });
 
   it("throws a readable error when missing", () => {
