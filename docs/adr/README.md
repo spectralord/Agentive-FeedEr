@@ -1,5 +1,7 @@
 # ADRs — numbering and how to avoid collisions
 
+> **For status at a glance, see `docs/OVERVIEW.md`** — every ADR and epic on one priority-ordered page.
+
 ## The problem this exists to prevent
 
 Multiple sessions work in parallel on separate branches (CLAUDE.md, branch strategy). Each picks
@@ -44,7 +46,7 @@ yields), but it is cheap to avoid and expensive to untangle once other docs cite
 | 0021 | Experience Reports in Topic Clusters |
 | 0022–0023 | UX phase 2 — SOTA retirement, navigation IA |
 | 0024 | On-demand Write-up generation on the Claude Code subscription |
-| 0025 | Deferred task queue + typed handlers (**REJECTED** 2026-08-03 — one consumer, and `pipeline_runs` already covers it) |
+| 0025 | Deferred task queue + typed handlers (**reopened** 2026-08-03, low priority — nested Claude Code context has no synchronous path) |
 | 0026 | Reusable writing-assistance service (**proposed**) |
 | 0027 | Node seeding by fetching for a declared node (**DEFERRED** 2026-08-03 — ADR 0001 collision dissolved; blocked on Epic 8) |
 | 0028 | Curator inbox / approval gate (**proposed — flagged for a design session**) |

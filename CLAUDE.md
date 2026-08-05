@@ -77,6 +77,11 @@ Der Prozess läuft auf **drei Ebenen**, jede mit Auslöser / Owner / Artefakt:
 
 ## Projekt-Dokumentation
 
+- **Erst hier schauen: `docs/OVERVIEW.md`** — alle ADRs und Epics auf einer Seite, nach
+  **Priorität** sortiert (nicht nach Nummer), mit Status und Kurz-Zusammenfassung. Spart das
+  Querspringen zwischen 28 ADR- und 24 Epic-Dateien. **Pflicht: im selben Commit mitpflegen, in dem
+  sich ein ADR-Status oder ein Epic-Abschluss ändert** — die Status-Zeilen in den Einzeldateien
+  bleiben maßgeblich, diese Seite ist die Landkarte.
 - Glossar: `CONTEXT.md` · ADRs: `docs/adr/` · Design: `docs/specs/` ·
   Ausführbarer Entwicklungsplan: `docs/plan/README.md` (Epics 0–8 + Vision-Backlog).
 - Sprache: **alles Englisch** — UI-Texte, generierter Content, Doku, Code/Kommentare/Commits

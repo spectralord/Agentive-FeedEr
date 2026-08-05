@@ -1,14 +1,12 @@
 # ADR 0025 — A deferred task queue with typed handlers (PARKED — needs a grill)
 
-- Status: **rejected** 2026-08-03 (grill session, strong model; owner asked for the grill).
-  **The generic queue is not built.** Every open question was answered against the code and they
-  converge on the same conclusion: the substrate has exactly one candidate consumer, that consumer
-  is itself unbuilt, and `pipeline_runs` already covers most of what the table would do. Rejected in
-  favour of giving that one consumer its own trigger if and when it is built — see "Grill outcome"
-  below. Revisit only when a **second** genuine async case appears.
-  Was: proposed — parked deliberately, needs a strong-model grill before any code.
-  **Do not build on the strength of this file.** It exists to stop the idea being re-derived from
-  scratch, and to record the questions that must be answered first.
+- Status: **reopened** 2026-08-03 (was: rejected the same day). The owner named a use case the
+  grill missed — running the app **from inside a Claude Code context**, where the executor cannot
+  spawn a nested `claude` and there is therefore *no* synchronous path for the write-up button
+  (ADR 0024) or writing assistance (ADR 0026). That is a second, already-shipped consumer, which
+  the rejection's "one consumer, and it is unbuilt" argument does not cover. **Low priority**
+  (owner's framing); needs a second grill. The original rejection's *findings* stand and are the
+  starting point — only its conclusion is superseded. See "Reopened" below.
 - Date: 2026-08-01
 - Origin: owner's proposal, 2026-08-01, offered as a *fallback* in case the app could not trigger
   the Claude Code subscription directly. It can (**ADR 0024** decision 2), so the fallback was not
@@ -79,6 +77,50 @@ it rather than overturning it.
 
 **What would reopen this:** a second genuine async case appearing (not a hypothetical), or Epic 16
 turning out to need work that `pipeline_runs` + a trigger cannot express.
+
+### Reopened 2026-08-03 (owner) — the nested-context case the rejection missed
+
+The owner raised a case the grill did not consider, and it is real:
+
+> *"0025 would still have merit, when I use the app in a context where I cannot trigger the executor
+> because I'm in a Claude Code context."*
+
+**Why this is a genuine second consumer, not a restatement of Epic 16.** The `claude-code` executor
+works by **spawning `claude` as a subprocess** (`src/lib/executor/claudeCode.ts:24`,
+`spawn("claude", ["-p", "--output-format", "json"])`). When the app is itself being driven from
+inside a Claude Code session, that nesting is exactly what failed during Epic 19's implementation
+on 2026-08-02: the nested CLI returned `Not logged in`, and no amount of fixing the app could have
+helped, because the constraint is the nesting itself.
+
+In that context there is **no synchronous path at all**. Every user-triggered LLM feature — the
+write-up button (ADR 0024), writing assistance (ADR 0026) — is simply unavailable, and today it
+fails at the point of use with an error. A queue changes the failure into a deferral: the app
+**records the intent**, and the outer Claude Code session (which *is* authenticated) drains it.
+
+This is materially different from Epic 16's case. Epic 16 wanted async because the work is *long*.
+This wants async because the work is *impossible in-process from certain contexts* — a
+capability gap, not a latency preference. The rejection's core argument ("one consumer, and it is
+unbuilt") no longer holds: this consumer is **two shipped features**, in a context the owner
+actually uses.
+
+**Status: reopened, low priority (owner's own framing).** Not re-decided here — a second grill
+should run when it comes up the queue. Three things that grill inherits:
+
+1. The `pipeline_runs` overlap finding still stands and still argues for **extending that table**
+   rather than adding a second one. The nested case wants a *pending work* row, which `mode` +
+   `status` can nearly express already.
+2. The dispatcher-vs-injected-executor tension (10 call sites) also still stands — but note this
+   use case may not need a *typed handler registry* at all. "Re-run this one already-designed
+   operation later" is much narrower than "arbitrary typed tasks", and the narrow version does not
+   fight ADR 0015.
+3. **Detecting the nested context is its own question.** The app currently discovers the problem by
+   spawning and failing. Deciding *when* to enqueue rather than execute needs a signal — an env
+   var, a probe, or an explicit mode — and that is likely the first thing the grill must settle.
+
+**Correction to the record:** the rejection above was reasoned from the code but from an incomplete
+set of use cases. It is left in place rather than deleted, because its findings about
+`pipeline_runs`, the executor pattern and the poll interval remain accurate and are the starting
+point for the re-grill — only its *conclusion* is superseded.
 
 ## Open questions — answered by the 2026-08-03 grill; kept for the record
 
