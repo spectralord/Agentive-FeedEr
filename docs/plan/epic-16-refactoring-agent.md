@@ -9,6 +9,13 @@ Claude-Code-Cron/Routine**), der **nachts über das Repo geht**, Verbesserungspo
 und **konkrete Vorschläge** liefert — Refactoring, Vereinfachung, Testlücken, Dead-Code,
 Inkonsistenzen zu ADRs/Konventionen — ohne selbst Risiko einzubauen.
 
+> **Update 2026-08-03 — ADR 0025 (generischer Task-Queue) wurde ABGELEHNT.** Der Grill ergab: es
+> gibt genau *einen* Kandidaten-Consumer für so eine Queue, nämlich dieses Epic — und `pipeline_runs`
+> deckt bereits Status-Lifecycle, beide Zeitstempel, `summary` (jsonb) und `error` ab. Falls Epic 16
+> gebaut wird, bekommt es daher **einen eigenen Trigger** (gleiche Form wie `beginRun`/`runAndFinish`
+> beim Daily-Job), keine generische Handler-Registry. Erst ein *zweiter* echter Async-Fall würde die
+> Queue wieder aufmachen.
+
 **Referenzen:** CLAUDE.md („Design-Prozess" Review-Mindest-Checkliste), `future-todos.md` T4
 (Muster Experten-Session), Epic 16 teilt die CC-Routine-Mechanik mit `future-todos.md` T6.
 Nutzt Claude-Code-**Kontingent** statt API-Tokens (wie T6).

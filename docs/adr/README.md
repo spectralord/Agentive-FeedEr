@@ -44,7 +44,7 @@ yields), but it is cheap to avoid and expensive to untangle once other docs cite
 | 0021 | Experience Reports in Topic Clusters |
 | 0022–0023 | UX phase 2 — SOTA retirement, navigation IA |
 | 0024 | On-demand Write-up generation on the Claude Code subscription |
-| 0025 | Deferred task queue + typed handlers (**parked**, needs a grill) |
+| 0025 | Deferred task queue + typed handlers (**REJECTED** 2026-08-03 — one consumer, and `pipeline_runs` already covers it) |
 | 0026 | Reusable writing-assistance service (**proposed**) |
 | 0027 | Node seeding by fetching for a declared node (**proposed** — collides with ADR 0001) |
 | 0028 | Curator inbox / approval gate (**proposed — flagged for a design session**) |

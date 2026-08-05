@@ -1,6 +1,12 @@
 # ADR 0025 — A deferred task queue with typed handlers (PARKED — needs a grill)
 
-- Status: **proposed** — *parked deliberately.* Needs a strong-model grill before any code.
+- Status: **rejected** 2026-08-03 (grill session, strong model; owner asked for the grill).
+  **The generic queue is not built.** Every open question was answered against the code and they
+  converge on the same conclusion: the substrate has exactly one candidate consumer, that consumer
+  is itself unbuilt, and `pipeline_runs` already covers most of what the table would do. Rejected in
+  favour of giving that one consumer its own trigger if and when it is built — see "Grill outcome"
+  below. Revisit only when a **second** genuine async case appears.
+  Was: proposed — parked deliberately, needs a strong-model grill before any code.
   **Do not build on the strength of this file.** It exists to stop the idea being re-derived from
   scratch, and to record the questions that must be answered first.
 - Date: 2026-08-01
@@ -39,7 +45,42 @@ keyed by task type is a second orchestration pattern sitting beside that one. Th
 justified — but "may well be" is exactly the standard the ADR threshold in CLAUDE.md says requires
 a grill, not a judgement call in passing.
 
-## Open questions — all must be answered before building
+## Grill outcome (2026-08-03) — rejected, with the evidence
+
+Each question below was answered against the live code and schema rather than argued in the
+abstract. The answers are recorded inline. Summary of why they add up to a rejection:
+
+1. **`pipeline_runs` already is most of this table.** Measured: 8 columns —
+   `id, trigger, mode, status, started_at, finished_at, summary (jsonb), error`. It already has a
+   status lifecycle, both timestamps, a structured result blob and an error field. `mode` is a
+   fixed type column. A second table would duplicate ~80% of it for no capability gain.
+2. **The dispatcher fights a pattern with ten call sites.** `StructuredCaller = callStructured`
+   appears in **10 non-test modules** (enrichment, verifier, skilltagger ×2, clustering ×2,
+   knowledge-check ×2, feedback, writeup). ADR 0015 deliberately chose *one executor, resolved
+   once, injected everywhere*. A type-erased handler registry beside that is a second orchestration
+   model to keep consistent forever.
+3. **The list of genuinely async work is one item long, and it is unbuilt.** Epic 16 (nightly
+   refactoring agent) is the only named case, and it is itself `GEPARKT — Vor Umsetzung eigener
+   Grill`. Everything else the queue was imagined for has since been answered elsewhere: write-up
+   generation is synchronous and user-triggered (ADR 0024), and the daily pipeline already has its
+   own trigger and run tracking.
+4. **The poll/stale interaction is a real defect in the proposal, not a detail.** `STALE_RUN_MS` is
+   **30 minutes** (`src/lib/pipeline.ts:31`) and the proposed poll was ~15 minutes — exactly half.
+   A wedged run would be picked up twice before it is considered stale. Fixable, but it is
+   complexity bought for one hypothetical consumer.
+7. **It cannot serve the cloud profile anyway.** `PROFILE_DEFAULTS` pins `cloud` to
+   `executor: "api"`, and a Claude Code consumer needs the local CLI — so the queue would be
+   local-only by construction, the same limitation ADR 0024 decision 3 already documents.
+
+**Decision: reject the generic substrate.** If Epic 16 is ever built, give it its own trigger — the
+same shape `runAndFinish`/`beginRun` already provides for the daily job. *Two* cases make a pattern;
+one makes a feature. This ADR's own "Provisional lean" said exactly that, and the evidence confirms
+it rather than overturning it.
+
+**What would reopen this:** a second genuine async case appearing (not a hypothetical), or Epic 16
+turning out to need work that `pipeline_runs` + a trigger cannot express.
+
+## Open questions — answered by the 2026-08-03 grill; kept for the record
 
 1. **What does this do that `pipeline_runs` does not?** The table already exists with
    `trigger` (`manual`/`cron`), `mode`, `status` (`running`/`success`/`failed`), `startedAt`,
