@@ -1,7 +1,13 @@
 # ADR 0027 — Seeding a user-declared Skill Node by fetching content for it
 
-- Status: **proposed** (owner requirement stated 2026-08-01 during the ADR 0018 grill; deferred to
-  its own ADR by owner decision. **Needs a grill — it has an unresolved trust-boundary problem.**)
+- Status: **deferred** 2026-08-03 (grill session, strong model). **Not built, and ADR 0001 is NOT
+  amended** — the collision dissolved: option 3 (user-supplied seed URLs) is already permitted by
+  ADR 0001's own "extended per source on concrete need" clause, and only open-web search would have
+  required an amendment. Blocked in practice on Epic 8 (which owns fetching and is itself parked),
+  and outranked by the real current constraint — 67 uncurated skill proposals, not missing content.
+  See "Grill outcome" below.
+  Was: proposed (owner requirement stated 2026-08-01 during the ADR 0018 grill; deferred to its own
+  ADR by owner decision).
 - Date: 2026-08-01
 - Related: **ADR 0001 (curated sources over the open web — the binding decision this collides
   with)**, Epic 8 (agentic Deep-Dive — whose whitelist this cannot reuse), ADR 0018 decision 8
@@ -43,7 +49,46 @@ That leaves the question this ADR exists to answer: **where does a declared node
 come from?** And it cannot be answered without touching **ADR 0001**, which chose curated sources
 over the open web as a binding decision.
 
-## Options (none yet chosen — this is the grill's job)
+## Grill outcome (2026-08-03) — DEFERRED, and the ADR 0001 collision dissolves
+
+Three facts from the code change the shape of this decision:
+
+1. **Epic 8's Deep-Dive is not built.** There is no `src/lib/deepdive/`. The whitelist this ADR
+   planned to adapt — "the Reel's own URL, links in that article, registry domains" — exists only
+   as prose in `docs/plan/epic-8-deep-dive.md`. So the anchor problem is not "how do we adapt a
+   working mechanism"; there is nothing yet to adapt, and no fetching code of any kind in the app.
+2. **ADR 0001 already contains the escape hatch.** Its decision text ends: open web search and
+   per-site scrapers are *"bewusst nach hinten geschoben und **nur bei konkretem Bedarf pro Quelle
+   ergänzt**"* — deferred, and extended **per source on concrete need**. A user handing over a
+   specific URL *is* concrete need, per source.
+3. **The source registry is code-as-truth with four types** (`rss`, `hn_algolia`, `reddit_rss`,
+   `github_releases`, `src/lib/sources.ts`). Nothing in the app fetches an arbitrary page today.
+
+**Consequence: option 3 needs no ADR 0001 amendment.** A URL the owner supplies is a curated source
+by definition — it is the owner doing the curating, which is exactly what ADR 0001 protects. Only
+**option 2 (open-web search)** would amend that ADR, and option 2 is the one nobody has argued for.
+
+**Decision: defer, do not build, and do not amend ADR 0001.** Reasons:
+
+- **It is blocked on Epic 8 in practice.** Fetching, whitelisting and the agent loop are Epic 8's
+  work. Building them here first would mean Epic 8 later inherits or duplicates them — the exact
+  "two orchestration paths" problem that got ADR 0025 rejected. Epic 8 is itself `GEPARKT` pending
+  its own grill.
+- **The corpus problem outranks it.** The motivation is "a topic I want to learn is not covered by
+  my feeds". But the feeds now produce **174 Reels**, and the actual blocker on the Skill Map is
+  **67 ungrilled skill proposals awaiting curation**, not missing content. Seeding solves a
+  shortage that is not currently the constraint.
+- **When it is built, option 3 is the shape.** User-supplied seed URLs solve the anchor problem
+  *structurally* rather than by loosening a rule: the URLs the owner pastes become the whitelist
+  anchor that a declared node otherwise lacks. Recorded here so the next session does not
+  re-derive it — but recorded as a **lean, not a decision**, because the fetching design belongs
+  to Epic 8's grill.
+
+**What would reopen this:** Epic 8 being grilled and built (it supplies the machinery), or a real
+case of a topic the curated feeds genuinely cannot reach — which the 174-Reel corpus does not
+currently demonstrate.
+
+## Options (recorded for the eventual Epic 8 grill — option 3 is the lean, see above)
 
 The owner was offered these and deferred the choice to this ADR:
 
