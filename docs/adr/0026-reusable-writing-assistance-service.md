@@ -1,6 +1,10 @@
 # ADR 0026 — A reusable writing-assistance service for user-authored text
 
-- Status: **proposed** (owner requirement stated 2026-08-01 during the ADR 0018 grill; needs its
+- Status: **accepted** 2026-08-03 (grill session, strong model), **scoped to one consumer** —
+  Experience Report authoring, the only surface with a real prose field that ships today. The module
+  stays reusable; only the UI wiring is narrowed. All six open questions resolved in "Grill outcome"
+  below. Buildable now — see `docs/plan/epic-22-writing-assistance.md`.
+  Was: proposed (owner requirement stated 2026-08-01 during the ADR 0018 grill; needs its
   own grill before building)
 - Date: 2026-08-01
 - Related: ADR 0018 decision 8 (hand-editable guides — the first consumer), ADR 0015 (executor
@@ -63,7 +67,53 @@ surface area, which is the reason it deserves a decision rather than an implemen
   for something usable "if the user wants it", and unsolicited rewriting of authored prose is a
   different and much more intrusive product.
 
-## Open questions — for the grill
+## Grill outcome (2026-08-03) — ACCEPTED, scoped to one consumer
+
+Tested against the code. The "two consumers" premise that justified making this cross-cutting is
+**half true**, and that resolves most of the open questions by shrinking the decision:
+
+- **Experience Report authoring exists and ships today** — `src/app/experience/new/page.tsx` and
+  `.../[id]/edit/page.tsx`, with exactly one prose field: `experience_reports.body` (`text NOT NULL`).
+  `title` is a single line and does not want assistance.
+- **Guide editing does not exist.** There is **no `skill_guides` table** (0 occurrences in
+  `src/db/schema.ts`), and ADR 0018 decision 6 gates that build on a corpus the nodes do not yet
+  have. It is a hypothetical consumer, not a second one.
+
+**Decision: accept decisions 1–5, but build for the one real surface first.** The module stays
+shaped for reuse (that costs nothing and is decision 1's whole point), and the *UI* is wired only
+into Experience Report authoring. Wiring the guide editor is a later, additive step when Guides
+exist — not a reason to design two affordances now.
+
+This deliberately does **not** repeat ADR 0025's outcome, and the difference is worth naming: 0025
+had **zero** live consumers and duplicated an existing table, so its substrate had nothing to stand
+on. 0026 has one shipped surface with a real prose field, so the narrow build is justified on its
+own merits even if Guides never land.
+
+### Open questions, resolved by that scoping
+
+1. **Intents → two, not a menu.** "Improve this" and "make it shorter". Both are unambiguous on a
+   free-prose experience report, and neither needs the author to learn a vocabulary. "Continue
+   writing" is rejected for now: it drifts toward composing *for* the author, which decision 2's
+   opt-in framing is specifically avoiding.
+2. **UI → one affordance below the textarea**, not a toolbar and not inline decoration. The form is
+   already a plain stacked form on a phone-first layout; a toolbar would be the most intrusive
+   option available and the least consistent with the rest of the app.
+3. **Persistence → never persisted before acceptance.** A suggestion lives in component state only.
+   Navigating away loses it, which is the simplest correct behaviour and sidesteps any interaction
+   with ADR 0018's layered edits (which do not exist yet anyway).
+4. **Context → the field's own text only.** No node content, no tagged Reels, no source material.
+   This keeps the prompt small *and* keeps decision 5's sourced-only boundary trivially true: the
+   service never sees source material, so it cannot leak an unsourced claim from one.
+5. **ADR 0018's "flag when better content exists" → not this service's job.** Confirmed as the guide
+   pipeline's concern; it compares stored generated text against a stored manual edit, neither of
+   which this service touches. Removed from scope.
+6. **Zod shape → `{ revised: string }`, validation deliberately thin.** ADR 0015 mandates
+   schema-validated output; for free prose that honestly means "a non-empty string". Adding a
+   rationale field was considered and rejected — it would be unverifiable prose validating
+   unverifiable prose. The thinness is recorded here so a future reader does not mistake it for an
+   oversight.
+
+## Open questions — answered above by the 2026-08-03 grill; kept for the record
 
 1. **What intents does it support?** "Improve this", "make it shorter", "fix grammar", "expand this
    bullet", "continue writing"? Each is a prompt and a UI affordance. A minimal set beats a menu
