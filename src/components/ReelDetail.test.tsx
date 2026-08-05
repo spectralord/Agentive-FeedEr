@@ -7,6 +7,7 @@ const baseData: ReelDetailData = {
   id: 1,
   title: "A reel",
   sourceName: "Some Source",
+  url: "https://example.com/a-reel",
   writeup: null,
   canGenerateWriteup: false,
   example: null,
@@ -82,5 +83,21 @@ describe("ReelDetail — Skill tab (T20.4)", () => {
       skill: { ...baseData.skill!, action: null, completion: null },
     });
     expect(html).not.toContain("Mark as done");
+  });
+
+  it("Context tab is NEVER hidden, even with no cluster members and no caveat (owner feedback 2026-08-03)", () => {
+    // baseData already has clusterMembers: [] and caveat: null — the exact
+    // "nothing to show" case that used to hide this tab. Every Reel has a
+    // source, so hiding it read as broken rather than empty; the tab now
+    // always renders, falling back to the existing "Single-sourced." copy.
+    const tabsHtml = renderToStaticMarkup(
+      <ReelDetail data={baseData} open activeTab="writeup" onSelectTab={() => {}} onClose={() => {}} />,
+    );
+    expect(tabsHtml).toContain("Context");
+
+    const panelHtml = renderToStaticMarkup(
+      <ReelDetail data={baseData} open activeTab="context" onSelectTab={() => {}} onClose={() => {}} />,
+    );
+    expect(panelHtml).toContain("Single-sourced.");
   });
 });

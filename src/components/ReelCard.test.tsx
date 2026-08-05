@@ -158,7 +158,11 @@ describe("ReelCard (Compact + Detail assembly)", () => {
 
     expect(html).toContain("Example (from the source)");
     expect(html).toContain("const x = 42;");
-    expect(html).toContain("From <b");
+    // The source reference is a link since 2026-08-03 (owner feedback: the
+    // registry name alone had no way to reach the actual item) — assert the
+    // anchor exists and carries the Reel's own url, not raw "From <b" markup.
+    expect(html).toContain("From");
+    expect(html).toContain(`href="${reel.url}"`);
   });
 
   it("Write-up tab renders reels.writeup when present", () => {
@@ -193,9 +197,9 @@ describe("ReelCard (Compact + Detail assembly)", () => {
     expect(html).toContain("No related coverage found");
   });
 
-  it("hides the Context tab entirely when it would render only its empty state (§2.2 hiding rule)", () => {
+  it("Context tab is NEVER hidden, even with no cluster members and no caveat (owner feedback 2026-08-03, supersedes §2.2 for this tab)", () => {
     const html = renderToStaticMarkup(<ReelCard reel={baseReel} newDays={7} />);
-    expect(html).not.toContain("Context");
+    expect(html).toContain("Context");
   });
 
   it("shows the Context tab when a caveat is present, even with no cluster members", () => {

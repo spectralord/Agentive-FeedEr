@@ -143,10 +143,17 @@ iterations, this is the one that held up.
   exists today.
 
 Write-up is never hidden (once `reels.writeup` is non-null, which should be the common case — see
-ADR 0017's generation-scope question). A tab with nothing in it otherwise (Context with no related
-sources, no caveat, and — before Epic 10 ships — no caveat field to even check) should not force a
-swipe to discover emptiness. Rule: **hide a tab entirely if it would render only its empty
-state** — this applies to Context and Skill, not to Write-up.
+ADR 0017's generation-scope question). A tab with nothing in it otherwise should not force a swipe
+to discover emptiness. Rule: **hide a tab entirely if it would render only its empty state** —
+this applies to Skill, not to Write-up.
+
+> **Superseded 2026-08-03 (owner feedback), Context removed from the hiding rule.** Every Reel has
+> a source, so a Context tab that is sometimes absent read as broken rather than "nothing to show"
+> — the two cases are not equivalent the way an unfilled Skill genuinely is. Context now always
+> renders, falling back to its pre-existing "Single-sourced." copy when there are no cluster
+> members and no caveat; the reader can judge a single-source item for themselves rather than have
+> the tab silently disappear. Skill is unaffected: a Reel can genuinely have no resolved skill, so
+> hiding it is still the right call.
 
 ### 2.3 Gesture model (mobile)
 

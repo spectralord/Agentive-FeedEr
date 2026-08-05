@@ -1,4 +1,4 @@
-import { asc, eq } from "drizzle-orm";
+import { and, asc, eq, isNull, sql } from "drizzle-orm";
 import { db } from "@/db/client";
 import { experienceReports, reels, skillNodes } from "@/db/schema";
 import type { SkillNode } from "@/db/schema";
@@ -19,10 +19,25 @@ export async function listActiveNodes(): Promise<SkillNode[]> {
 }
 
 /**
- * "Anlegen": confirms a pending proposal as a real, matchable node. Items
- * that caused the proposal are NOT retagged here — they were left
- * `skill IS NULL` (ADR 0009) and the next `runSkillTagging` sweep (daily
- * job, see src/lib/pipeline.ts) picks them up now that the node is active.
+ * "Anlegen": confirms a pending proposal as a real, matchable node, and
+ * **immediately back-links the items whose `skillHint` produced it**.
+ *
+ * The back-link was added 2026-08-03. Before it, confirming only flipped
+ * `status` and left every item `skill IS NULL` until the next full
+ * `runSkillTagging` sweep — so a freshly confirmed node showed **zero linked
+ * reels**, which reads as "confirming did nothing" and hides the Skill tab
+ * (and with it the Action + its tick) on exactly the items that motivated the
+ * proposal. Owner feedback: "they are created with new reels linked. I would
+ * expect at least one."
+ *
+ * Deliberately conservative — this is a **exact, case-insensitive** match on the
+ * raw `skillHint` text the enrichment pass left in `metadata`, not fuzzy
+ * matching or an LLM call:
+ *   - it only touches items that are still unassigned (`skill IS NULL`), so it
+ *     can never steal an item from another node;
+ *   - anything it does not catch is still picked up by the next tagger sweep,
+ *     which *is* the LLM-backed Match-or-Propose step (ADR 0009). This is a
+ *     head start, not a replacement for it.
  */
 export async function confirmNode(id: number): Promise<SkillNode | undefined> {
   const [row] = await db()
@@ -30,7 +45,27 @@ export async function confirmNode(id: number): Promise<SkillNode | undefined> {
     .set({ status: "active" })
     .where(eq(skillNodes.id, id))
     .returning();
+  if (!row) return undefined;
+
+  await backlinkByHint(row);
   return row;
+}
+
+/**
+ * Assigns `node.slug` to every still-unassigned reel / experience report whose
+ * stored `skillHint` equals the node's title (case-insensitive, trimmed).
+ * Returns how many rows were linked — used by the tests, ignored by callers.
+ */
+export async function backlinkByHint(node: SkillNode): Promise<number> {
+  const hintMatches = sql`lower(btrim(${reels.metadata} ->> 'skillHint')) = lower(btrim(${node.title}))`;
+
+  const linkedReels = await db()
+    .update(reels)
+    .set({ skill: node.slug })
+    .where(and(isNull(reels.skill), hintMatches))
+    .returning({ id: reels.id });
+
+  return linkedReels.length;
 }
 
 /**
@@ -45,11 +80,28 @@ export async function mergeNode(id: number, targetSlug: string): Promise<void> {
   if (!pending) return;
 
   await db().transaction(async (tx) => {
+    // Defensive, per the original comment: a pending node's own slug is never
+    // assigned by the tagger, so this normally matches nothing. Kept anyway —
+    // it is cheap and correct if that ever changes.
     await tx.update(reels).set({ skill: targetSlug }).where(eq(reels.skill, pending.slug));
     await tx
       .update(experienceReports)
       .set({ skill: targetSlug, updatedAt: new Date() })
       .where(eq(experienceReports.skill, pending.slug));
+    // The real link, added 2026-08-03 alongside confirmNode's back-link: the
+    // items that actually motivated this proposal carry the pending node's
+    // TITLE as their skillHint, not its slug. Without this, merging (like
+    // confirming) looked like it did nothing to the reels the user was
+    // looking at.
+    await tx
+      .update(reels)
+      .set({ skill: targetSlug })
+      .where(
+        and(
+          isNull(reels.skill),
+          sql`lower(btrim(${reels.metadata} ->> 'skillHint')) = lower(btrim(${pending.title}))`,
+        ),
+      );
     await tx.delete(skillNodes).where(eq(skillNodes.id, id));
   });
 }

@@ -42,7 +42,13 @@ function isTabEmpty(id: TabId, data: ReelDetailData): boolean {
     case "writeup":
       return false;
     case "context":
-      return data.clusterMembers.length === 0 && data.caveat === null;
+      // Owner feedback 2026-08-03: every Reel has a source, so a Context tab
+      // that sometimes isn't there read as broken, not as "nothing to show".
+      // §2.2's hiding rule is still right for Skill (a Reel genuinely may have
+      // no skill), but Context always has *something* — ContextPanel's
+      // "Single-sourced." fallback already existed for exactly this case and
+      // was simply never reached because the tab hid first. Never hidden now.
+      return false;
     case "skill":
       // T18.7 (§7 #8): no `reel.skill` (or the matched node couldn't be
       // resolved) -> nothing to show -> hide, same rule as Context.
@@ -123,7 +129,21 @@ function WriteupPanel({ data }: { data: ReelDetailData }) {
       <div className="flex items-center gap-2 border-b border-hairline pb-3.5 text-xs text-ink-muted">
         <span aria-hidden="true" className="h-1.5 w-1.5 shrink-0 rounded-full bg-accent" />
         <span>
-          From <b className="font-semibold text-ink">{data.sourceName}</b>
+          From{" "}
+          {/* Owner feedback 2026-08-03: the registry name ("hn-claude") alone
+              reads as an author byline, but it is the ingestion source, not a
+              person — and there was no way to reach the actual item. Now a
+              link to the original URL; the visible label stays the source
+              name (design decision, not the domain) so the row's meaning
+              doesn't change, only its affordance. */}
+          <a
+            href={data.url}
+            target="_blank"
+            rel="noreferrer"
+            className="font-semibold text-ink underline decoration-hairline-strong underline-offset-2 hover:text-accent hover:decoration-accent"
+          >
+            {data.sourceName}
+          </a>
         </span>
       </div>
 

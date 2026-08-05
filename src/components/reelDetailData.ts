@@ -62,6 +62,10 @@ export interface ReelDetailData {
   id: number;
   title: string;
   sourceName: string;
+  /** The Reel's own originating source URL — added 2026-08-03 so the "From
+   *  <source>" line in the Write-up tab is clickable through to the actual
+   *  item, not just a label. */
+  url: string;
   /** ADR 0017 (T18.6): null everywhere until a write-up has been generated
    *  (ADR 0024: user-triggered, on demand, per Reel). The Write-up tab shows
    *  an explicit placeholder — plus, since T19.4, a "Generate write-up"
@@ -145,6 +149,7 @@ export function buildReelDetailData(
     id: reel.id,
     title: reel.title,
     sourceName: reel.sourceName,
+    url: reel.url,
     writeup: reel.writeup,
     canGenerateWriteup,
     example: reel.example,
