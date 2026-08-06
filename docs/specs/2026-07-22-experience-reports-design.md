@@ -1,118 +1,118 @@
-# Erfahrungsberichte & Qualitäts-Erweiterungen — Design
+# Experience reports & quality extensions — design
 
-- Datum: 2026-07-22
-- Status: zur Review / Grundlage der Umsetzung (Epics 9–12)
-- Verwandt: `docs/specs/2026-07-21-agentive-feeder-design.md`, ADRs 0007–0009, `CONTEXT.md`
+- Date: 2026-07-22
+- Status: for review / basis for implementation (Epics 9–12)
+- Related: `docs/specs/2026-07-21-agentive-feeder-design.md`, ADRs 0007–0009, `CONTEXT.md`
 
-Aus der Grill-Session vom 2026-07-22 sind **vier** benannte Design-Themen entstanden.
-Nur Thema 1 ist voll durchgegrillt; 2–4 sind bewusst skizziert und werden vor Umsetzung
-je einzeln durchgegrillt.
+The grill session on 2026-07-22 produced **four** named design themes.
+Only theme 1 has been fully grilled; 2–4 are deliberately sketched and will each be
+grilled individually before implementation.
 
 ---
 
-## Thema 1 — Erfahrungs-Sektion (Epic 9)
+## Theme 1 — Experience section (Epic 9)
 
-### Zweck
-Ein Ort für subjektive, gelebte Erfahrung („wie lange Session offen", „wann welches
-Modell", Tricks) — nicht zwingend validiert, zum Nachdenken anregend, als **Company-Wissen**
-von Kollegen ergänzbar. Bewusst **außerhalb** von ADR 0005 (Sourced-only), sauber vom
-verifizierten Reel-Feed getrennt (ADR 0007).
+### Purpose
+A place for subjective, lived experience ("how long a session stays open", "when to
+use which model", tricks) — not necessarily validated, meant to spark thought, extensible
+as **company knowledge** by colleagues. Deliberately **outside** ADR 0005 (sourced-only),
+cleanly separated from the verified reel feed (ADR 0007).
 
-### Datenmodell (`experience_reports`)
+### Data model (`experience_reports`)
 - `id`, `title`, `body` (Markdown), `created_at`, `updated_at`
-- `author_type`: `own` | `curated` (später `colleague`)
-- `author_label`: Name (own) / Quell-Handle (curated)
-- `relevance_score` (nullable): nur für `curated` KI-vergeben; Bedeutung „breit nützlich /
-  anregend", nicht „passt zu meinem Profil"
-- `skill` (nullable): kanonischer Skill-Slug — **nicht vom Nutzer**, vom SkillTagger
-  (Thema 4) gesetzt
+- `author_type`: `own` | `curated` (later `colleague`)
+- `author_label`: name (own) / source handle (curated)
+- `relevance_score` (nullable): AI-assigned, only for `curated`; meaning "broadly useful /
+  thought-provoking", not "fits my profile"
+- `skill` (nullable): canonical skill slug — **not set by the user**, set by the
+  SkillTagger (theme 4)
 - `lifecycle_state` (`active`|`deprecated`|`archived`), `lifecycle_reason` (nullable), `superseded_by` (nullable → report/reel)
-- `source_url` (nullable): nur bei `curated`
+- `source_url` (nullable): only for `curated`
 - `metadata JSONB`
 
-### Relevanz-Score (Grill-Ergebnis)
-- **Eigene Berichte:** neutral dargestellt, **nicht** heruntergerankt. Optional kann der
-  Nutzer *aktiv* eine KI-Einschätzung als **Selbst-Feedback** anfordern (kein Filter).
-- **Kuratierte Berichte:** KI-bewertet fürs Ranking (Ausbaupfad A→C: erst KI-Score,
-  später „hilfreich"-Votes, sobald Mehrbenutzer).
+### Relevance score (grill result)
+- **Own reports:** shown neutrally, **not** down-ranked. Optionally the user can
+  *actively* request an AI assessment as **self-feedback** (not a filter).
+- **Curated reports:** AI-scored for ranking (expansion path A→C: first an AI score,
+  later "helpful" votes, once there are multiple users).
 
-### Beständigkeit (ADR 0008)
-Eigene Berichte gehören zur **dauerhaften Wissensschicht** — rotieren nicht automatisch
-heraus, sind aber manuell über den `lifecycle_state` (`active → deprecated → archived`,
-mit Grund/`superseded_by`) verschiebbar. **Kein Auto-Delete**; alles bleibt historisch
-nachvollziehbar (ADR 0008). Hartes Löschen nur als seltener manueller Notausgang.
+### Durability (ADR 0008)
+Own reports belong to the **durable knowledge layer** — they don't rotate out
+automatically, but can be manually moved via `lifecycle_state` (`active → deprecated →
+archived`, with a reason/`superseded_by`). **No auto-delete**; everything stays
+historically traceable (ADR 0008). Hard deletion only as a rare manual emergency exit.
 
-### Skill-Bezug & Actionables
-- Berichte tragen denselben optionalen `skill`-Bezug wie Reels ⇒ tauchen auf Skill-Nodes
-  **gelabelt** (nicht als eigene Rubrik) neben Reels auf.
-- Aus Reels *und* Berichten werden **Actionables** („To-Try") abgeleitet — die abhakbare
-  Fortschritts-Einheit. Reels/Berichte selbst werden **nie** abgehakt. (Actionable-Konzept
-  = Thema-übergreifend, greift in Epic 6/7 — siehe „Revidierte Annahmen".)
+### Skill link & actionables
+- Reports carry the same optional `skill` link as reels ⇒ show up on skill nodes
+  **labeled** (not as their own category) alongside reels.
+- **Actionables** ("to-try") are derived from reels *and* reports — the checkable
+  progress unit. Reels/reports themselves are **never** checked off. (The actionable
+  concept spans themes, feeds into Epic 6/7 — see "Revised assumptions".)
 
-### MVP-Schnitt (Epic 9)
-**Drin:** Entität + Migration · eigene/Firmen-Berichte erfassen/bearbeiten (Formular:
-Titel, Markdown, optional „⭐ wichtig") · Anzeige-Seite, filterbar nach `author_type` ·
-Lifecycle-Aktionen (`deprecated`/`archived`/reaktivieren) mit Grund + optionalem `superseded_by`.
-**Nicht drin (Folge-Themen):** kuratierte Berichte + Scraping (Reddit/Kommentare) ·
-KI-Selbst-Feedback · Skill-Tagging (Thema 4) · Actionables (eigenes Thema, greift Epic 7).
-
----
-
-## Thema 2 — Content Verifier (Epic 10, Vision)
-
-Ein kritischer KI-Schritt, der Inhalte **beliebiger Herkunft** gegencheckt und
-zweifelhafte Aussagen mit `caveat` markiert (Reels *und* Berichte). Besonders wertvoll für
-unvalidierte Erfahrungsberichte. Berührt den Enrichment-Pfad und rüttelt an ADR 0003
-(Single-Pass) → eigener Grill + eigener ADR vor Umsetzung. Skizze: zusätzliches
-`caveat`-Feld/-Schritt, Anzeige als Warnhinweis an der Karte.
+### MVP cut (Epic 9)
+**In scope:** entity + migration · capture/edit own/company reports (form:
+title, Markdown, optional "⭐ important") · display page, filterable by `author_type` ·
+lifecycle actions (`deprecated`/`archived`/reactivate) with a reason + optional `superseded_by`.
+**Not in scope (follow-up themes):** curated reports + scraping (Reddit/comments) ·
+AI self-feedback · skill tagging (theme 4) · actionables (own theme, feeds into Epic 7).
 
 ---
 
-## Thema 3 — SOTA-Frische-Re-Check (Epic 11, Vision)
+## Theme 2 — Content verifier (Epic 10, Vision)
 
-`isSota` ist bewusst altersunabhängig (Epic 5), daher können überholte Einträge als „State
-of the Art" hängenbleiben. Ein periodischer Job re-evaluiert aktuelle SOTA-Einträge gegen
-Neueres und setzt Überholtes auf `lifecycle_state = deprecated` (`superseded_by` — dieselbe
-Mechanik wie bei Berichten, ADR 0008) oder stuft `maturity` herab. Passt ins Daily-Job-Muster. Eigener Grill vor
-Umsetzung (Kriterien „noch SOTA?").
-
----
-
-## Thema 4 — SkillTagger (Epic 12) — siehe ADR 0009
-
-**Match-or-Propose** ordnet Inhalten kanonische Skill-Nodes zu:
-- Match auf bestehenden Node → automatisch im Hintergrund.
-- Kein Treffer → neuen Node *vorschlagen*, Anlegen nur mit Nutzer-Bestätigung.
-- Solange Taxonomie in den Prompt passt: reine LLM-Zuordnung; Embeddings später.
-- **Ein Tagger, mehrere Trigger:** Reels im Daily-Job (Batch); manuelle Reports on-save
-  (Einzel-Item); Daily-Run als Backstop für alles noch Ungetaggte.
-- Enrichment liefert künftig nur eine **rohe Kompetenz-Vermutung**; der SkillTagger
-  reconciled sie gegen die kontrollierte Vokabelliste (revidiert ADR 0003).
-
-SkillTagger ist **Voraussetzung** für die Skill-Map (Epic 7) und für den Skill-Bezug der
-Erfahrungs-Sektion.
+A critical AI step that fact-checks content **of any origin** and flags dubious
+statements with `caveat` (reels *and* reports). Especially valuable for
+unvalidated experience reports. Touches the enrichment path and pushes against ADR 0003
+(single pass) → own grill + own ADR before implementation. Sketch: an additional
+`caveat` field/step, shown as a warning note on the card.
 
 ---
 
-## Revidierte Annahmen bestehender Epics
+## Theme 3 — SOTA freshness re-check (Epic 11, Vision)
 
-Diese Grill-Session ändert Annahmen in noch **nicht gebauten** Epics (6/7). Die
-Änderungen sind hier festgehalten; die betroffenen Epic-Files verweisen hierher.
-
-- **Actionable/To-Try als Fortschritts-Einheit:** Nicht Reels/Reports werden abgehakt,
-  sondern daraus abgeleitete Actionables. Der Skill-Node steigt über erledigte Actionables.
-  → Betrifft Epic 6 („tried"-Interaktion) und Epic 7 (Fortschritts-Logik).
-- **Skill-Node hat zusätzlich einen Selbst-Status** („kenne ich" / „schon verprobt"):
-  Wer das Wissen schon hat, muss keine Actionables erledigen. Selbst-Deklaration **und**
-  Actionable-Belege existieren nebeneinander. → Epic 7.
-- **Skill-Zuordnung kommt vom SkillTagger** (Epic 12), nicht aus dem Enrichment-Pass und
-  nicht vom Nutzer. → Epic 7 (Node-Aggregation T7.2 wird durch Epic 12 ersetzt/erweitert).
+`isSota` is deliberately age-independent (Epic 5), so outdated entries can stay stuck as
+"state of the art". A periodic job re-evaluates current SOTA entries against
+newer ones and sets outdated ones to `lifecycle_state = deprecated` (`superseded_by` — the
+same mechanism as for reports, ADR 0008) or downgrades `maturity`. Fits the daily-job
+pattern. Own grill before implementation (criteria for "still SOTA?").
 
 ---
 
-## Reihenfolge / Abhängigkeiten
-- **Epic 9** (Erfahrungs-Sektion MVP) ist unabhängig baubar (ohne Skill-Tagging/Actionables).
-- **Epic 12** (SkillTagger) sollte **vor** Epic 7 (Skill-Map) kommen und schaltet den
-  Skill-Bezug für Epic 9 frei.
-- **Epic 10/11** (Verifier, SOTA-Re-Check) sind unabhängige Vision-Erweiterungen.
-- Alle 9–12: erst nach explizitem Benutzer-Go bzw. eigenem Grill (10/11) bauen.
+## Theme 4 — SkillTagger (Epic 12) — see ADR 0009
+
+**Match-or-propose** assigns content to canonical skill nodes:
+- Match against an existing node → automatic, in the background.
+- No match → *propose* a new node, only created with user confirmation.
+- As long as the taxonomy fits in the prompt: pure LLM assignment; embeddings later.
+- **One tagger, multiple triggers:** reels in the daily job (batch); manual reports on-save
+  (single item); the daily run as a backstop for anything still untagged.
+- Going forward, enrichment only supplies a **raw skill guess**; the SkillTagger
+  reconciles it against the controlled vocabulary (revises ADR 0003).
+
+The SkillTagger is a **precondition** for the skill map (Epic 7) and for the skill link
+of the experience section.
+
+---
+
+## Revised assumptions in existing epics
+
+This grill session changes assumptions in epics that are **not yet built** (6/7). The
+changes are recorded here; the affected epic files reference this document.
+
+- **Actionable/to-try as the progress unit:** it's not reels/reports that get checked off,
+  but actionables derived from them. The skill node advances via completed actionables.
+  → affects Epic 6 ("tried" interaction) and Epic 7 (progress logic).
+- **A skill node additionally has a self-status** ("I know this" / "already tried"):
+  someone who already has the knowledge doesn't need to complete actionables. Self-declaration
+  **and** actionable evidence exist side by side. → Epic 7.
+- **Skill assignment comes from the SkillTagger** (Epic 12), not from the enrichment pass and
+  not from the user. → Epic 7 (node aggregation T7.2 is replaced/extended by Epic 12).
+
+---
+
+## Order / dependencies
+- **Epic 9** (experience section MVP) is independently buildable (without skill tagging/actionables).
+- **Epic 12** (SkillTagger) should come **before** Epic 7 (skill map) and unlocks the
+  skill link for Epic 9.
+- **Epic 10/11** (verifier, SOTA re-check) are independent vision extensions.
+- All of 9–12: build only after explicit user go-ahead or their own grill (10/11).

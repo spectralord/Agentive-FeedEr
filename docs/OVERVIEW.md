@@ -1,15 +1,19 @@
-# Overview — every ADR and Epic, one page
+# Overview — what's next, one page
 
-> **Purpose:** the single place to see *what exists, what state it is in, and what is worth doing
-> next* — without opening 28 ADRs and 24 epic files to reconstruct it.
+> **Purpose:** the single place to see *what's in flight, what's blocked, and what's worth doing
+> next* — the volatile, changes-every-week layer. For *how the system works* (accepted
+> architecture, binding rules), see [`ARCH_SPEC.md`](ARCH_SPEC.md) instead — that content used to
+> live here and has moved, so this page no longer needs a "Built and live" table.
 > **Ordered by priority, not by number.** Numbers are allocation order and carry no meaning;
 > reorder the sections here freely as priorities change.
 >
-> Last reconciled against the files **and the live DB**: **2026-08-03**.
+> Last reconciled against the files **and the live DB**: **2026-08-06**.
 > Counts below are point-in-time; re-query before trusting them for a decision.
 > **Rule: update this file in the same commit that changes an ADR status or finishes an epic.**
-> The per-file status lines remain authoritative; this page is a map, and a map that lies is worse
-> than no map (this project has had three stale status tables).
+> Update `ARCH_SPEC.md` instead when a decision itself changes (new ADR accepted, superseded,
+> etc.) — this page tracks *progress*, not *decisions*. The per-file status lines remain
+> authoritative; this page is a map, and a map that lies is worse than no map (this project has
+> had three stale status tables).
 
 ---
 
@@ -23,27 +27,7 @@
 | **Constellation rework** | Owner feedback, needs an ADR 0020 amendment | Dragging does not work; no connections between nodes; owner wants hub-and-spoke with themes as visible root nodes |
 | **Actionables content quality** | Prompt work | The action reads as "look at the source", not a real task. Three options recorded in ADR 0019's feedback section. |
 
-## 2. Built and live
-
-The app runs on a **real 172-Reel corpus** (no fixtures). 475 tests / 72 files.
-
-| Epic | What it gave you | ADRs |
-|---|---|---|
-| 0–5 | Skeleton, ingestion, enrichment, Feed, Today, Overview | 0001–0006 |
-| 6 | Saves, feedback, resurfacing | — |
-| 9 | Experience Reports | 0007 |
-| 10 | Content verifier (stage 1) — the `caveat` | 0011 |
-| 11 | Topic knowledge-check — corroboration + freshness | 0012 |
-| 12 | SkillTagger (Match-or-Propose) | 0009 |
-| 13 | Admin console + manual pipeline trigger | 0010 |
-| 15 | Topic clustering | 0013 |
-| 17 | Execution modes (trigger × executor, profiles) | 0015 |
-| 18 | The UX redesign — tokens, tabs, 4-item nav, hubs | 0016, 0023 |
-| **19** | **Write-up on demand**, on your Claude subscription | 0017, 0024 |
-| **20** | **Actionables + evidenced progress track** | 0019 |
-| **21** | **Constellation stage (a)** + closed theme vocabulary | 0020 |
-
-## 3. Decided, not built
+## 2. Decided, not built
 
 | Item | State | Blocked by |
 |---|---|---|
@@ -67,32 +51,10 @@ The app runs on a **real 172-Reel corpus** (no fixtures). 475 tests / 72 files.
 | **T9** — click-to-explain glossary | Idea | Tension with ADR 0005 (a definition isn't sourced) |
 | **T10** — token/cost accounting | Idea | **Cheap** — both executors already return usage and it is discarded |
 
-## 5. The binding rules (violating these is a review failure)
+## 5. Process notes learned the hard way
 
-Short form. Full text in the named ADRs.
-
-- **ADR 0015 — executor seam.** Every LLM step takes an **injected** `Executor` defaulting to
-  `callStructured`. Never call the API directly. zod-validate the output. Unit-test with a mocked
-  caller.
-- **ADR 0016 — reserved colours, one meaning each.** `--accent` links/focus/tried · `--action`
-  sourced action + skill badge · `--gold` **mastered only** · `--caution` **caveat + freshness only**.
-  No raw `zinc-*`/`amber-*`/`emerald-*` in new code. Dark-only (decision 4).
-- **ADR 0003 — null over hallucination.** ADR 0005 — sourced-only.
-- **ADR 0023 — four tab destinations, max.** New surfaces go in a hub, never on the tab bar.
-- **No new runtime dependencies.** English everywhere. Pipeline steps never abort the run.
-- **`src/lib/env.ts` is server-only** — calling `env()` from a client component throws at hydration.
-  Six occurrences on record.
-
-## 6. How the three artifact types work
-
-- **T** (`docs/plan/future-todos.md`) — a parked idea. Cheapest record. **Never built directly.**
-- **ADR** (`docs/adr/`) — a decision *and its reasoning*. Binding once accepted. Written when a
-  future session would otherwise repeat a rejected option.
-- **Epic** (`docs/plan/epic-N-*.md`) — the buildable unit: tasks with verification steps, written
-  for a subagent to execute cold.
-
-Flow: `T → grill → ADR → plan → Epic → delegate → review → merge`.
-
-**Two rules learned the hard way:** check *all remote branches* before picking an ADR number (two
-sessions once both wrote 0021), and never write an epic plan for an ADR whose input data does not
-exist yet (ADR 0018's build gate is exactly this).
+- Check *all remote branches* before picking a new ADR number (two sessions once both wrote 0021).
+- Never write an epic plan for an ADR whose input data does not exist yet (ADR 0018's build gate
+  is exactly this).
+- Artifact flow and the binding architecture rules now live in
+  [`ARCH_SPEC.md`](ARCH_SPEC.md) — this page only tracks progress against them.

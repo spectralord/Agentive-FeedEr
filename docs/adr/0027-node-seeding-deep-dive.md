@@ -58,8 +58,8 @@ Three facts from the code change the shape of this decision:
    as prose in `docs/plan/epic-8-deep-dive.md`. So the anchor problem is not "how do we adapt a
    working mechanism"; there is nothing yet to adapt, and no fetching code of any kind in the app.
 2. **ADR 0001 already contains the escape hatch.** Its decision text ends: open web search and
-   per-site scrapers are *"bewusst nach hinten geschoben und **nur bei konkretem Bedarf pro Quelle
-   ergänzt**"* — deferred, and extended **per source on concrete need**. A user handing over a
+   per-site scrapers are *"deliberately deferred and **only added per source when there is
+   concrete demand**"* — deferred, and extended **per source on concrete need**. A user handing over a
    specific URL *is* concrete need, per source.
 3. **The source registry is code-as-truth with four types** (`rss`, `hn_algolia`, `reddit_rss`,
    `github_releases`, `src/lib/sources.ts`). Nothing in the app fetches an arbitrary page today.
@@ -72,7 +72,7 @@ by definition — it is the owner doing the curating, which is exactly what ADR 
 
 - **It is blocked on Epic 8 in practice.** Fetching, whitelisting and the agent loop are Epic 8's
   work. Building them here first would mean Epic 8 later inherits or duplicates them — the exact
-  "two orchestration paths" problem that got ADR 0025 rejected. Epic 8 is itself `GEPARKT` pending
+  "two orchestration paths" problem that got ADR 0025 rejected. Epic 8 is itself `PARKED` pending
   its own grill.
 - **The corpus problem outranks it.** The motivation is "a topic I want to learn is not covered by
   my feeds". But the feeds now produce **174 Reels**, and the actual blocker on the Skill Map is

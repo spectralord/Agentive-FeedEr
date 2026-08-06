@@ -1,63 +1,64 @@
-# ADR 0011 — Zwei-Stufen-Content-Verifier
+# ADR 0011 — Two-tier content verifier
 
-- Status: akzeptiert (Design; Umsetzung offen)
-- Datum: 2026-07-23
-- Berührt: ADR 0003 (Single-Pass), ADR 0001 (kuratierte Quellen), ADR 0004
-  (abgeleitete Ansichten), ADR 0007 (Erfahrungsberichte), ADR 0008 (Schichten)
+- Status: accepted (design; implementation open)
+- Date: 2026-07-23
+- Touches: ADR 0003 (single pass), ADR 0001 (curated sources), ADR 0004
+  (derived views), ADR 0007 (experience reports), ADR 0008 (layers)
 
-## Kontext / Problem
+## Context / Problem
 
-Der Verifier soll Inhalte kritisch gegenchecken. Ein LLM, das „Wahrheit" beurteilt,
-halluziniert aber selbst am ehesten genau dort — ein unzuverlässiger Prüfer ist schlimmer
-als keiner. Gleichzeitig gibt es bereits `quality_score` (Substanz vs. Hype), sodass der
-Verifier *etwas anderes* liefern muss, um nicht redundant zu sein.
+The verifier is meant to critically cross-check content. But an LLM that judges "truth"
+is itself most likely to hallucinate exactly there — an unreliable checker is worse
+than none. At the same time, `quality_score` already exists (substance vs. hype), so the
+verifier must deliver *something different* in order not to be redundant.
 
-## Entscheidung
+## Decision
 
-Der Verifier ist **zweistufig**, entlang der Schichten aus ADR 0008:
+The verifier is **two-tiered**, along the layers from ADR 0008:
 
-**Stufe 1 — Reel-Verifier (ephemere Reels):**
-- Ein **eigener Kritiker-Pass** (separater LLM-Call, „Kritiker"-Rolle) bekommt **Quelle +
-  fertiges Reel** und prüft: **(A) Treue** — überzeichnet die Aufbereitung die Quelle? —
-  und **(B) Skepsis** — riskante Aussage-Typen (unbelegte Benchmarks, Superlative/
-  „X ersetzt Y", Einzelfall-Verallgemeinerungen).
-- Ergebnis: `caveat` (Text, nullable). **Gated:** nur Reels prüfen, die überhaupt
-  angezeigt werden (über der Quality/Relevanz-Schwelle) → Kosten im Rahmen.
-- `caveat` ist ein **eigener gespeicherter Fakt**, wird als ⚠️ sichtbar gemacht und ist
-  filterbar, **fließt aber nicht in `quality_score`** ein (getrennte Signale, ADR 0004;
-  „Transparenz statt stilles Ausblenden").
+**Tier 1 — Reel verifier (ephemeral Reels):**
+- A **dedicated critic pass** (separate LLM call, "critic" role) receives **source +
+  finished Reel** and checks: **(A) fidelity** — does the write-up overstate the
+  source? — and **(B) skepticism** — risky claim types (unsubstantiated benchmarks,
+  superlatives/"X replaces Y", single-case generalizations).
+- Result: `caveat` (text, nullable). **Gated:** only checks Reels that are actually
+  displayed (above the quality/relevance threshold) → cost stays bounded.
+- `caveat` is its **own stored fact**, made visible as ⚠️, and is
+  filterable, **but does not feed into `quality_score`** (separate signals, ADR 0004;
+  "transparency instead of silently hiding").
 
-**Stufe 2 — Cluster-Korroboration (dauerhafte Wissensschicht):**
-- Auf der Cluster-/Wissens-Ebene wird eine **`confidence`** aus der Zahl **unabhängiger
-  stützender Quellen** abgeleitet — ein **Konsens-Signal**, keine LLM-Wahrheitsbewertung.
-- **Eigener Korpus zuerst** (Topic-Cluster mit N unabhängigen Quellen); **externe
-  Web-Suche später** als bewusste Erweiterung (rührt an ADR 0001 → eigener Entscheid).
-- Hängt am **Clustering** (`topic_cluster` / Content-Modell C / Vision V1).
+**Tier 2 — Cluster corroboration (durable knowledge layer):**
+- At the cluster/knowledge level, a **`confidence`** is derived from the number of
+  **independent supporting sources** — a **consensus signal**, not an LLM truth
+  judgment.
+- **Own corpus first** (topic cluster with N independent sources); **external
+  web search later** as a deliberate extension (touches ADR 0001 → its own decision).
+- Depends on **clustering** (`topic_cluster` / content model C / vision V1).
 
-**Erfahrungsberichte (ADR 0007 gewahrt):** Stufe-1-Treue entfällt (kein externer Quell-
-Bezug); Skepsis nur als **enger Überclaim-Flag** (Absolutaussagen), **nie** die
-Subjektivität an sich. Hauptwert ist Stufe-2-Korroboration. Der `caveat` **rahmt**, er
-diskreditiert nicht.
+**Experience reports (ADR 0007 preserved):** tier-1 fidelity does not apply (no external
+source reference); skepticism only as a **narrow overclaim flag** (absolute
+statements), **never** subjectivity itself. Main value is tier-2 corroboration. The
+`caveat` **frames**, it does not discredit.
 
-Stufe 1 ist ein **zweiter Pass** und **revidiert damit ADR 0003** (Single-Pass) — im
-selben Geist wie ADR 0009 (SkillTagger): eigenständige Belange bekommen einen eigenen
-Pass mit passendem Kontext.
+Tier 1 is a **second pass** and thus **revises ADR 0003** (single pass) — in
+the same spirit as ADR 0009 (SkillTagger): distinct concerns get their own
+pass with matching context.
 
-## Alternativen
+## Alternatives
 
-- **Echter Faktenchecker gegen externes Wissen (Stufe-1-C):** höchste Halluzinationsgefahr
-  beim Prüfer selbst. Verworfen; falls überhaupt, dann als geerdete Korroboration (Stufe 2).
-- **Selbst-Flaggen im Enrichment-Single-Pass:** billig, aber Selbstkritik-Bias untergräbt
-  den Zweck. Verworfen zugunsten des dedizierten Kritiker-Passes.
-- **`caveat` in `quality_score` einrechnen:** vermischt zwei verschiedene Signale
-  (Treue-Vorbehalt vs. Substanz). Verworfen (ADR 0004).
+- **Real fact-checker against external knowledge (tier-1-C):** highest hallucination risk
+  in the checker itself. Rejected; if used at all, then as grounded corroboration (tier 2).
+- **Self-flagging in the enrichment single pass:** cheap, but self-critique bias undermines
+  the purpose. Rejected in favor of the dedicated critic pass.
+- **Fold `caveat` into `quality_score`:** mixes two different signals
+  (fidelity caveat vs. substance). Rejected (ADR 0004).
 
-## Konsequenzen
+## Consequences
 
-- Zwei Prüf-Ebenen mit unterschiedlichem Aufwand/Takt: Stufe 1 pro Reel (billig, gated),
-  Stufe 2 selten auf Cluster-Ebene (braucht Clustering).
-- Neues gespeichertes Feld `caveat` an Reels; `confidence` auf Cluster-Ebene (später).
-- Verlässlichkeit durch Geerdetheit (Treue = Vergleich mit Quelle; Confidence = Zählen
-  unabhängiger Quellen) statt durch erfundene Zweitmeinung.
-- Kosten: +1 LLM-Call pro anzuzeigendem Reel (Haiku, gated). Externe Web-Korroboration
-  ist eine spätere, separat zu entscheidende Erweiterung.
+- Two checking levels with different effort/cadence: tier 1 per Reel (cheap, gated),
+  tier 2 rarely at cluster level (needs clustering).
+- New stored field `caveat` on Reels; `confidence` at cluster level (later).
+- Reliability through groundedness (fidelity = comparison with source; confidence =
+  counting independent sources) instead of a fabricated second opinion.
+- Cost: +1 LLM call per displayed Reel (Haiku, gated). External web corroboration
+  is a later, separately decided extension.

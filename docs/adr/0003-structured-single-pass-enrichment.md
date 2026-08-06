@@ -1,35 +1,36 @@
-# ADR 0003 — Strukturierte Anreicherung in einem einzigen LLM-Pass
+# ADR 0003 — Structured enrichment in a single LLM pass
 
-- Status: akzeptiert
-- Datum: 2026-07-21
+- Status: accepted
+- Date: 2026-07-21
 
-## Kontext / Problem
+## Context / Problem
 
-Ein Reel braucht viele abgeleitete Felder: Zusammenfassung, `category`, `maturity`,
-`experimentell`, `relevance_score`, `quality_score`, belegtes Beispiel, Action,
-Effort-Tag und `skill`-Tag. Diese über mehrere spezialisierte LLM-Aufrufe zu erzeugen
-vervielfacht Kosten und Latenz. Gleichzeitig darf das LLM nichts erfinden.
+A Reel needs many derived fields: summary, `category`, `maturity`,
+`experimental`, `relevance_score`, `quality_score`, a documented example, Action,
+effort tag, and `skill` tag. Producing these via multiple specialized LLM calls
+multiplies cost and latency. At the same time, the LLM must not invent anything.
 
-## Entscheidung
+## Decision
 
-Jedes Raw Item wird in **einem** LLM-Aufruf mit **striktem JSON-Schema** (Structured
-Output) angereichert. Der Aufruf liefert genau ein validiertes Reel-Objekt. Felder, die
-sich nicht aus der Quelle belegen lassen, kommen als `null` zurück — nicht geraten.
-Auch der `quality_score` (Substanz vs. Hype) entsteht in **demselben** Pass, nicht als
-zweiter Aufruf.
+Every Raw Item is enriched in **one** LLM call with a **strict JSON schema**
+(Structured Output). The call returns exactly one validated Reel object. Fields that
+cannot be substantiated from the source come back as `null` — not guessed.
+The `quality_score` (substance vs. hype) is also produced in **the same**
+pass, not as a second call.
 
-## Alternativen
+## Alternatives
 
-- **Mehrere spezialisierte Aufrufe** (Summarizer, Klassifikator, Judge …): sauberere
-  Einzelverantwortung, aber n-fache Kosten/Latenz. Für Single-User-Tagesbatch unnötig.
-- **Freitext-Ausgabe** statt JSON-Schema: fehleranfälliger im Parsing, lädt zum
-  Halluzinieren ein.
+- **Multiple specialized calls** (summarizer, classifier, judge …): cleaner
+  single responsibility, but n-times the cost/latency. Unnecessary for a single-user
+  daily batch.
+- **Free-text output** instead of a JSON schema: more error-prone to parse,
+  invites hallucination.
 
-## Konsequenzen
+## Consequences
 
-- Günstig und schnell: ein Aufruf pro Item.
-- `null`-statt-Raten macht das Sourced-only-Prinzip (siehe ADR 0005) technisch
-  durchsetzbar.
-- Das JSON-Objekt ist die stabile Andockstelle für spätere Anreicherung (Vertiefen).
-- Ein sehr großer Prompt trägt viel Verantwortung; Schema-Validierung und klare
-  Feld-Anweisungen sind Pflicht.
+- Cheap and fast: one call per item.
+- `null`-instead-of-guessing makes the sourced-only principle (see ADR 0005) technically
+  enforceable.
+- The JSON object is the stable attachment point for later enrichment (deepening).
+- A very large prompt carries a lot of responsibility; schema validation and clear
+  field instructions are mandatory.

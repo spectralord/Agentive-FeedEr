@@ -1,58 +1,58 @@
-# ADR 0008 — Dauerhafte Wissensschicht vs. ephemere Inhaltsschicht
+# ADR 0008 — Durable knowledge layer vs. ephemeral content layer
 
-- Status: akzeptiert
-- Datum: 2026-07-22
+- Status: accepted
+- Date: 2026-07-22
 
-## Kontext / Problem
+## Context / Problem
 
-Reels (und kuratierte Berichte) sind flüchtig — sie altern, werden überholt und
-perspektivisch durch Neueres ersetzt. Der Skill-Tree soll aber **beständig** sein: Die
-Kompetenz „Prompt-Caching" verschwindet nicht, nur weil der Artikel, der sie einem
-beibrachte, aus dem Feed gealtert ist. Würde man Skill-Nodes und Fortschritt aus den
-aktuell vorhandenen Inhalten *ableiten und wegwerfen*, würde der Baum mit dem Feed
-churnen und Fortschritt/Notizen gingen verloren.
+Reels (and curated reports) are transient — they age, become superseded, and are
+eventually replaced by newer content. The skill tree, however, should be **durable**: the
+competency "prompt caching" does not disappear just because the article that taught it
+has aged out of the feed. If skill nodes and progress were *derived from and discarded
+along with* the currently present content, the tree would churn with the feed and
+progress/notes would be lost.
 
-## Entscheidung
+## Decision
 
-Es gibt zwei Schichten mit unterschiedlichem Lebenszyklus:
+There are two layers with different lifecycles:
 
-- **Ephemere Inhaltsschicht:** News-Reels + `curated` Experience Reports. Rotieren mit der
-  Zeit automatisch aus den *aktiven* Ansichten heraus — **nicht** durch Löschen, sondern
-  über den Lebenszyklus `active → deprecated → archived`.
-- **Dauerhafte Wissensschicht:** Skill-Nodes + `user_progress`/Adoption-Log + `own`
-  Experience Reports. Wächst an, bleibt aktiv, bis *manuell* zustandsverschoben.
+- **Ephemeral content layer:** news Reels + `curated` Experience Reports. Automatically
+  rotate out of the *active* views over time — **not** via deletion, but
+  via the lifecycle `active → deprecated → archived`.
+- **Durable knowledge layer:** Skill Nodes + `user_progress`/adoption log + `own`
+  Experience Reports. Grows, stays active until *manually* transitioned.
 
-**Einheitlicher Lebenszyklus (kein Auto-Delete):** Alles — Reels, Reports *und*
-Skill-Nodes — trägt einen `lifecycle_state`:
-- `active` → in normalen Ansichten sichtbar.
-- `deprecated` → überholt (mit `reason`/`superseded_by`); raus aus aktiven Ansichten, aber
-  im Verlauf/History weiter auffindbar.
-- `archived` → nur noch in expliziter Archiv-/Historien-Ansicht.
-Nichts wird **automatisch gelöscht**; alles bleibt historisch nachvollziehbar. Hartes
-Löschen ist ausschließlich eine seltene, bewusste manuelle Aktion.
+**Unified lifecycle (no auto-delete):** Everything — Reels, reports, *and*
+Skill Nodes — carries a `lifecycle_state`:
+- `active` → visible in normal views.
+- `deprecated` → superseded (with `reason`/`superseded_by`); out of active views, but
+  still findable in history.
+- `archived` → only in an explicit archive/history view.
+Nothing is **automatically deleted**; everything remains historically traceable. Hard
+deletion is exclusively a rare, deliberate manual action.
 
-Regeln, die Beständigkeit garantieren:
-1. **Skill-Nodes sind First-Class-Entitäten.** Inhalte *referenzieren* Nodes
-   (`content.skill → node`), nie umgekehrt. Ein Node hängt nicht davon ab, dass ein
-   bestimmter Inhalt existiert.
-2. **Nodes werden einmal erzeugt und nie automatisch gelöscht** (nur manuelles
-   Archivieren). Ein Node darf null aktuelle Inhalte haben und trotzdem bestehen.
-3. **Fortschritt und Notizen leben am Node**, nicht am Inhalt — sie überleben jeden
-   Inhalts-Austausch.
-4. **„Dauerhaft" ≠ „für immer aktiv":** Auch `own`/Firmen-Berichte können manuell
-   `deprecated`/`archived` werden (mit Grund/`superseded_by`) — sie sind nur nicht Teil des
-   *automatischen* Herausrotierens. Auch sie werden nicht auto-gelöscht.
+Rules that guarantee durability:
+1. **Skill Nodes are first-class entities.** Content *references* nodes
+   (`content.skill → node`), never the reverse. A node does not depend on a
+   particular piece of content existing.
+2. **Nodes are created once and never automatically deleted** (only manual
+   archiving). A node may have zero current content and still persist.
+3. **Progress and notes live on the node**, not on the content — they survive any
+   content turnover.
+4. **"Durable" ≠ "forever active":** `own`/company reports too can manually be
+   `deprecated`/`archived` (with a reason/`superseded_by`) — they are just not part of the
+   *automatic* rotation-out. They also are not auto-deleted.
 
-## Alternativen
+## Alternatives
 
-- **Skill-Nodes aus vorhandenen Inhalten ableiten (kein First-Class):** einfacher, aber
-  Baum und Fortschritt churnen mit dem Feed. Verworfen — widerspricht der geforderten
-  Beständigkeit.
+- **Derive skill nodes from existing content (not first-class):** simpler, but
+  the tree and progress churn with the feed. Rejected — contradicts the required
+  durability.
 
-## Konsequenzen
+## Consequences
 
-- Der Feed rotiert (aktive Ansicht), der Skill-Tree akkumuliert — beide Schichten
-  behalten ihre volle Historie.
-- Eigene Erfahrungsberichte **verankern** Nodes zusätzlich (dauerhafter Inhalt, der
-  bleibt, wenn alle News zum Thema veraltet sind).
-- Erfordert Aufräum-Disziplin (Archivieren) statt Auto-Delete; bewusst gewählt.
+- The feed rotates (active view), the skill tree accumulates — both layers
+  retain their full history.
+- Own experience reports additionally **anchor** nodes (durable content that
+  remains even when all news on the topic has become outdated).
+- Requires cleanup discipline (archiving) instead of auto-delete; a deliberate choice.

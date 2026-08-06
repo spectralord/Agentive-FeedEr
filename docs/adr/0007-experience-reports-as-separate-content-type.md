@@ -1,42 +1,42 @@
-# ADR 0007 — Erfahrungsberichte als eigener Inhaltstyp
+# ADR 0007 — Experience reports as a separate content type
 
-- Status: akzeptiert
-- Datum: 2026-07-22
+- Status: accepted
+- Date: 2026-07-22
 
-## Kontext / Problem
+## Context / Problem
 
-Es soll einen Bereich für subjektive Erfahrungs-/Praxisberichte geben („wie lange
-Session offenhalten", „wann welches Modell", Tricks) — bewusst *nicht zwingend
-validiert*, zum Nachdenken anregend, teils selbst/Firma verfasst, teils später aus
-Quellen (Reddit/Kommentarspalten) kuratiert. Das steht in direkter Spannung zu ADR 0005
-(Sourced-only): Der Reel-Feed verbietet unbelegte Inhalte, weil Vertrauen die Währung
-ist. Beides in dieselbe `reels`-Tabelle zu mischen würde diese Vertrauensgrenze
-verwischen.
+There should be an area for subjective experience/practice reports ("how long to
+keep a session open", "when to use which model", tricks) — deliberately *not
+necessarily validated*, meant to prompt reflection, partly self/company-authored, partly
+later curated from sources (Reddit/comment sections). This is in direct tension with ADR 0005
+(sourced-only): the Reel feed prohibits unsubstantiated content, because trust is the
+currency. Mixing both into the same `reels` table would blur this trust
+boundary.
 
-## Entscheidung
+## Decision
 
-Erfahrungsberichte werden ein **eigener Inhaltstyp** (`experience_reports`), getrennt von
+Experience reports become their **own content type** (`experience_reports`), separate from
 `reels`:
-- Sie unterliegen **nicht** ADR 0005 — subjektiv/unvalidiert ist erlaubt und klar so
-  gekennzeichnet.
-- Statt einer `source` tragen sie einen **Autor**: `author_type` (`own` | `curated`,
-  später `colleague`) + `author_label`. Das ersetzt im MVP eine echte
-  Authentifizierung; echtes Mehrbenutzer-Login ist ein End-of-Road-Feature.
-- Relevanz-Score wird nur für `curated` Berichte KI-vergeben (Bedeutung: „breit
-  nützlich / zum Nachdenken anregend"); eigene Berichte bleiben neutral (nicht
-  heruntergerankt), optional mit KI-Selbst-Feedback auf Anforderung.
-- Gemeinsame Konzepte (Skill-Bezug, `outdated`-Markierung) bekommt der Typ über eigene
-  Felder — ohne die Reel-Regeln zu erben.
+- They are **not** subject to ADR 0005 — subjective/unvalidated is allowed and clearly
+  marked as such.
+- Instead of a `source`, they carry an **author**: `author_type` (`own` | `curated`,
+  later `colleague`) + `author_label`. In the MVP this substitutes for
+  real authentication; real multi-user login is an end-of-road feature.
+- A relevance score is only AI-assigned for `curated` reports (meaning "broadly
+  useful / thought-provoking"); own reports remain neutral (not
+  down-ranked), optionally with AI self-feedback on request.
+- Shared concepts (skill reference, `outdated` marking) are given to the type via its own
+  fields — without inheriting the Reel rules.
 
-## Alternativen
+## Alternatives
 
-- **Flag am Reel** (`is_experience`): einfacher im Schema, aber vermischt zwei
-  unvereinbare Inhalts-Verträge (belegt vs. subjektiv) in einer Tabelle und einer
-  UI-Logik. Verworfen.
+- **A flag on the Reel** (`is_experience`): simpler in the schema, but mixes two
+  incompatible content contracts (sourced vs. subjective) into one table and one
+  UI logic. Rejected.
 
-## Konsequenzen
+## Consequences
 
-- Saubere Quarantäne: im Datenmodell *und* visuell immer klar „gelebte Erfahrung, keine
-  verifizierte News".
-- Die Naht für späteres echtes Teilen (`author_label` → `user_id`) existiert von Anfang an.
-- Zwei Inhaltstypen bedeuten etwas mehr Query-/UI-Fläche; akzeptiert.
+- Clean quarantine: in the data model *and* visually always clearly "lived
+  experience, not verified news".
+- The seam for later real sharing (`author_label` → `user_id`) exists from the start.
+- Two content types mean somewhat more query/UI surface; accepted.

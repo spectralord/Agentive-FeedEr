@@ -1,119 +1,121 @@
-# Future-TODOs / Ideen (roh, zum späteren Aufgreifen)
+# Future TODOs / ideas (raw, to be picked up later)
 
-Vom Benutzer geparkte Gedanken (2026-07-23). Noch nicht gegrillt — vor Umsetzung je ein
-kurzes Design-/Grill-Gespräch.
+Thoughts parked by the user (2026-07-23). Not grilled yet — a short design/grill
+conversation before implementation in each case.
 
-## T1 — Zwei Detailtiefen pro Inhalt (Kompakt → Aufgeklappt)
-Der Feed bleibt wie jetzt der *zusammengefasste* Modus. Aber ein Reel soll **anklickbar**
-sein und dann eine **besser aufgearbeitete, tiefere Zusammenfassung** zeigen (Detail-Ansicht).
-- Verwandt mit, aber nicht identisch zu Epic 8 (agentisches „Vertiefen"): hier geht es
-  zunächst um eine *vorhandene* tiefere Aufbereitung on click, nicht um Live-Recherche.
-- Denkbar: das Enrichment erzeugt zwei Ebenen (kompakt + ausführlich), oder die Detailtiefe
-  wird on-demand nachgeladen.
+## T1 — Two levels of detail per content item (compact → expanded)
+The feed stays, as now, the *summarized* mode. But a reel should be **clickable**
+and then show a **better worked-out, deeper summary** (detail view).
+- Related to, but not identical with, Epic 8 (agentic "deepening"): here it's initially
+  about an *existing* deeper write-up on click, not live research.
+- Conceivable: enrichment produces two tiers (compact + detailed), or the detail level
+  is loaded on demand.
 
-## T2 — Actionables / „To-Try"-Aufforderungen überarbeiten
-> **AUFGEGRIFFEN 2026-08-01 → ADR 0019 (akzeptiert).** `reels.action` wird zum abhakbaren
-> Actionable befördert, zweispuriger Fortschritt (declared/evidenced) ohne Gating, `effort_tag`
-> wird funktional (Filter „5-Minuten-Gewinn"). Der hier notierte Kern — „die Aufforderungen sind
-> zu schwach" — ist damit *strukturell* adressiert (abhakbar + rollt auf den Skill Node auf);
-> die *Formulierungsqualität* der generierten `action`-Texte bleibt eine separate Prompt-Frage.
-Die aktuellen Handlungs-/TODO-Aufforderungen (`action`/`effort_tag`) sind noch **zu schwach**.
-Bei Gelegenheit überarbeiten — konkreter, motivierender, klarer Anreiz zum Ausprobieren.
-Hängt mit dem Actionable-Konzept (Epic 6/7-Revision) zusammen.
+## T2 — Rework actionables / "to-try" prompts
+> **PICKED UP 2026-08-01 → ADR 0019 (accepted).** `reels.action` is promoted to a
+> checkable actionable, two-track progress (declared/evidenced) with no gating, `effort_tag`
+> becomes functional (filter "5-minute win"). The core noted here — "the prompts are
+> too weak" — is thereby *structurally* addressed (checkable + rolls up to the skill node);
+> the *wording quality* of the generated `action` texts remains a separate prompt question.
+The current action/TODO prompts (`action`/`effort_tag`) are still **too weak**.
+Rework when there's a chance — more concrete, more motivating, a clearer incentive to try it.
+Connected to the actionable concept (Epic 6/7 revision).
 
-## T3 — Auf Englisch umstellen (Chat + gesamte App)
-Perspektivisch **Chat und sämtliche App-Inhalte/UI auf Englisch** umstellen. Betrifft dann
-auch `CLAUDE.md` (Sprach-Konvention „UI/Doku Deutsch" → Englisch) und alle bestehenden
-UI-Strings. Bewusste, einmalige Umstellung — erst auf explizites Go.
+## T3 — Switch to English (chat + the entire app)
+Eventually switch **chat and all app content/UI to English**. This then also affects
+`CLAUDE.md` (language convention "UI/docs German" → English) and all existing
+UI strings. A deliberate, one-time switch — only on explicit go-ahead.
 
-## T4 — Design-/UX-Experten-Agent (eigene Session) + Übergabe-Prompt
-Design/UX ist aktuell dürftig. Ziel: Claude baut einen **umfassenden Prompt**, den der
-Benutzer einer **weiteren Session** gibt; diese agiert als **Design-Experte**, schaut sich
-das Projekt an und erarbeitet mit **Gamifying- + Good-UX-Mindset** konkrete, umsetzbare
-Design-Vorschläge. (Deliverable: der Übergabe-Prompt.)
-> **Update 2026-07-23:** Übergabe-Prompt **geliefert** →
-> `docs/specs/design-expert-handoff-prompt.md` (Leitmotiv: Look-and-Feel + Gamification
-> gleichrangig). Offen ist nur noch, dass der Benutzer die Design-Session damit startet.
+## T4 — Design/UX expert agent (own session) + handoff prompt
+Design/UX is currently thin. Goal: Claude builds a **comprehensive prompt** that the
+user gives to a **further session**; that session acts as a **design expert**, looks at
+the project, and works out concrete, actionable design proposals with a
+**gamifying + good-UX mindset**. (Deliverable: the handoff prompt.)
+> **Update 2026-07-23:** handoff prompt **delivered** →
+> `docs/specs/design-expert-handoff-prompt.md` (leitmotif: look-and-feel and gamification
+> on equal footing). All that's left open is for the user to start the design session with it.
 
-## T5 — Persona-Agent „Entwickler-Sicht auf den Mehrwert" (Zukunftsmusik)
-Später eine Session, die die **generierten Inhalte aus Entwickler-Perspektive** bewertet:
-Wie viel echten Mehrwert/Erfahrung gewinnt ein Entwickler daraus? Gut über einen
-**Persona-Agenten** abbildbar. Bewusst Zukunftsmusik.
+## T5 — Persona agent "developer's view of the value" (future music)
+Later, a session that evaluates the **generated content from a developer's perspective**:
+how much real value/experience does a developer actually get out of it? Well suited to a
+**persona agent**. Deliberately future music.
 
-## T6 — Zweiter Ausführungsmodus: Pipeline über Claude-Code-Kontingent statt API-Key
-> **Hochgezogen 2026-07-23:** gegrillt (F1–F5 unten) → **ADR 0015** + **Epic 17**
-> (`epic-17-execution-modes.md`). Bauen erst auf Benutzer-Go.
-**Motiv:** Der Daily-Task ruft die LLM-Arbeit (Enrichment/Summaries etc.) heute über die
-**Anthropic-API** (`ANTHROPIC_API_KEY`) → verbraucht **API-Tokens (Geld)**. Wenn noch
-**Claude-Code-Kontingent** (Subscription) übrig ist, soll dieselbe Arbeit stattdessen darüber
-laufen — und man soll **umschalten** können, *wie* der Lauf ausgeführt wird.
+## T6 — Second execution mode: pipeline via Claude Code quota instead of an API key
+> **Promoted 2026-07-23:** grilled (F1–F5 below) → **ADR 0015** + **Epic 17**
+> (`epic-17-execution-modes.md`). Build only on user go-ahead.
+**Motive:** the daily task today calls the LLM work (enrichment/summaries etc.) via the
+**Anthropic API** (`ANTHROPIC_API_KEY`) → consumes **API tokens (money)**. If there is
+still **Claude Code quota** (subscription) left, the same work should run through that
+instead — and one should be able to **switch** *how* the run is executed.
 
-**Kern-Idee:** Zwei Ausführungs-Modi hinter einem Schalter (z. B. `PIPELINE_EXECUTOR=api|claude-code`):
-- **`api` (heute):** Railway-Cron ruft die App, die per SDK die API mit dem Key aufruft.
-- **`claude-code` (neu):** Eine **Claude-Code-Scheduled-Task/Routine** feuert eine Session, die
-  den Pipeline-Lauf anstößt.
+**Core idea:** two execution modes behind a switch (e.g. `PIPELINE_EXECUTOR=api|claude-code`):
+- **`api` (today):** Railway cron calls the app, which calls the API with the key via the SDK.
+- **`claude-code` (new):** A **Claude Code scheduled task/routine** fires a session that
+  kicks off the pipeline run.
 
-**Wichtiger technischer Haken (für den Grill):** Damit wirklich **Kontingent statt API-Tokens**
-verbraucht wird, muss die **Inferenz im Claude-Code-Agent-Turn** passieren (der Agent liest die
-Raw-Items und erzeugt die strukturierten Summaries selbst, schreibt sie in die DB) — eine bloße
-Routine, die die App triggert, die *dann* die API ruft, spart **nichts**. Das ist ein anderer
-Ausführungspfad als das deterministische, tool-use-strukturierte Enrichment (ADR 0003).
-- **Naht/Seam:** Das bestehende **`StructuredCaller`-Interface** (Enrichment/SkillTagger/…) ist
-  der Ansatzpunkt — eine zweite Implementierung „Agent-getrieben" dahinter.
-- **Trade-offs zu grillen:** Konsistenz/Qualität (Agent-Freitext vs. erzwungenes JSON-Schema +
-  zod-Validierung), Idempotenz/Fehlertoleranz pro Item, Kadenz/Scheduling (Railway-Cron vs.
-  Claude-Code-Routine), wie „null statt Halluzination" (ADR 0003) im Agent-Modus garantiert wird,
-  und ob nur *Teile* (z. B. Enrichment) oder die ganze Pipeline umgeschaltet werden.
-- **Ergebnis vermutlich:** eigener ADR (Ausführungs-Modell) + Env-Schalter + zweite
-  `StructuredCaller`-Implementierung. **Vor Bau grillen** (echte architektonische Weggabelung).
+**Important technical catch (for the grill):** for this to actually consume **quota
+instead of API tokens**, the **inference must happen inside the Claude Code agent turn**
+(the agent reads the raw items and produces the structured summaries itself, writes them
+to the DB) — a mere routine that triggers the app, which *then* calls the API, saves
+**nothing**. That's a different execution path than the deterministic, tool-use-structured
+enrichment (ADR 0003).
+- **Seam:** the existing **`StructuredCaller` interface** (enrichment/SkillTagger/…) is
+  the point of attachment — a second, "agent-driven" implementation behind it.
+- **Trade-offs to grill:** consistency/quality (agent free text vs. enforced JSON schema +
+  zod validation), idempotency/error tolerance per item, cadence/scheduling (Railway cron vs.
+  Claude Code routine), how "null instead of hallucination" (ADR 0003) is guaranteed in agent
+  mode, and whether only *parts* (e.g. enrichment) or the whole pipeline get switched over.
+- **Likely outcome:** its own ADR (execution model) + env switch + second
+  `StructuredCaller` implementation. **Grill before building** (a genuine architectural fork).
 
-### Grill-Protokoll (läuft, 2026-07-23)
-- **F1 — Datenpfad im `claude-code`-Modus → ENTSCHIEDEN: A (direkter DB-Zugriff).** Die
-  CC-Session nutzt dieselbe Drizzle-Schicht wie die App (liest `raw_items`, schreibt `reels`),
-  gleiche Idempotenz/Validierung — kein Endpunkt-Zoo. Für ein Single-User-Tool der einfachste,
-  robusteste Weg.
+### Grill protocol (in progress, 2026-07-23)
+- **F1 — data path in `claude-code` mode → DECIDED: A (direct DB access).** The
+  CC session uses the same Drizzle layer as the app (reads `raw_items`, writes `reels`),
+  same idempotency/validation — no zoo of endpoints. For a single-user tool, the simplest,
+  most robust way.
 
-- **F2 — Profil-Struktur → ENTSCHIEDEN: C (Profil mit Defaults + Override).** Ein
-  `APP_PROFILE=local|cloud` setzt sinnvolle Defaults (local→Claude Code + lokale DB;
-  cloud→API + Railway), einzelne Achsen (v. a. Executor) sind per Env überschreibbar
-  (⇒ auch Cloud+Claude-Code möglich). Nicht die volle 4er-Kombinatorik als Normalfall.
-- **F3 — Schema-Disziplin/Granularität → ENTSCHIEDEN: C (Agent-Batch + erzwungenes Tool-Use).**
-  Der Agent verarbeitet einen Batch in einem Turn, ruft aber **pro Item ein lokales Tool
-  `emit_reel(reel)`** auf, das **serverseitig zod-validiert + schreibt** — Schema-Zwang im Tool,
-  Per-Item-Validierung/-Isolation (ADR 0003 gewahrt) bei Batch-Effizienz. Bildet die heutige
-  „forced tool_choice"-Disziplin nach. Fallback bei Setup-Problemen: (A) Agent-Batch → Skript
-  validiert das Array.
-- **F4 — Scope → ENTSCHIEDEN: B (uniformer Executor, inkrementell gebaut).** Ein einmal
-  gewählter Executor wird an **allen** `StructuredCaller`-Stellen injiziert (Enrichment,
-  SkillTagger, Clustering, Knowledge-Check, Feedback-Summary) → einheitlicher Lauf, kein
-  Mischmasch. Baureihenfolge enrichment-first als erste Scheibe. **Harte Leitplanke:** Im
-  Claude-Code-/local-Modus laufen **null** API-Calls und es gibt **keinen stillen API-Fallback**
-  (sonst entstünden Kosten). Fehlt/misslingt der CC-Weg, wird **abgebrochen/geskippt**, nie über
-  die API nachgeholt. `ANTHROPIC_API_KEY` darf im local-Modus ungesetzt sein.
-- **F5 — Trigger/Scheduling → ENTSCHIEDEN: zwei unabhängige Achsen + Profil-Matrix.**
-  - **Achse 1 Trigger:** `railway-cron` | `claude-code-cron` | `manuell/lokal`.
-  - **Achse 2 Executor:** `api` | `claude-code` (siehe F4).
-  - **local:** Trigger manuell/lokal, Executor `claude-code`, DB lokal — **nie Railway, nie API**
-    (hart abgeschottet).
-  - **cloud** (DB=Railway), drei nutzbare Kombis:
-    - „Cloud" = `railway-cron` + `api` (Status quo).
-    - „Claude Code Cron" = `claude-code-cron` + `claude-code` (Kontingent, kein API).
-    - „Claude Code API" = `claude-code-cron` + `api` (CC plant, API inferiert).
-  - **Ausgeschlossen:** `railway-cron` + `claude-code` (Railway kann kein CC-Kontingent nutzen).
+- **F2 — profile structure → DECIDED: C (profile with defaults + override).** An
+  `APP_PROFILE=local|cloud` sets sensible defaults (local→Claude Code + local DB;
+  cloud→API + Railway), individual axes (especially the executor) are overridable via env
+  (⇒ cloud+Claude Code also possible). Not the full 2×2 combinatorics as the normal case.
+- **F3 — schema discipline/granularity → DECIDED: C (agent batch + enforced tool use).**
+  The agent processes a batch in one turn, but calls a local tool **`emit_reel(reel)`
+  per item**, which **validates via zod server-side + writes** — schema enforcement in the
+  tool, per-item validation/isolation (ADR 0003 upheld) at batch efficiency. Mirrors today's
+  "forced tool_choice" discipline. Fallback on setup problems: (A) agent batch → script
+  validates the array.
+- **F4 — scope → DECIDED: B (uniform executor, built incrementally).** An executor, once
+  chosen, is injected at **all** `StructuredCaller` call sites (enrichment,
+  SkillTagger, clustering, knowledge check, feedback summary) → a uniform run, no
+  mixing. Build order: enrichment-first as the first slice. **Hard guardrail:** in
+  Claude Code/local mode, **zero** API calls run, and there is **no silent API fallback**
+  (otherwise costs would arise). If the CC path is missing/fails, it gets **aborted/skipped**,
+  never caught up via the API. `ANTHROPIC_API_KEY` may be unset in local mode.
+- **F5 — trigger/scheduling → DECIDED: two independent axes + a profile matrix.**
+  - **Axis 1 trigger:** `railway-cron` | `claude-code-cron` | `manual/local`.
+  - **Axis 2 executor:** `api` | `claude-code` (see F4).
+  - **local:** trigger manual/local, executor `claude-code`, DB local — **never Railway, never
+    API** (hard-walled off).
+  - **cloud** (DB=Railway), three usable combos:
+    - "Cloud" = `railway-cron` + `api` (status quo).
+    - "Claude Code Cron" = `claude-code-cron` + `claude-code` (quota, no API).
+    - "Claude Code API" = `claude-code-cron` + `api` (CC schedules, API infers).
+  - **Excluded:** `railway-cron` + `claude-code` (Railway can't use CC quota).
 
-### Erweiterung (Benutzer 2026-07-23): zwei **Umgebungs-Profile** lokal ↔ cloud
-Der Schalter ist eigentlich **zweidimensional** — Umgebung *und* Inferenz:
-- **Umgebung:** **`local`** (eigener Rechner, **lokale DB**, Ausführung in Claude Code) vs.
-  **`cloud`** (Railway + Cloud-DB).
-- **Inferenz:** **`api`** (Anthropic-Key) vs. **`claude-code`** (Kontingent).
-- **Kopplung/Motiv:** **`local` ⇒ Claude Code + lokale DB** — spart *sowohl* Railway- *als auch*
-  API-Kosten (Entwicklung/Nutzung am eigenen Rechner). **`cloud`** ist v. a. für **Tablet-Nutzung**
-  interessant (kein eigener Rechner zur Hand); auch dort ist eine `api`-vs-`claude-code`-Unterscheidung
-  gewünscht. Ziel: unsere Tools/Services **einmal „lokal" und einmal „cloud" startbar** machen.
-- **Folgen für den Bau:** nicht nur ein `PIPELINE_EXECUTOR`-Flag, sondern **Umgebungs-Profile**
-  (DB-Ziel + Executor + Scheduling gebündelt), z. B. `APP_PROFILE=local|cloud` mit sinnvollen
-  Defaults (`local`→`claude-code`+lokale DB; `cloud`→heute `api`+Railway, optional `claude-code`).
-  Lokaler Start-Pfad ohne Railway (eigenes `npm`-Kommando / Claude-Code-Routine gegen lokale DB).
+### Extension (user, 2026-07-23): two **environment profiles**, local ↔ cloud
+The switch is actually **two-dimensional** — environment *and* inference:
+- **Environment:** **`local`** (own machine, **local DB**, execution in Claude Code) vs.
+  **`cloud`** (Railway + cloud DB).
+- **Inference:** **`api`** (Anthropic key) vs. **`claude-code`** (quota).
+- **Coupling/motive:** **`local` ⇒ Claude Code + local DB** — saves *both* Railway *and*
+  API costs (development/use on one's own machine). **`cloud`** is mainly interesting for
+  **tablet use** (no own machine at hand); there too, an `api`-vs-`claude-code` distinction
+  is desired. Goal: make our tools/services startable **once "local" and once "cloud"**.
+- **Consequences for the build:** not just one `PIPELINE_EXECUTOR` flag, but **environment
+  profiles** (DB target + executor + scheduling bundled), e.g. `APP_PROFILE=local|cloud` with
+  sensible defaults (`local`→`claude-code`+local DB; `cloud`→today `api`+Railway, optionally
+  `claude-code`). Local startup path without Railway (own `npm` command / Claude Code routine
+  against the local DB).
 
 ## T7 — Curator / user system with trust-weighted evaluation
 > Parked by the user on 2026-07-24, during the T11.7 grill (reports ↔ topic clusters).

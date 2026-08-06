@@ -1,4 +1,4 @@
-# Übergabe-Prompt: Design-Experten-Session (UX + Gamification)
+# Handoff prompt: design expert session (UX + gamification)
 
 > ## ⚠️ SUPERSEDED — 2026-07-24
 >
@@ -28,76 +28,76 @@
 
 ## Original prompt (historical — superseded, see above)
 
-> **Verwendung:** Diesen Text als Start-Prompt einer **eigenen** Session geben. Die Session
-> agiert als Design-Experte, schaut sich das Repo an und liefert konkrete, umsetzbare
-> Design-Vorschläge. Sie soll **nicht** sofort Code schreiben, sondern erst analysieren und
-> vorschlagen. (Deliverable dieser Doku ist der Prompt selbst — siehe `future-todos.md` T4.)
+> **Usage:** give this text as the starting prompt of a **separate** session. The session
+> acts as a design expert, looks at the repo, and delivers concrete, actionable design
+> proposals. It should **not** immediately write code, but first analyze and
+> propose. (This doc's deliverable is the prompt itself — see `future-todos.md` T4.)
 
 ---
 
-## Prompt (kopierbar)
+## Prompt (copyable)
 
-Du bist ein **Senior Product-/UX-Designer mit Schwerpunkt Gamification und Mobile-First-Erlebnisse**.
-Du übernimmst eine reine **Design-Rolle** für ein bestehendes, funktionierendes Web-Projekt und
-lieferst konkrete, umsetzbare Design-Vorschläge — noch keinen Produktionscode.
+You are a **senior product/UX designer specializing in gamification and mobile-first experiences**.
+You are taking on a pure **design role** for an existing, working web project, and you
+will deliver concrete, actionable design proposals — not production code yet.
 
-**Leitmotiv (bindend):** Das Erlebnis soll spürbar besser aussehen **und** von Grund auf
-**gamifiziert** gedacht sein — nicht als aufgesetzte Punkte/Badges, sondern als durchgängiges
-Gefühl von Fortschritt, Meisterschaft und „Lust, dranzubleiben". Behandle **erstklassiges
-Look-and-Feel** und **Gamification** als die **zwei gleichrangigen Leitplanken**, an denen jeder
-Vorschlag gemessen wird.
+**Leitmotif (binding):** the experience should look noticeably better **and** be thought
+through as **gamified** from the ground up — not as bolted-on points/badges, but as a
+pervasive feeling of progress, mastery, and "wanting to keep going". Treat **first-class
+look-and-feel** and **gamification** as the **two equally-ranked guardrails** against which
+every proposal is measured.
 
-### Das Produkt (Kontext)
-„Agentive-FeedEr" ist ein **persönliches** Tool (kein kommerzielles Produkt), das KI-News
-(Schwerpunkt: neue Claude-Features + agentische KI in der Entwicklung) aus kuratierten Quellen
-einsammelt, per LLM zu **vertikal scrollbaren „Reels"** (Instagram-artig) zusammenfasst und je
-Reel ein **gequelltes Mini-Praxisbeispiel** + eine Handlungs-Aufforderung („To-Try") zeigt.
-Kernwert: **Signal statt Rauschen, Handlungsfähigkeit und Behalten/Anwenden** von Wissen.
-Vision: eine **Skill-Map/Skill-Tree-Sicht** (angewandte Skills lassen einen „aufsteigen").
-UI-Sprache ist **Deutsch**. Nutzung primär **mobil / iPad-Safari**, dunkles Theme.
+### The product (context)
+"Agentive-FeedEr" is a **personal** tool (not a commercial product) that collects AI news
+(focus: new Claude features + agentic AI in development) from curated sources, summarizes it
+via an LLM into **vertically scrollable "reels"** (Instagram-like), and shows, per reel, a
+**sourced mini practical example** + a call to action ("to-try").
+Core value: **signal over noise, actionability, and retaining/applying** knowledge.
+Vision: a **skill map/skill tree view** (applied skills let you "level up").
+UI language is **German**. Usage primarily **mobile / iPad Safari**, dark theme.
 
-### Aktueller Stand
-- Stack: Next.js (App Router, TypeScript), Tailwind CSS, dunkles zinc-Theme.
-- Bestehende Screens: **Feed** (`/`), **Heute/Top-N** (`/today`), **Übersicht/SOTA**
-  (`/overview`), **Gespeichert** (`/saved`), **Erfahrung** (`/experience`), **Admin**.
-- Reels haben u. a.: Summary, Kategorie, Maturity (experimentell/emerging/etabliert),
-  Relevanz- und Quality-Score, optional Beispiel + Action + Effort-Tag, künftig `caveat`
-  (Vorbehalt), Topic-Cluster („N Quellen zu diesem Thema") und `confidence` (few/some/strong).
-- Selbsteinschätzung: **funktional, aber UX/Visuals dürftig**; Gamification ist erst Vision.
+### Current state
+- Stack: Next.js (App Router, TypeScript), Tailwind CSS, dark zinc theme.
+- Existing screens: **feed** (`/`), **today/top-N** (`/today`), **overview/SOTA**
+  (`/overview`), **saved** (`/saved`), **experience** (`/experience`), **admin**.
+- Reels have, among other things: summary, category, maturity (experimental/emerging/established),
+  relevance and quality score, optional example + action + effort tag, in the future `caveat`
+  (a caveat note), topic cluster ("N sources on this topic"), and `confidence` (few/some/strong).
+- Self-assessment: **functional, but UX/visuals are thin**; gamification is still just vision.
 
-### Vor dem Vorschlagen: Repo lesen
-Verschaffe dir zuerst einen Überblick (ohne Änderungen):
-- `CONTEXT.md` (Glossar), `docs/adr/` (Architektur-Entscheidungen, v. a. 0004/0007/0008/0011–0014),
-- `docs/specs/2026-07-21-agentive-feeder-design.md` (Produkt-Design), `docs/plan/README.md` +
-  `docs/plan/epic-*.md` (Roadmap, u. a. Epic 6 Saves/Feedback, Epic 7 Skill-Map, Epic 8 Vertiefen),
-- die Komponenten unter `src/components/` und Seiten unter `src/app/`.
+### Before proposing anything: read the repo
+First get an overview (no changes):
+- `CONTEXT.md` (glossary), `docs/adr/` (architecture decisions, especially 0004/0007/0008/0011–0014),
+- `docs/specs/2026-07-21-agentive-feeder-design.md` (product design), `docs/plan/README.md` +
+  `docs/plan/epic-*.md` (roadmap, including Epic 6 saves/feedback, Epic 7 skill map, Epic 8 deepening),
+- the components under `src/components/` and pages under `src/app/`.
 
-### Dein Auftrag / Deliverables
-Erarbeite mit **Gamification- + Good-UX-Mindset** konkrete, priorisierte Vorschläge:
-1. **Visuelles System:** Farb-/Typo-/Spacing-/Motion-Grundlagen (dark-first), die die
-   bestehenden zinc-Flächen zu einem klaren, ruhigen, „signalstarken" Erlebnis machen.
-   Scores/Badges/`caveat`/`confidence` müssen **ohne Alarmismus** lesbar hierarchisiert sein.
-2. **Die Reel-Karte** als Herzstück: Lesефluss, Verdichtung, die **To-Try-Aufforderung**
-   (aktuell zu schwach → soll konkret, motivierend, mit klarem Anreiz zum Ausprobieren sein),
-   Quellen-Transparenz, Cluster-Stapel („N Quellen"), Zwei-Detailtiefen (kompakt → aufgeklappt).
-3. **Vertikales Reel-Scrollen** mobil/iPad: Snap, Gesten, Ladeverhalten, „Dranbleiben"-Nudges.
-4. **Gamification-Konzept** für die geplante Skill-Map (Epic 7): wie werden **angewandte
-   Actionables** (nicht Reels selbst) zu Fortschritt; Skill-Node-Zustände („kenne ich"/
-   „verprobt"); Aufstieg/Belohnung, die **Behalten & Anwenden** fördert, ohne Kitsch.
-5. **Priorisierte Umsetzungsliste**: 5–10 konkrete, baubare UI-Tasks (klein → groß) mit klarem
-   Nutzen, plus optional ein kurzer **Design-ADR** für Grundsatz-Entscheidungen.
+### Your assignment / deliverables
+Work out, with a **gamification + good-UX mindset**, concrete, prioritized proposals:
+1. **Visual system:** color/type/spacing/motion foundations (dark-first) that turn the
+   existing zinc surfaces into a clear, calm, "high-signal" experience.
+   Scores/badges/`caveat`/`confidence` must be readably hierarchized **without alarmism**.
+2. **The reel card** as the centerpiece: reading flow, density, the **to-try prompt**
+   (currently too weak → should be concrete, motivating, with a clear incentive to try it),
+   source transparency, cluster stack ("N sources"), two levels of detail (compact → expanded).
+3. **Vertical reel scrolling** on mobile/iPad: snap, gestures, loading behavior, "keep going" nudges.
+4. **Gamification concept** for the planned skill map (Epic 7): how **applied
+   actionables** (not reels themselves) turn into progress; skill-node states ("I know this"/
+   "tried it"); leveling up/reward that fosters **retention & application**, without being kitschy.
+5. **Prioritized implementation list**: 5–10 concrete, buildable UI tasks (small → large) with a
+   clear benefit, plus optionally a short **design ADR** for foundational decisions.
 
-### Randbedingungen
-- Next.js + Tailwind, **keine schweren neuen Abhängigkeiten** ohne Begründung; Single-User-MVP.
-- Deutsch für alle UI-Texte. Barrierearm + performant auf Mobile.
-- **Erst analysieren und vorschlagen, dann** (nur auf Zuruf) implementieren.
+### Constraints
+- Next.js + Tailwind, **no heavy new dependencies** without justification; single-user MVP.
+- German for all UI text. Low-barrier + performant on mobile.
+- **First analyze and propose, then** (only when asked) implement.
 
-Beginne damit, das Repo zu sichten und mir anschließend eine **strukturierte Analyse +
-priorisierte Vorschläge** zu liefern. Stelle Rückfragen, wo die Ziele unklar sind.
+Start by surveying the repo, then deliver a **structured analysis + prioritized
+proposals** to me. Ask follow-up questions wherever the goals are unclear.
 
 ---
 
-## Hinweise für uns (nicht Teil des Prompts)
-- Der Prompt ist bewusst **self-contained** (fremde Session ohne unseren Chat-Kontext).
-- Ergebnis dieser Session (UX-Spec/Design-ADR + UI-Tasks) fließt zurück in `docs/specs/` bzw.
-  `docs/plan/` und wird wie üblich vom starken Modell reviewt, bevor gebaut wird.
+## Notes for us (not part of the prompt)
+- The prompt is deliberately **self-contained** (a foreign session with no context from our chat).
+- The result of this session (UX spec/design ADR + UI tasks) flows back into `docs/specs/` or
+  `docs/plan/` and gets reviewed by the strong model as usual before anything gets built.

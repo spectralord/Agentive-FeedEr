@@ -1,80 +1,80 @@
-# ADR 0015 — Ausführungs-Modell: zwei Achsen (Trigger × Executor) + Profile
+# ADR 0015 — Execution model: two axes (trigger x executor) + profiles
 
-- Status: akzeptiert (Design gegrillt 2026-07-23; **Umsetzung offen**, Bau erst auf Benutzer-Go)
-- Baut auf: ADR 0003 (strukturierter Single-Pass, „null statt Halluzination"), ADR 0002
-  (entkoppelte Ingestion/Enrichment), ADR 0006 (All-in-one-Container-Hosting), ADR 0010
-  (Admin/manueller Trigger). Umsetzung: Epic 17.
+- Status: accepted (design grilled 2026-07-23; **implementation open**, build only on user go-ahead)
+- Builds on: ADR 0003 (structured single pass, "null instead of hallucination"), ADR 0002
+  (decoupled ingestion/enrichment), ADR 0006 (all-in-one container hosting), ADR 0010
+  (admin/manual trigger). Implementation: Epic 17.
 
-## Kontext / Problem
+## Context / Problem
 
-Die LLM-Arbeit der Pipeline (Enrichment, SkillTagger, Clustering, Knowledge-Check,
-Feedback-Summary) läuft heute über die **Anthropic-API** mit `ANTHROPIC_API_KEY` → verbraucht
-**bezahlte API-Tokens**. Ist **Claude-Code-Kontingent** (Subscription) übrig, soll dieselbe
-Arbeit wahlweise **darüber** laufen (kostenneutral). Zusätzlich soll ein **lokaler** Betrieb
-möglich sein, der **nie** mit Railway oder der API interagiert.
+The pipeline's LLM work (enrichment, SkillTagger, clustering, knowledge check,
+feedback summary) today runs via the **Anthropic API** with `ANTHROPIC_API_KEY` → consumes
+**paid API tokens**. If **Claude Code quota** (subscription) is available, the same
+work should optionally run **over that** (cost-neutral). Additionally, a **local**
+operating mode should be possible that **never** interacts with Railway or the API.
 
-## Entscheidung
+## Decision
 
-**Zwei orthogonale Achsen** steuern jeden Lauf, gebündelt über Umgebungs-**Profile**:
+**Two orthogonal axes** control every run, bundled via environment **profiles**:
 
-- **Achse 1 — Trigger** (wer stößt den Lauf an): `railway-cron` | `claude-code-cron` | `manuell`.
-- **Achse 2 — Executor** (was macht die Inferenz): `api` (SDK + Key) | `claude-code` (Agent-Turn,
-  Kontingent).
+- **Axis 1 — trigger** (who kicks off the run): `railway-cron` | `claude-code-cron` | `manual`.
+- **Axis 2 — executor** (what performs the inference): `api` (SDK + key) | `claude-code` (agent turn,
+  quota).
 
-**Profil-Matrix:**
+**Profile matrix:**
 
-| Profil | Trigger | Executor | DB | Railway | API |
+| Profile | Trigger | Executor | DB | Railway | API |
 |---|---|---|---|---|---|
-| **local** | manuell | `claude-code` | lokal | **nie** | **nie** |
-| cloud · „Cloud" | `railway-cron` | `api` | Railway | ja | ja |
-| cloud · „Claude Code Cron" | `claude-code-cron` | `claude-code` | Railway | ja | nein |
-| cloud · „Claude Code API" | `claude-code-cron` | `api` | Railway | ja | ja |
+| **local** | manual | `claude-code` | local | **never** | **never** |
+| cloud · "Cloud" | `railway-cron` | `api` | Railway | yes | yes |
+| cloud · "Claude Code Cron" | `claude-code-cron` | `claude-code` | Railway | yes | no |
+| cloud · "Claude Code API" | `claude-code-cron` | `api` | Railway | yes | yes |
 
-- **Ausgeschlossen:** `railway-cron` + `claude-code` (Railway kann kein CC-Kontingent verbrauchen).
-- **`APP_PROFILE=local|cloud`** setzt Defaults; einzelne Achsen sind per Env überschreibbar.
-- **Amendment 2026-08-01 (Benutzer-Entscheidung):** Der **Default** von `APP_PROFILE` ist von
-  `cloud` auf **`local`** geändert (`src/lib/env.ts`). Die Matrix oben bleibt unverändert —
-  `cloud` ist weiterhin voll unterstützt, muss aber **explizit** gesetzt werden. Grund: `cloud`
-  impliziert `executor=api`, also die **kostenpflichtige** API. Ein *ungesetztes* `APP_PROFILE`
-  bedeutete damit „Geld ausgeben und einen Cloud-Cron annehmen"; jetzt bedeutet es Claude-Code-
-  Kontingent + manueller Trigger, was beides nicht kann. Zusätzlicher Anlass: das Railway-Deployment
-  ruht derzeit. Der Default ist in `src/lib/env.test.ts` festgenagelt, weil die
-  `resolveExecutionConfig`-Tests `APP_PROFILE` immer explizit übergeben und ein stilles
-  Zurückflippen sonst keinen Test brechen würde.
-- **Harte Leitplanke local:** null API-Calls, **kein stiller API-Fallback**. Misslingt der
-  CC-Weg, wird abgebrochen/geskippt, nie über die API nachgeholt. `ANTHROPIC_API_KEY` darf
-  ungesetzt sein.
+- **Excluded:** `railway-cron` + `claude-code` (Railway cannot consume CC quota).
+- **`APP_PROFILE=local|cloud`** sets defaults; individual axes are overridable via env.
+- **Amendment 2026-08-01 (user decision):** the **default** of `APP_PROFILE` is changed from
+  `cloud` to **`local`** (`src/lib/env.ts`). The matrix above remains unchanged —
+  `cloud` is still fully supported, but must be set **explicitly**. Reason: `cloud`
+  implies `executor=api`, i.e. the **paid** API. An *unset* `APP_PROFILE` therefore
+  meant "spend money and accept a cloud cron"; now it means Claude Code
+  quota + manual trigger, which can do neither. Additional reason: the Railway deployment
+  is currently dormant. The default is pinned in `src/lib/env.test.ts`, because the
+  `resolveExecutionConfig` tests always pass `APP_PROFILE` explicitly, and a silent
+  flip-back would otherwise break no test.
+- **Hard guardrail for local:** zero API calls, **no silent API fallback**. If the
+  CC path fails, it is aborted/skipped, never made up for via the API. `ANTHROPIC_API_KEY`
+  is allowed to be unset.
 
-**Executor-Naht + Schema-Disziplin:** Der Executor ist die bestehende `StructuredCaller`-Naht
-(Enrichment/SkillTagger/Clustering/Knowledge-Check/Feedback nutzen sie schon). Neben dem
-`ApiExecutor` (heute) tritt ein `ClaudeCodeExecutor`: der Agent verarbeitet einen **Batch** in
-einem Turn und ruft **pro Item ein lokales Tool `emit_reel(...)`** auf, das **serverseitig
-zod-validiert und schreibt** — der Schema-Zwang steckt im Tool, nicht im Freitext, sodass die
-„forced tool_choice"-Garantie (ADR 0003, „null statt Halluzination") pro Item erhalten bleibt.
-Der Executor wird **einmal** gewählt und an **allen** Aufruf-Stellen injiziert (uniform, kein
-Mischmasch); Baureihenfolge enrichment-first.
+**Executor seam + schema discipline:** the executor is the existing `StructuredCaller`
+seam (enrichment/SkillTagger/clustering/knowledge check/feedback already use it). Alongside
+the `ApiExecutor` (today), a `ClaudeCodeExecutor` is added: the agent processes a **batch**
+in one turn and calls **one local tool `emit_reel(...)` per item**, which is
+**server-side zod-validated and written** — the schema enforcement lives in the tool, not
+in free text, so the "forced tool_choice" guarantee (ADR 0003, "null instead of
+hallucination") is preserved per item. The executor is chosen **once** and injected at
+**all** call sites (uniform, no mixing); build order is enrichment-first.
 
-**Datenpfad:** Die Claude-Code-Session greift **direkt** auf die DB zu (dieselbe Drizzle-Schicht
-wie die App) — im local-Profil die lokale DB, im cloud-Override die Railway-DB.
+**Data path:** the Claude Code session accesses the DB **directly** (the same Drizzle
+layer as the app) — the local DB in the local profile, the Railway DB in the cloud override.
 
-## Alternativen
+## Alternatives
 
-- **Ein einziger Schalter** (Trigger und Executor gekoppelt): kann „CC plant, aber API inferiert"
-  nicht abbilden. Verworfen — zwei Achsen sind nötig.
-- **Datenzugriff über admin-geschützte App-Endpunkte** statt direkter DB: mehr Bewegungsteile,
-  neue API-Fläche; für ein Single-User-Tool unnötig. Verworfen (F1).
-- **Pro-Schritt-Executor-Konfiguration:** unnötige Konfig-Fläche; uniform reicht. Verworfen (F4).
-- **Stiller API-Fallback im CC-Modus:** würde die Kostengarantie brechen. Verworfen (F4).
+- **A single switch** (trigger and executor coupled): cannot represent "CC plans, but the
+  API infers". Rejected — two axes are necessary.
+- **Data access via admin-protected app endpoints** instead of direct DB: more moving
+  parts, new API surface; unnecessary for a single-user tool. Rejected (F1).
+- **Per-step executor configuration:** unnecessary config surface; uniform is enough. Rejected (F4).
+- **Silent API fallback in CC mode:** would break the cost guarantee. Rejected (F4).
 
-## Konsequenzen
+## Consequences
 
-- Neue `StructuredCaller`-Implementierung `ClaudeCodeExecutor` (Batch + `emit_reel`-Tool).
-- `env.ts`: `APP_PROFILE` + Achsen-Overrides + Validierung (illegale Kombi
-  `railway-cron`+`claude-code` ablehnen; local ⇒ kein API/kein Railway).
-- Claude-Code-Routine als Scheduler-Option (für `claude-code-cron`).
-- Lokaler Job-Einstieg (`npm run job:cc` o. ä.), der ohne API/Railway läuft.
-- Umsetzung in **Epic 17**; bleibt geparkt bis Benutzer-Go.
-- Teilt die Claude-Code-Routine-Mechanik mit dem geplanten Refactoring-Agent (Epic 16).
-- **Bindende Folge-Konvention (Benutzer 2026-07-23):** *Jede* künftige KI-Funktion wird über die
-  Executor-Naht gebaut und läuft damit in **beiden** Ausprägungen (`api` + `claude-code`) — nie
-  ein direkter API-Aufruf in einem LLM-Schritt. Siehe CLAUDE.md → „Design-Prozess".
+- New `StructuredCaller` implementation `ClaudeCodeExecutor` (batch + `emit_reel` tool).
+- `env.ts`: `APP_PROFILE` + axis overrides + validation (reject the illegal combination
+  `railway-cron`+`claude-code`; local ⇒ no API/no Railway).
+- Claude Code routine as a scheduler option (for `claude-code-cron`).
+- Local job entry point (`npm run job:cc` or similar) that runs without API/Railway.
+- Implementation in **Epic 17**; stays parked until user go-ahead.
+- Shares the Claude Code routine mechanics with the planned refactoring agent (Epic 16).
+- **Binding follow-on convention (user, 2026-07-23):** *every* future AI feature is built via
+  the executor seam and thus runs in **both** variants (`api` + `claude-code`) — never
+  a direct API call in an LLM step. See CLAUDE.md → "design process".

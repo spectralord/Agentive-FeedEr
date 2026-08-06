@@ -1,96 +1,95 @@
-# Admin-/Operator-Console — Design (Self-Grill)
+# Admin/operator console — design (self-grill)
 
-- Datum: 2026-07-22
-- Status: zur Review / Grundlage von Epic 13
-- Verwandt: ADR 0010, `docs/plan/epic-13-admin-console.md`
-- Kontext: Der Benutzer wünscht eine Admin-Sicht, um u. a. den Cron-Task per Knopf
-  auszuführen, plus „andere Funktionen, die dort Sinn machen". Diese Session wurde
-  autonom (Benutzer schläft) durchgeführt — Entscheidungen sind hier als Self-Grill
-  dokumentiert, damit sie morgen nachvollziehbar/veto-bar sind.
+- Date: 2026-07-22
+- Status: for review / basis for Epic 13
+- Related: ADR 0010, `docs/plan/epic-13-admin-console.md`
+- Context: the user wants an admin view, among other things to run the cron task
+  via a button, plus "other functions that make sense there". This session was
+  carried out autonomously (the user is asleep) — decisions are documented here
+  as a self-grill so they can be reviewed/vetoed tomorrow.
 
 ---
 
-## Self-Grill (Frage → Antwort, mit Alternativen)
+## Self-grill (question → answer, with alternatives)
 
-**F1 — Wie führt ein Web-Button den Cron-Task aus, der minutenlang laufen kann?**
-- (A) Synchron in der API-Route, bis fertig → Button „hängt" Minuten, Proxy-/Browser-Timeout-Risiko. Verworfen.
-- (B) **Asynchron starten, sofort antworten**, Status über eine `pipeline_runs`-Tabelle verfolgen; Admin-Seite zeigt Laufstatus. **Gewählt.** Robuster, kein hängender Request, Historie inklusive.
-- Konsequenz: `pipeline_runs`-Tabelle + „nur ein Lauf gleichzeitig"-Guard (verhindert Doppel-/Überlappungsläufe von Button und Cron).
+**Q1 — How does a web button run the cron task, which can run for minutes?**
+- (A) Synchronously in the API route, until done → the button "hangs" for minutes, proxy/browser timeout risk. Rejected.
+- (B) **Start asynchronously, respond immediately**, track status via a `pipeline_runs` table; the admin page shows run status. **Chosen.** More robust, no hanging request, history included.
+- Consequence: `pipeline_runs` table + a "only one run at a time" guard (prevents double/overlapping runs from the button and cron).
 
-**F2 — Wird Logik dupliziert (Cron vs. Button)?**
-- Nein. Der Kern (`runIngestion` + `runEnrichment`) wird in **eine wiederverwendbare
-  Funktion `runDailyPipeline()`** (`src/lib/pipeline.ts`) extrahiert. Sowohl
-  `src/jobs/daily.ts` (Cron) als auch die Admin-API rufen dieselbe Funktion. Kein
-  zweiter Pfad, keine Divergenz.
+**Q2 — Is logic duplicated (cron vs. button)?**
+- No. The core (`runIngestion` + `runEnrichment`) is extracted into **one
+  reusable function `runDailyPipeline()`** (`src/lib/pipeline.ts`). Both
+  `src/jobs/daily.ts` (cron) and the admin API call the same function. No
+  second path, no divergence.
 
-**F3 — Sicherheit: Die App ist öffentlich (railway.app-URL). Ein offener „Run"-Button
-kann echte Anthropic-Kosten verursachen (LLM-Calls).**
-- Das ist ein echtes Risiko. Der Admin-Bereich **muss** geschützt sein.
-- (A) Volles Auth-System → Overkill fürs Single-User-MVP.
-- (B) **Shared-Secret über `ADMIN_TOKEN`-Env** → Login-Formular setzt httpOnly-Cookie;
-  Admin-Seiten + Trigger-API prüfen es. **Gewählt.** Passt zur bereits geplanten
-  Team-Feed-Vision (V4, Stufe 1: Shared-Secret).
-- **Safe default:** Ist `ADMIN_TOKEN` **nicht gesetzt**, ist der Admin-Bereich
-  **deaktiviert** (Seite zeigt Hinweis, Trigger-API antwortet 503). Kein
-  ungeschützter Trigger auf einer öffentlichen URL.
+**Q3 — Security: the app is public (a railway.app URL). An open "run" button
+can cause real Anthropic costs (LLM calls).**
+- This is a real risk. The admin area **must** be protected.
+- (A) Full auth system → overkill for the single-user MVP.
+- (B) **Shared secret via an `ADMIN_TOKEN` env var** → login form sets an httpOnly cookie;
+  admin pages + trigger API check it. **Chosen.** Fits the already-planned
+  team-feed vision (V4, stage 1: shared secret).
+- **Safe default:** if `ADMIN_TOKEN` is **not set**, the admin area is
+  **disabled** (the page shows a notice, the trigger API responds 503). No
+  unprotected trigger on a public URL.
 
-**F4 — Welche Funktionen gehören außer „Run" in die Admin-Sicht?**
-Ausgewählt nach Nutzen/Aufwand (Operator-Bedürfnisse eines Single-User-News-Tools):
-- **Pipeline jetzt ausführen** (voll / nur Ingestion / nur Enrichment) — Kernwunsch.
-- **Letzte Läufe** (`pipeline_runs`): Status, Dauer, Ingestion-Zahlen pro Quelle,
-  Enrichment-Zahlen, Fehler. Genau die Sicht, die zeigt „welche Quelle 403t".
-- **System-Status**: DB erreichbar? `ANTHROPIC_API_KEY` gesetzt? Counts (raw_items,
+**Q4 — What functions belong in the admin view besides "run"?**
+Selected by value/effort (the operator needs of a single-user news tool):
+- **Run the pipeline now** (full / ingestion only / enrichment only) — the core request.
+- **Recent runs** (`pipeline_runs`): status, duration, ingestion counts per source,
+  enrichment counts, errors. Exactly the view that shows "which source is 403ing".
+- **System status**: DB reachable? `ANTHROPIC_API_KEY` set? Counts (raw_items,
   reels, unenriched, enrich_errors).
-- **Quellen-Übersicht**: Liste mit `enabled`, `last_polled_at`; Toggle enable/disable.
-- **Fehler-Items erneut versuchen**: `enrich_error` zurücksetzen, damit der nächste
-  Lauf sie neu anreichert.
-- Später (wenn die Epics existieren): Buttons für SkillTagger (Epic 12),
-  SOTA-Re-Check (Epic 11), Verifier (Epic 10) — dieselbe „named task"-Mechanik.
+- **Source overview**: list with `enabled`, `last_polled_at`; enable/disable toggle.
+- **Retry failed items**: reset `enrich_error` so the next run re-enriches them.
+- Later (once the epics exist): buttons for SkillTagger (Epic 12),
+  SOTA re-check (Epic 11), verifier (Epic 10) — the same "named task" mechanic.
 
-**F5 — MVP-Schnitt für heute Nacht?**
-- **Muss (vom Benutzer verlangt):** „Pipeline jetzt ausführen"-Button end-to-end,
-  geschützt, async, mit Laufstatus.
-- **Wenn Zeit (Bonus):** Letzte-Läufe-Liste, System-Status/Counts, Quellen-Liste.
-- **Nur geplant (nicht heute):** Quellen-Toggle schreibend, Fehler-Retry, Task-Buttons
-  für spätere Epics.
+**Q5 — MVP cut for tonight?**
+- **Must (requested by the user):** "run pipeline now" button end-to-end,
+  protected, async, with run status.
+- **If time allows (bonus):** recent-runs list, system status/counts, source list.
+- **Only planned (not today):** writable source toggle, error retry, task buttons
+  for later epics.
 
 ---
 
-## Datenmodell
+## Data model
 
 `pipeline_runs`:
 - `id`, `trigger` (`manual` | `cron`), `mode` (`full` | `ingestion` | `enrichment`),
   `status` (`running` | `success` | `failed`), `started_at`, `finished_at` (nullable),
   `summary` JSONB (per-source ingestion + enrichment counts), `error` (nullable).
-- „Ein Lauf gleichzeitig"-Guard: neuer Lauf nur, wenn kein `status='running'` existiert
-  (bzw. keiner jünger als ein Stale-Timeout).
+- "One run at a time" guard: a new run is only started if no `status='running'` row exists
+  (or none younger than a stale timeout).
 
-## Task-Ausführung
-- `runDailyPipeline(db, { mode })` in `src/lib/pipeline.ts` — von Cron und Admin genutzt.
-- Admin-API `POST /api/admin/run` (token-gated): legt `pipeline_runs`-Zeile (`running`)
-  an, startet `runDailyPipeline` **ohne await** (fire-and-forget im Always-on-Container,
-  ADR 0006), schreibt am Ende `success`/`failed` + `summary`. Gibt sofort die Run-ID zurück.
-- `src/jobs/daily.ts` schreibt ebenfalls eine `pipeline_runs`-Zeile (`trigger='cron'`),
-  damit Cron-Läufe in der Admin-Historie auftauchen.
+## Task execution
+- `runDailyPipeline(db, { mode })` in `src/lib/pipeline.ts` — used by cron and admin.
+- Admin API `POST /api/admin/run` (token-gated): creates a `pipeline_runs` row (`running`),
+  starts `runDailyPipeline` **without awaiting** (fire-and-forget in the always-on container,
+  ADR 0006), writes `success`/`failed` + `summary` at the end. Returns the run ID immediately.
+- `src/jobs/daily.ts` also writes a `pipeline_runs` row (`trigger='cron'`),
+  so cron runs show up in the admin history.
 
-## Auth (Shared-Secret)
-- Env `ADMIN_TOKEN` (optional). Ungesetzt ⇒ Admin deaktiviert (503/Hinweis).
-- `/admin/login`: Formular nimmt Token, vergleicht (constant-time) mit `ADMIN_TOKEN`,
-  setzt httpOnly-Cookie `admin_session` (Wert = Hash/HMAC des Tokens, nicht das Token selbst).
-- Alle `/admin/*`-Seiten + `/api/admin/*`-Routen prüfen das Cookie. Kein Cookie ⇒ Redirect
-  auf Login bzw. 401.
+## Auth (shared secret)
+- Env `ADMIN_TOKEN` (optional). Unset ⇒ admin disabled (503/notice).
+- `/admin/login`: form takes a token, compares it (constant-time) against `ADMIN_TOKEN`,
+  sets an httpOnly cookie `admin_session` (value = hash/HMAC of the token, not the token itself).
+- All `/admin/*` pages + `/api/admin/*` routes check the cookie. No cookie ⇒ redirect
+  to login or 401.
 
 ## UI
-- `/admin` (geschützt): Status-Kacheln (DB, Key, Counts) · „Pipeline ausführen"-Buttons
-  (voll/ingestion/enrichment) mit Live-Laufanzeige · Tabelle „Letzte Läufe".
-- Nav-Eintrag „Admin" nur dezent (rechts). `force-dynamic`.
+- `/admin` (protected): status tiles (DB, key, counts) · "run pipeline" buttons
+  (full/ingestion/enrichment) with a live run indicator · a "recent runs" table.
+- Nav entry "Admin" kept subtle (on the right). `force-dynamic`.
 
-## Betrieb / Benutzer-Aktionen
-- **`ADMIN_TOKEN` in Railway setzen** (Web-Service), sonst ist Admin aus.
-- Der Web-Service braucht **`ANTHROPIC_API_KEY`** (für den Run-Button), da die Pipeline
-  dort ausgeführt wird — als Referenz auf die Projekt-Shared-Variable ergänzen.
+## Operations / user actions
+- **Set `ADMIN_TOKEN` in Railway** (web service), otherwise admin stays off.
+- The web service needs **`ANTHROPIC_API_KEY`** (for the run button), since the pipeline
+  runs there — add it as a reference to the project shared variable.
 
-## Offene Punkte
-- Echte Job-Logs (stdout) in der Admin-UI zeigen wäre schön, ist aber ohne Log-Sammler
-  aufwändig — MVP zeigt die strukturierte `summary` statt roher Logs.
-- Stale-Run-Erkennung (Container-Neustart mitten im Lauf) — simple Zeitgrenze im MVP.
+## Open points
+- Showing real job logs (stdout) in the admin UI would be nice, but is expensive
+  without a log collector — the MVP shows the structured `summary` instead of raw logs.
+- Stale-run detection (container restart mid-run) — a simple time bound in the MVP.

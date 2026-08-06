@@ -1,51 +1,53 @@
-# Epic 16 — Refactoring-Agent (nächtlicher Claude-Code-Cron, geparkt)
+# Epic 16 — Refactoring agent (nightly Claude Code cron, parked)
 
-> **Status: GEPARKT** — auf Benutzerwunsch als Epic vorgemerkt. Vor Umsetzung eigener Grill
-> (+ ggf. ADR). Nicht ohne Benutzer-Go bauen. Verwandt mit T4 (Design-Experten-Session) und
-> **T6** (Ausführung über Claude-Code-Routinen — geteilte Scheduling-/Kontingent-Mechanik).
+> **Status: PARKED** — noted as an epic at the user's request. Needs its own grill
+> (+ possibly an ADR) before implementation. Do not build without user go-ahead.
+> Related to T4 (design expert session) and **T6** (execution via Claude Code
+> routines — shared scheduling/quota mechanics).
 
-**Ziel:** Ein wiederkehrender Agent (analog zur Design-Experten-Session, aber **als
-Claude-Code-Cron/Routine**), der **nachts über das Repo geht**, Verbesserungspotenzial findet
-und **konkrete Vorschläge** liefert — Refactoring, Vereinfachung, Testlücken, Dead-Code,
-Inkonsistenzen zu ADRs/Konventionen — ohne selbst Risiko einzubauen.
+**Goal:** A recurring agent (analogous to the design expert session, but **as a
+Claude Code cron/routine**) that **goes through the repo at night**, finds
+opportunities for improvement, and delivers **concrete suggestions** — refactoring,
+simplification, test gaps, dead code, inconsistencies with ADRs/conventions —
+without introducing any risk of its own.
 
-> **Update 2026-08-03 — ADR 0025 (generischer Task-Queue) wurde ABGELEHNT.** Der Grill ergab: es
-> gibt genau *einen* Kandidaten-Consumer für so eine Queue, nämlich dieses Epic — und `pipeline_runs`
-> deckt bereits Status-Lifecycle, beide Zeitstempel, `summary` (jsonb) und `error` ab. Falls Epic 16
-> gebaut wird, bekommt es daher **einen eigenen Trigger** (gleiche Form wie `beginRun`/`runAndFinish`
-> beim Daily-Job), keine generische Handler-Registry. Erst ein *zweiter* echter Async-Fall würde die
-> Queue wieder aufmachen.
+> **Update 2026-08-03 — ADR 0025 (generic task queue) was REJECTED.** The grill found:
+> there is exactly *one* candidate consumer for such a queue, namely this epic — and
+> `pipeline_runs` already covers status lifecycle, both timestamps, `summary` (jsonb),
+> and `error`. If Epic 16 gets built, it therefore gets **its own trigger** (same shape
+> as `beginRun`/`runAndFinish` in the daily job), not a generic handler registry. Only a
+> *second* real async use case would reopen the queue question.
 
-**Referenzen:** CLAUDE.md („Design-Prozess" Review-Mindest-Checkliste), `future-todos.md` T4
-(Muster Experten-Session), Epic 16 teilt die CC-Routine-Mechanik mit `future-todos.md` T6.
-Nutzt Claude-Code-**Kontingent** statt API-Tokens (wie T6).
+**References:** CLAUDE.md ("design process" review minimum checklist), `future-todos.md` T4
+(expert session pattern), Epic 16 shares CC routine mechanics with `future-todos.md` T6.
+Uses Claude Code **quota** instead of API tokens (like T6).
 
 ## Motivation
-- Code wächst über viele Epics/Subagenten; niemand schaut regelmäßig ganzheitlich auf Qualität.
-- Nachts ist ohnehin Leerlauf — ein Kontingent-basierter Routine-Lauf kostet kein API-Geld.
-- Passt zum etablierten Muster „Experten-Agent mit klarem Mindset" (wie Design/Persona).
+- Code grows across many epics/subagents; nobody regularly looks at quality holistically.
+- Nighttime is idle anyway — a quota-based routine run costs no API money.
+- Fits the established pattern of "expert agent with a clear mindset" (like design/persona).
 
-## Offene Design-Fragen (im Grill zu klären)
-- **Output-Form:** nur **Report/„Findings-Liste"** (Mensch entscheidet), oder direkt ein
-  **PR-Entwurf** mit kleinen, sicheren Änderungen? (Konservativ: Vorschläge/PR-Entwurf, Merge
-  bleibt beim Menschen — nichts wird nachts eigenmächtig auf `main` gebracht.)
-- **Scope pro Lauf:** ganzes Repo vs. **rotierender Ausschnitt** (Kontext-/Kostengrenzen) —
-  z. B. jede Nacht ein anderes Modul/Verzeichnis.
-- **Was zählt als „Verbesserung":** Refactoring/Duplikate, Vereinfachung, Testabdeckung,
-  ADR-/Konventions-Konformität (CLAUDE.md), Dead-Code, offensichtliche Perf/Kosten. **Kein**
-  Feature-Scope, keine großen Rewrites ohne Freigabe.
-- **Nicht-Regression (hart):** Der Agent darf **nichts kaputt machen** — Vorschläge müssen
-  Build + Tests grün lassen; automatisch angelegte Branches laufen erst durch CI/Review.
-- **Kadenz + Kosten:** nächtliche Routine; Kontingent-Nutzung (teilt Infrastruktur mit T6);
-  Guardrails gegen Scope-Creep / Endlos-Refactoring.
-- **Zusammenspiel mit dem Review-Prozess:** Findings landen als priorisierte Liste, die das
-  starke Modell (oder der Benutzer) triagiert — kein paralleler „zweiter Wahrheits-Kanal".
+## Open design questions (to clarify in the grill)
+- **Output form:** just a **report/"findings list"** (human decides), or directly a
+  **draft PR** with small, safe changes? (Conservative: suggestions/draft PR, merge
+  stays with the human — nothing gets pushed to `main` unilaterally at night.)
+- **Scope per run:** whole repo vs. **rotating slice** (context/cost limits) —
+  e.g. a different module/directory each night.
+- **What counts as "improvement":** refactoring/duplicates, simplification, test
+  coverage, ADR/convention compliance (CLAUDE.md), dead code, obvious perf/cost. **No**
+  feature scope, no large rewrites without approval.
+- **Non-regression (hard):** the agent must **not break anything** — suggestions must
+  leave build + tests green; auto-created branches only go through CI/review afterward.
+- **Cadence + cost:** nightly routine; quota usage (shares infrastructure with T6);
+  guardrails against scope creep / endless refactoring.
+- **Interplay with the review process:** findings land as a prioritized list that the
+  strong model (or the user) triages — no parallel "second channel of truth".
 
-## Grobe Skizze (unverbindlich)
-- **Claude-Code-Routine (nightly)** → Agent liest Repo (bzw. rotierenden Ausschnitt) + CLAUDE.md/
-  ADRs → erzeugt einen **priorisierten Refactoring-Report** (`docs/…` oder Issue) + optional
-  einen **Branch mit kleinen, sicheren Verbesserungen** als PR-Entwurf → normaler Review/Merge.
-- Guardrails: harte Größenlimits pro Vorschlag, „nur grün", keine ADR-Verletzung, kein Feature-Scope.
+## Rough sketch (non-binding)
+- **Claude Code routine (nightly)** → agent reads the repo (or a rotating slice) + CLAUDE.md/
+  ADRs → produces a **prioritized refactoring report** (`docs/…` or issue) + optionally
+  a **branch with small, safe improvements** as a draft PR → normal review/merge.
+- Guardrails: hard size limits per suggestion, "green only", no ADR violation, no feature scope.
 
-## Abweichungen/Fragen
-_(erst nach Grill zu befüllen)_
+## Deviations/Questions
+_(to be filled in only after the grill)_

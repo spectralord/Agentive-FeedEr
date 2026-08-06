@@ -249,7 +249,7 @@ layer 2 ("could become quite large"). **Note the subagent's own flagged uncertai
 this** — whether the 8 hand-placed regions hold up as nodes accumulate. It does not, at 3 nodes.
 Fold into whatever answers per-theme overflow.
 
-## Abweichungen / Fragen
+## Deviations / Questions
 
 *(Subagent: record here rather than guessing — `README.md` §1.4.)*
 

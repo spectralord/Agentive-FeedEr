@@ -1,67 +1,67 @@
-# ADR 0013 — Topic-Clustering: Match-or-Propose, enge Granularität, `is_primary`
+# ADR 0013 — Topic clustering: match-or-propose, narrow granularity, `is_primary`
 
-- Status: akzeptiert (Design; Umsetzung offen)
-- Datum: 2026-07-23
-- Baut auf: ADR 0009 (Match-or-Propose beim SkillTagging — Muster-Vorlage),
-  ADR 0012 (Topic-Knowledge-Check rechnet auf Clustern), ADR 0008 (Schichten),
-  ADR 0004 (abgeleitete Ansichten), ADR 0003 (null statt Halluzination).
-- Voraussetzung für: Epic 11 (Topic-Knowledge-Check), Content-Bündelung (Content-Modell C).
+- Status: accepted (design; implementation open)
+- Date: 2026-07-23
+- Builds on: ADR 0009 (match-or-propose in skill tagging — the pattern template),
+  ADR 0012 (topic knowledge check computes on clusters), ADR 0008 (layers),
+  ADR 0004 (derived views), ADR 0003 (null instead of hallucination).
+- Prerequisite for: Epic 11 (topic knowledge check), content bundling (content model C).
 
-## Kontext / Problem
+## Context / Problem
 
-Content-Modell C und der Topic-Knowledge-Check (ADR 0012) brauchen eine **Recheneinheit**,
-die „mehrere Quellen zu *einem* Thema" fasst: das ist ein **Topic-Cluster**. Offen war,
-**wie** Cluster gebildet werden (Stabilität, Granularität), wie sie sich zur breiten
-Skill-Ebene (Epic 12) verhalten und wie man „**unabhängige** Quellen" für die spätere
-Korroboration ehrlich zählt, ohne dass Reblogs die Zahl aufblähen.
+Content model C and the topic knowledge check (ADR 0012) need a **unit of computation**
+that groups "multiple sources on *one* topic": that is a **topic cluster**. Open
+questions were **how** clusters are formed (stability, granularity), how they relate to
+the broad skill level (Epic 12), and how to honestly count "**independent**"
+sources for later corroboration, without reblogs inflating the count.
 
-## Entscheidung
+## Decision
 
-1. **Bildung = Match-or-Propose gegen aktive Cluster** (analog ADR 0009). Jedes neue Reel
-   wird per LLM-Pass entweder einem bestehenden Cluster innerhalb eines Zeitfensters
-   zugeordnet (**Match**) oder begründet einen neuen (**Propose**). Das hält Cluster über
-   die Zeit **stabil** (kein Neu-Würfeln pro Lauf) und den LLM-Kontext beschränkt.
-   Embeddings/Schwellwert sind eine spätere Skalierungs-Naht, nicht Teil des MVP.
+1. **Formation = match-or-propose against active clusters** (analogous to ADR 0009). Each
+   new Reel is either assigned via LLM pass to an existing cluster within a
+   time window (**match**) or justifies a new one (**propose**). This keeps clusters
+   **stable** over time (no re-rolling per run) and bounds the LLM context.
+   Embeddings/threshold are a later scaling seam, not part of the MVP.
 
-2. **Granularität = eng / feature- bzw. meldungs-spezifisch.** Ein Cluster fasst Inhalte zu
-   *einem konkreten Ding und seiner Verwendung* („der Batch-Command"), nicht zur generischen
-   Fähigkeit. Nur so ist eine spätere Korroborations-Zahl ehrlich (unabhängige Quellen zum
-   *selben spezifischen* Claim, nicht themen-weit vermischt).
+2. **Granularity = narrow / feature- or announcement-specific.** A cluster groups content
+   about *one concrete thing and its usage* ("the batch command"), not the generic
+   capability. Only this way is a later corroboration number honest (independent sources
+   on the *same specific* claim, not mixed topic-wide).
 
-3. **Die breite thematische Ebene ist die Skill-Node (Epic 12), kein zweiter Cluster-Typ.**
-   Ein Reel trägt zwei „Peer-Mengen": den **engen Topic-Cluster** (Epic 15) für
-   Korroboration/Freshness und eine/mehrere **Skill-Nodes** (Epic 12) für die breite
-   thematische Wissens-/Browsing-Sicht. Es gibt bewusst **keine** eigenständige
-   zweistufige Cluster-Hierarchie.
+3. **The broad thematic level is the skill node (Epic 12), not a second cluster type.**
+   A Reel carries two "peer sets": the **narrow topic cluster** (Epic 15) for
+   corroboration/freshness, and one or more **skill nodes** (Epic 12) for the broad
+   thematic knowledge/browsing view. There is deliberately **no** standalone
+   two-tier cluster hierarchy.
 
-4. **Unabhängigkeit via `is_primary` pro Cluster-Mitglied, bewusst grob.** Der Clustering-Pass
-   markiert je Reel, ob es eine **eigenständige/first-hand** Aussage ist (offizielle
-   Primärquelle, eigener Test, Erfahrungsbericht) oder die erkennbare **Wiedergabe** eines
-   anderen Cluster-Mitglieds (Reblog). Die eigentliche `confidence` leitet **Epic 11** daraus
-   als **grobe Skala (few/some/strong)** ab — nicht als exakte Zahl —, damit Fehler beim
-   Echo-Erkennen kaum durchschlagen.
+4. **Independence via `is_primary` per cluster member, deliberately coarse.** The clustering
+   pass marks, per Reel, whether it is an **independent/first-hand** statement (official
+   primary source, own test, experience report) or a recognizable **restatement** of
+   another cluster member (reblog). The actual `confidence` is derived by **Epic 11**
+   from this as a **coarse scale (few/some/strong)** — not an exact number —
+   so that errors in echo detection barely propagate.
 
-## Alternativen
+## Alternatives
 
-- **Batch-Clustering / Embeddings ab Start:** mächtiger, aber instabil (Cluster wandern pro
-  Lauf) bzw. neue Infrastruktur ohne aktuellen Skalierungsdruck. Verworfen zugunsten
-  Match-or-Propose; Embeddings bleiben spätere Option.
-- **Weite Granularität (Feature-Familie) als Cluster:** verwässert die Korroborations-Zahl
-  (Quellen über verschiedene Claims gezählt). Verworfen — Weite liegt bei der Skill-Node.
-- **Eigene zweistufige Cluster-Hierarchie** (enger Cluster + thematischer Über-Cluster):
-  dritter Gruppierungsbegriff neben Tag und Skill-Node, mehr Maschinerie ohne Zusatznutzen,
-  da die Skill-Node die breite Ebene bereits liefert. Verworfen.
-- **Reine `source`-Zählung für „unabhängig":** durch Reblogs verfälscht (Echo zählt wie
-  Primär). Verworfen zugunsten `is_primary`.
+- **Batch clustering / embeddings from the start:** more powerful, but unstable (clusters
+  drift per run) or new infrastructure without current scaling pressure. Rejected in favor
+  of match-or-propose; embeddings remain a later option.
+- **Wide granularity (feature family) as cluster:** dilutes the corroboration number
+  (sources counted across different claims). Rejected — breadth belongs at the skill node.
+- **A separate two-tier cluster hierarchy** (narrow cluster + thematic super-cluster):
+  a third grouping concept alongside tag and skill node, more machinery without added
+  benefit, since the skill node already provides the broad level. Rejected.
+- **Plain `source` counting for "independent":** distorted by reblogs (echo counts like
+  primary). Rejected in favor of `is_primary`.
 
-## Konsequenzen
+## Consequences
 
-- Neues Schema: Tabelle `topic_clusters`, `reels.topic_cluster_id` (aktiviert, FK),
-  `reels.is_primary`. Neuer Pipeline-Schritt nach Enrichment/SkillTagger (Cron + Admin-Button),
-  fehlertolerant und idempotent.
-- Feed bündelt Cluster als Stapelkarte („N Quellen zu diesem Thema"), Primär oben.
-- Epic 11 (Topic-Knowledge-Check) wird baubar: `confidence` aus `is_primary`, `freshness`/
-  Supersession als geerdeter Vergleich der Cluster-Mitglieder; beide propagieren auf
-  referenzierende Items (ADR 0012).
-- Externe Web-Korroboration (Quellen aktiv erweitern) bleibt außerhalb dieses ADR und rührt
-  an ADR 0001 → eigener Entscheid.
+- New schema: table `topic_clusters`, `reels.topic_cluster_id` (nullable, FK),
+  `reels.is_primary`. New pipeline step after enrichment/SkillTagger (cron + admin button),
+  fault-tolerant and idempotent.
+- Feed bundles clusters as a stacked card ("N sources on this topic"), primary on top.
+- Epic 11 (topic knowledge check) becomes buildable: `confidence` from `is_primary`,
+  `freshness`/supersession as a grounded comparison of cluster members; both propagate to
+  referencing items (ADR 0012).
+- External web corroboration (actively expanding sources) stays outside this ADR and
+  touches ADR 0001 → its own decision.

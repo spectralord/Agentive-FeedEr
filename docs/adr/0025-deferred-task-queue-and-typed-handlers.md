@@ -58,8 +58,8 @@ abstract. The answers are recorded inline. Summary of why they add up to a rejec
    once, injected everywhere*. A type-erased handler registry beside that is a second orchestration
    model to keep consistent forever.
 3. **The list of genuinely async work is one item long, and it is unbuilt.** Epic 16 (nightly
-   refactoring agent) is the only named case, and it is itself `GEPARKT — Vor Umsetzung eigener
-   Grill`. Everything else the queue was imagined for has since been answered elsewhere: write-up
+   refactoring agent) is the only named case, and it is itself `PARKED — requires its own grill
+   before implementation`. Everything else the queue was imagined for has since been answered elsewhere: write-up
    generation is synchronous and user-triggered (ADR 0024), and the daily pipeline already has its
    own trigger and run tracking.
 4. **The poll/stale interaction is a real defect in the proposal, not a detail.** `STALE_RUN_MS` is

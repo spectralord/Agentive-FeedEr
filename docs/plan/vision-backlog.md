@@ -1,47 +1,47 @@
-# Vision-Backlog (optional, nur nach explizitem Benutzer-Go)
+# Vision backlog (optional, only after explicit user go-ahead)
 
-Bewusst grob gehaltene Skizzen — vor Umsetzung je ein kurzes Grill-Gespräch mit dem
-Benutzer führen und ggf. einen ADR ergänzen.
+Deliberately rough sketches — hold a short grill conversation with the user before
+implementation and add an ADR if needed.
 
-## V1 — Topic-Clustering (Content-Modell C)
-- Ziel: mehrere Quellen zum selben Thema bündeln (das reservierte
-  `reels.topic_cluster_id` aktivieren).
-- Skizze: neue Tabelle `topic_clusters { id, title, created_at }`. Im Daily-Job nach
-  dem Enrichment ein Batch-Call: Titel+Summaries der letzten 7 Tage → Cluster-Vorschläge;
-  Zuordnung nur bei hoher Sicherheit, sonst null. Feed zeigt gebündelte Reels als
-  Stapel-Karte („3 Quellen zu diesem Thema").
-- Vorbedingung: Feed fühlt sich nachweislich repetitiv an (sonst nicht bauen).
+## V1 — Topic clustering (content model C)
+- Goal: bundle multiple sources on the same topic (activate the reserved
+  `reels.topic_cluster_id`).
+- Sketch: new table `topic_clusters { id, title, created_at }`. In the daily job, after
+  enrichment, one batch call: titles+summaries of the last 7 days → cluster proposals;
+  assignment only with high confidence, otherwise null. Feed shows bundled reels as a
+  stacked card ("3 sources on this topic").
+- Precondition: the feed demonstrably feels repetitive (otherwise don't build).
 
-## V2 — Generierte Beispiele (Erweiterung von ADR 0005)
-- Env-Flag `ALLOW_GENERATED_EXAMPLES=false` (Default). Wenn aktiviert: fehlt ein
-  belegtes `example`, darf ein zweiter, expliziter Call ein Beispiel generieren —
-  Anzeige zwingend mit Warn-Label „⚠️ KI-generiert, ungeprüft", gespeichert in
-  `metadata.generated_example` (nie im `example`-Feld — belegt und generiert bleiben
-  getrennt).
-- Vorbedingung: ADR 0005 um diese Erweiterung fortschreiben (Status-Update).
+## V2 — Generated examples (extension of ADR 0005)
+- Env flag `ALLOW_GENERATED_EXAMPLES=false` (default). If enabled: if a sourced
+  `example` is missing, a second, explicit call may generate an example — display
+  mandatorily with a warning label "⚠️ AI-generated, unverified", stored in
+  `metadata.generated_example` (never in the `example` field — sourced and generated
+  stay separate).
+- Precondition: extend ADR 0005 with this addition (status update).
 
-## V3 — Audio-Modus (TTS)
-- „Heute anhören": Top-N-Summaries zu einem Audio-Snippet (TTS-Anbieter offen —
-  vor Umsetzung wählen), Player auf `/today`. Kein Podcast-Feed im ersten Schritt.
+## V3 — Audio mode (TTS)
+- "Listen today": turn Top-N summaries into an audio snippet (TTS provider open —
+  choose before implementation), player on `/today`. No podcast feed in the first step.
 
-## V4 — Teilen mit Kollegen / Team-Feed
-- Stufe 1: Read-only-Zugang hinter einfachem Shared-Secret (Env `ACCESS_PASSWORD`,
-  Middleware-Check, Cookie) — kein Account-System.
-- Stufe 2 (nur bei echtem Bedarf): getrennte Profile/Saves je Person ⇒ dann echtes
-  Auth (z. B. Auth.js), eigene Grill-Session vorab (ändert Datenmodell: user_id-Spalten).
-- Datenschutz-Hinweis: ab Stufe 1 ist das Tool nicht mehr „nur privat" — Quellen-
-  Nutzungsbedingungen kurz prüfen.
+## V4 — Sharing with colleagues / team feed
+- Stage 1: read-only access behind a simple shared secret (env `ACCESS_PASSWORD`,
+  middleware check, cookie) — no account system.
+- Stage 2 (only on real demand): separate profiles/saves per person ⇒ then real
+  auth (e.g. Auth.js), own grill session beforehand (changes the data model: user_id columns).
+- Privacy note: from stage 1 onward the tool is no longer "private only" — briefly
+  check source terms of use.
 
-## V5 — Betriebs-Nettigkeiten
-- Wöchentliche Digest-Mail (Top der Woche) · Health-Alarm, wenn Daily-Job 2× in Folge
-  scheitert (einfacher Webhook/Mail) · Backfill-Kommando für neue Quellen
+## V5 — Operational niceties
+- Weekly digest email (top of the week) · health alert if the daily job fails 2×
+  in a row (simple webhook/mail) · backfill command for new sources
   (`npm run job:backfill -- --source=<name> --days=90`).
 
-## V6 — Reddit via OAuth (TODO, Benutzerwunsch)
-- Reddit blockt serverseitigen/Cloud-IP-Zugriff auf die `.rss`-Feeds (403/429). Deshalb
-  sind `reddit-claudeai` und `reddit-localllama` in `sources.ts` mit `disabled: true`.
-- Für echten Zugriff: eine Reddit-App (Typ „script") registrieren (client id/secret),
-  Client-Credentials-Token holen, gegen `oauth.reddit.com` mit sauberem User-Agent und
-  Rate-Limits abfragen. Neuer Fetcher-Typ `reddit_oauth` (Secrets als Env-Vars).
-- Passt thematisch zu den **kuratierten Erfahrungsberichten** (Thema 1/Epic 9-Folge:
-  Tipps aus Comment-Sections) — dort gemeinsam angehen. Reaktivieren = `disabled` entfernen.
+## V6 — Reddit via OAuth (TODO, user request)
+- Reddit blocks server-side/cloud-IP access to the `.rss` feeds (403/429). That's why
+  `reddit-claudeai` and `reddit-localllama` are set to `disabled: true` in `sources.ts`.
+- For real access: register a Reddit app (type "script") (client id/secret), obtain a
+  client-credentials token, query against `oauth.reddit.com` with a clean user agent and
+  rate limits. New fetcher type `reddit_oauth` (secrets as env vars).
+- Fits thematically with the **curated experience reports** (theme 1/Epic 9 follow-up:
+  tips from comment sections) — tackle together there. Reactivate = remove `disabled`.

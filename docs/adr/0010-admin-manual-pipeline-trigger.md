@@ -1,42 +1,43 @@
-# ADR 0010 — Admin-Console: manueller Pipeline-Trigger + Shared-Secret-Gate
+# ADR 0010 — Admin console: manual pipeline trigger + shared-secret gate
 
-- Status: akzeptiert (autonome Session, Benutzer-Veto vorbehalten)
-- Datum: 2026-07-22
-- Berührt: ADR 0002 (Pipeline), ADR 0006 (Always-on-Container)
+- Status: accepted (autonomous session, user veto reserved)
+- Date: 2026-07-22
+- Touches: ADR 0002 (pipeline), ADR 0006 (always-on container)
 
-## Kontext / Problem
+## Context / Problem
 
-Der tägliche Cron-Task soll auch **manuell per Knopf** aus der App ausgelöst werden
-können (Operator-Bedürfnis). Zwei Probleme: (1) der Task läuft minutenlang und ruft die
-Anthropic-API (Kosten), (2) die App ist unter einer öffentlichen URL erreichbar — ein
-ungeschützter Trigger wäre ein Kosten-/Missbrauchsrisiko.
+The daily cron task should also be triggerable **manually via a button** from the app
+(operator need). Two problems: (1) the task runs for minutes and calls the
+Anthropic API (cost), (2) the app is reachable under a public URL — an
+unprotected trigger would be a cost/abuse risk.
 
-## Entscheidung
+## Decision
 
-1. **Wiederverwendbare Pipeline-Funktion:** Der Kern wird als `runDailyPipeline(db,{mode})`
-   in `src/lib/pipeline.ts` extrahiert; Cron (`jobs/daily.ts`) **und** Admin-API rufen
-   dieselbe Funktion — keine Logik-Duplikation.
-2. **Asynchroner Lauf mit Status-Tabelle:** `POST /api/admin/run` legt eine
-   `pipeline_runs`-Zeile (`running`) an, startet die Pipeline **ohne await** (zulässig im
-   Always-on-Container, ADR 0006) und antwortet sofort mit der Run-ID. Am Ende wird
-   `success`/`failed` + `summary` geschrieben. Ein **„nur ein Lauf gleichzeitig"-Guard**
-   verhindert Überlappung von Button- und Cron-Läufen.
-3. **Shared-Secret-Gate:** Der gesamte Admin-Bereich (`/admin/*`, `/api/admin/*`) ist
-   durch `ADMIN_TOKEN` (Env) geschützt (Login → httpOnly-Cookie). **Ist `ADMIN_TOKEN`
-   nicht gesetzt, ist der Admin-Bereich deaktiviert** (Trigger-API 503) — safe default,
-   kein offener Trigger auf öffentlicher URL.
+1. **Reusable pipeline function:** the core is extracted as `runDailyPipeline(db,{mode})`
+   in `src/lib/pipeline.ts`; cron (`jobs/daily.ts`) **and** the admin API call
+   the same function — no logic duplication.
+2. **Asynchronous run with status table:** `POST /api/admin/run` creates a
+   `pipeline_runs` row (`running`), starts the pipeline **without await** (permitted in
+   the always-on container, ADR 0006) and responds immediately with the run ID. At the
+   end, `success`/`failed` + `summary` is written. A **"only one run at a time"
+   guard** prevents overlap between button and cron runs.
+3. **Shared-secret gate:** the entire admin area (`/admin/*`, `/api/admin/*`) is
+   protected by `ADMIN_TOKEN` (env) (login → httpOnly cookie). **If `ADMIN_TOKEN`
+   is not set, the admin area is disabled** (trigger API 503) — safe default,
+   no open trigger on a public URL.
 
-## Alternativen
+## Alternatives
 
-- **Synchroner Trigger** (Route läuft bis fertig): hängender Request, Timeout-Risiko. Verworfen.
-- **Kein Auth** (Single-User-Annahme): unsicher, da die URL öffentlich ist und LLM-Kosten
-  entstehen. Verworfen.
-- **Volles Auth-System**: Overkill fürs MVP; das Shared-Secret ist die Team-Feed-Vorstufe (V4).
+- **Synchronous trigger** (route runs until finished): hanging request, timeout risk. Rejected.
+- **No auth** (single-user assumption): unsafe, since the URL is public and LLM costs
+  are incurred. Rejected.
+- **Full auth system**: overkill for the MVP; the shared secret is the precursor to the
+  team feed (V4).
 
-## Konsequenzen
+## Consequences
 
-- Cron-Läufe schreiben ebenfalls in `pipeline_runs` → einheitliche Lauf-Historie in der Admin-UI.
-- Neuer Betriebs-Schritt: `ADMIN_TOKEN` setzen (sonst Admin aus); der **Web-Service** braucht
-  jetzt auch `ANTHROPIC_API_KEY` (Pipeline läuft dort beim Button-Klick).
-- Rohe Job-Logs werden nicht gesammelt; die Admin-UI zeigt die strukturierte `summary`.
-- Stale-Run-Erkennung (Container-Neustart mitten im Lauf) ist im MVP nur zeitbasiert.
+- Cron runs also write to `pipeline_runs` → unified run history in the admin UI.
+- New operational step: set `ADMIN_TOKEN` (otherwise admin is off); the **web service**
+  now also needs `ANTHROPIC_API_KEY` (the pipeline runs there on button click).
+- Raw job logs are not collected; the admin UI shows the structured `summary`.
+- Stale-run detection (container restart mid-run) is time-based only in the MVP.

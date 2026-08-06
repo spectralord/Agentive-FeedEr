@@ -1,119 +1,122 @@
-# Design-Prozess — Entwurf zum Grillen (2026-07-23)
+# Design process — draft to be grilled (2026-07-23)
 
-> **Zweck:** Unseren bislang *organisch gewachsenen* Arbeits-/Design-Prozess explizit machen,
-> Lücken benennen und gemeinsam grillen, wie wir ihn bewusst gestalten. Grundlage sind die
-> bereits vereinbarten Bausteine (CLAUDE.md) und die geparkten Ideen (`future-todos.md` T4/T5).
-> Ergebnis des Grills wird in CLAUDE.md (Konventionen) bzw. einem ADR festgehalten.
+> **Purpose:** make our so-far *organically grown* working/design process explicit,
+> name the gaps, and jointly grill how to shape it deliberately. Based on the
+> already agreed-upon building blocks (CLAUDE.md) and the parked ideas (`future-todos.md` T4/T5).
+> The grill's outcome will be recorded in CLAUDE.md (conventions) or an ADR.
 
 ---
 
-## 1. Ist-Zustand (beobachtet, was wir de facto tun)
+## 1. Current state (observed, what we actually do)
 
-**Design-/Entscheidungs-Schleife:**
-1. **Grillen** (grill-with-docs): starkes Modell (Opus) interviewt eine Frage nach der
-   anderen, geerdet an Code + Glossar + bisherigen ADRs.
-2. **Festhalten**: Entscheidungen landen als (a) Glossar-Begriff in `CONTEXT.md`,
-   (b) **ADR** in `docs/adr/`, (c) Task-Plan im Epic-File `docs/plan/epic-*.md`.
-3. **Bauen**: Implementierung wird an **Subagenten (Sonnet)** delegiert — je ein Epic-File,
-   auf einem **eigenen Feature-Branch** (`claude/epic-<N>-<kurz>`), häufige Commits.
-4. **Review**: starkes Modell prüft (Build/Tests grün, Verifikation erfüllt, keine
-   ADR-Verletzung) **vor** dem Merge.
-5. **Merge → Deploy**: Feature-Branch nach `main`, Railway deployt `main`.
+**Design/decision loop:**
+1. **Grill** (grill-with-docs): the strong model (Opus) interviews one question at a
+   time, grounded in code + glossary + prior ADRs.
+2. **Record**: decisions land as (a) a glossary term in `CONTEXT.md`,
+   (b) an **ADR** in `docs/adr/`, (c) a task plan in the epic file `docs/plan/epic-*.md`.
+3. **Build**: implementation is delegated to **subagents (Sonnet)** — one epic file each,
+   on its **own feature branch** (`claude/epic-<N>-<short>`), frequent commits.
+4. **Review**: the strong model checks (build/tests green, verification satisfied, no
+   ADR violation) **before** merging.
+5. **Merge → deploy**: feature branch into `main`, Railway deploys `main`.
 
-**Bereits vereinbarte Regeln (CLAUDE.md):** Modell-Arbeitsteilung, Branch-Strategie,
-häufige Subagenten-Commits, Sprache (UI/Doku Deutsch, Code/Commits Englisch).
+**Already agreed rules (CLAUDE.md):** model division of labor, branch strategy,
+frequent subagent commits, language (UI/docs German, code/commits English).
 
-## 2. Stärken (behalten)
-- Ein-Frage-Grill zwingt zu echten Entscheidungen statt Scheinkonsens.
-- Durable Records (ADR/Glossar/Epic) → Kontext überlebt Context-Kompaktierung & Sessions.
-- Delegation an schwächeres Modell spart Kosten; Review hält Qualität.
-- Branch-Isolation erlaubt parallele Epics ohne Kollision.
+## 2. Strengths (keep)
 
-## 3. Lücken / offene Fragen (Grill-Kandidaten)
+- One-question-at-a-time grilling forces real decisions instead of fake consensus.
+- Durable records (ADR/glossary/epic) → context survives context compaction & sessions.
+- Delegating to a weaker model saves cost; review maintains quality.
+- Branch isolation allows parallel epics without collisions.
 
-- **L1 — ADR-Schwelle:** Wann verdient etwas einen ADR vs. nur eine Epic-Notiz vs. nur einen
-  Glossar-Eintrag? (Heute nach Gefühl.) Klare Trigger fehlen.
-- **L2 — Grillen vs. direkt bauen:** Welche Änderung braucht einen Design-Grill, welche ist
-  mechanisch genug für direkte Delegation? (Untergrenze für „designwürdig".)
-- **L3 — UI/UX-Design hat *keinen* Prozess.** Bislang rein funktional/„dürftig" (eigene
-  Einschätzung des Benutzers). Wo im Lebenszyklus kommt ein bewusster UX-/Gamification-Pass
-  rein? Als **eigene Design-Experten-Session** (T4) mit Übergabe-Prompt? Wann/wie oft?
-- **L4 — Inhalts-/Mehrwert-Bewertung (T5):** Soll ein **Persona-Agent** die *generierten
-  Inhalte* aus Entwickler-Sicht bewerten (Feedback-Loop auf die Produktqualität, nicht den
-  Code)? Wo dockt das an?
-- **L5 — Review-Tiefe:** Wie rigoros prüft das starke Modell Subagenten-Ergebnisse? Fester
-  Checklisten-Umfang vs. situativ?
-- **L6 — „Designed enough to build":** Woran erkennen wir, dass ein Grill *fertig* ist und in
-  einen Plan übergeht? (Exit-Kriterium.)
-- **L7 — Parallelitätsgrad:** Wie viele Epics/Subagenten gleichzeitig, und wie halten wir den
-  Überblick (Task-Board, Status-Tabelle) aktuell?
+## 3. Gaps / open questions (grill candidates)
 
-## 4. Drei Ebenen des Design-Prozesses (Zielbild)
+- **L1 — ADR threshold:** when does something deserve an ADR vs. just an epic note vs. just a
+  glossary entry? (Currently by gut feel.) Clear triggers are missing.
+- **L2 — Grilling vs. building directly:** which changes need a design grill, and which are
+  mechanical enough for direct delegation? (A lower bound for "design-worthy".)
+- **L3 — UI/UX design has *no* process.** So far purely functional/"thin" (the user's own
+  assessment). Where in the lifecycle does a deliberate UX/gamification pass go? As its own
+  **design expert session** (T4) with a handoff prompt? When/how often?
+- **L4 — Content/value assessment (T5):** should a **persona agent** evaluate the *generated
+  content* from a developer's perspective (a feedback loop on product quality, not the
+  code)? Where does that dock in?
+- **L5 — Review depth:** how rigorously does the strong model check subagent results? A fixed
+  checklist scope vs. situational?
+- **L6 — "Designed enough to build":** how do we recognize that a grill is *done* and moves
+  into a plan? (Exit criterion.)
+- **L7 — Degree of parallelism:** how many epics/subagents at once, and how do we keep the
+  overview (task board, status table) up to date?
 
-Jede Ebene braucht **Auslöser** (wann), **Owner** (wer), **Artefakt** (was bleibt):
+## 4. Three levels of the design process (target picture)
 
-| Ebene | Auslöser | Owner | Artefakt |
+Each level needs a **trigger** (when), an **owner** (who), an **artifact** (what remains):
+
+| Level | Trigger | Owner | Artifact |
 |---|---|---|---|
-| **Produkt-/Architektur-Design** | echte Weggabelung / Datenmodell-Änderung | starkes Modell (Opus), Grill | ADR + Epic-Plan + Glossar |
-| **UX-/Gamification-Design** | neues nutzerseitiges Epic *oder* periodischer Ganzheits-Pass | **Design-Experten-Session** (T4) | UX-Spec / Design-ADR + baubare UI-Tasks |
-| **Inhalts-Qualität** | periodisch, Stichprobe generierter Reels | **Persona-Agent** (T5, Zukunftsmusik) | Bewertung → speist Enrichment-Prompt/Threshold |
+| **Product/architecture design** | genuine fork in the road / data model change | strong model (Opus), grill | ADR + epic plan + glossary |
+| **UX/gamification design** | new user-facing epic *or* periodic holistic pass | **design expert session** (T4) | UX spec / design ADR + buildable UI tasks |
+| **Content quality** | periodic, sampling generated reels | **persona agent** (T5, future music) | assessment → feeds into enrichment prompt/threshold |
 
-Heute ist nur die erste Ebene ausgeprägt.
+Today only the first level is developed.
 
-## 5. Vorschlag des starken Modells je offener Frage (im Grill zu bestätigen/kippen)
+## 5. The strong model's proposal per open question (to be confirmed/overturned in the grill)
 
-> Das sind **meine Empfehlungen**, keine getroffenen Entscheidungen — der Benutzer bestätigt
-> oder kippt sie im Grill. Erst dann wandern sie nach CLAUDE.md bzw. in einen ADR.
+> These are **my recommendations**, not decisions already made — the user confirms
+> or overturns them in the grill. Only then do they move into CLAUDE.md or an ADR.
 
-- **L1 — ADR-Schwelle → Vorschlag:** ADR, wenn eine Entscheidung (a) schwer reversibel ist
-  oder Struktur/Datenmodell prägt, (b) eine plausible Alternative *verwirft*, die man sich
-  merken sollte, oder (c) von späterer Arbeit referenziert wird. Sonst reicht Glossar (neuer
-  Begriff) oder Epic-Notiz (lokales Detail). Faustregel: *„Würde ein künftiges Ich/ein
-  Subagent das ohne das Warum falsch wiederholen?"* → ADR.
-- **L2 — Grillen vs. direkt bauen → Vorschlag:** Grillen bei echter Weggabelung mit
-  Trade-offs, unklarer Intention oder querschnittlicher Wirkung. Direkt delegieren bei
-  mechanischen/klar spezifizierten Tasks. Lackmustest: *„Kann ich die Epic-Tasks eindeutig
-  schreiben, ohne eine Entscheidung zu treffen?"* ja → bauen, nein → grillen.
-- **L3 — UX-Design-Prozess → Vorschlag:** Eigener **UX-/Gamification-Pass** als distinkte
-  Phase, ausgelöst (a) *vor* dem Bau jedes nutzerseitigen Epics mit neuen Screens/Interaktionen
-  und (b) einmal jetzt als **Ganzheits-Review** (weil UX aktuell dürftig). Owner: die geparkte
-  **T4-Design-Experten-Session** (Opus/Design-Agent, umfassender Übergabe-Prompt, Mindset
-  Gamification + gute UX). Artefakt: UX-Spec/Design-ADR + konkrete, baubare UI-Tasks.
-- **L4 — Persona-Loop (T5) → Vorschlag:** Zukunftsmusik lassen, aber Andockpunkt definieren:
-  Persona-Agent zieht periodisch Stichproben generierter Reels, bewertet Entwickler-Mehrwert;
-  Ergebnis fließt in Enrichment-Prompt/`QUALITY_THRESHOLD`-Tuning. Nicht jetzt bauen.
-- **L5 — Review-Tiefe → Vorschlag:** Feste **Mindest-Checkliste** (Build grün, Tests grün,
-  Task-Verifikationen ausgeführt, keine ADR-Verletzung, keine neuen Libs, Diff auf das Epic
-  begrenzt) **plus** situativ tiefer bei architektonisch bedeutsamen Änderungen.
-- **L6 — „Designed enough" → Vorschlag:** Exit-Kriterium = jeder Ast des Entscheidungsbaums
-  ist *aufgelöst oder bewusst mit Notiz vertagt*; Epic-Tasks eindeutig mit Verifikationsschritten
-  schreibbar; kein „TBD" im kritischen Pfad.
-- **L7 — Parallelitätsgrad → Vorschlag:** Gleichzeitige Subagenten auf das begrenzen, was das
-  starke Modell gut reviewen kann (~2–3), jeder auf eigenem Branch; **Task-Board + README-
-  Status-Tabelle** als einzige Wahrheitsquelle, an jeder Epic-Grenze aktualisiert.
+- **L1 — ADR threshold → proposal:** an ADR when a decision (a) is hard to reverse
+  or shapes structure/data model, (b) *rejects* a plausible alternative that's worth
+  remembering, or (c) is referenced by later work. Otherwise a glossary entry (new
+  term) or an epic note (local detail) is enough. Rule of thumb: *"would a future me/a
+  subagent get this wrong without knowing the why?"* → ADR.
+- **L2 — Grilling vs. building directly → proposal:** grill on a genuine fork with
+  trade-offs, unclear intent, or cross-cutting effects. Delegate directly for
+  mechanical/clearly specified tasks. Litmus test: *"can I write the epic tasks
+  unambiguously without making a decision?"* yes → build, no → grill.
+- **L3 — UX design process → proposal:** a dedicated **UX/gamification pass** as a
+  distinct phase, triggered (a) *before* building any user-facing epic with new screens/
+  interactions and (b) once now as a **holistic review** (because UX is currently thin).
+  Owner: the parked **T4 design expert session** (Opus/design agent, comprehensive handoff
+  prompt, gamification + good-UX mindset). Artifact: UX spec/design ADR + concrete,
+  buildable UI tasks.
+- **L4 — Persona loop (T5) → proposal:** leave it as future music, but define the
+  docking point: a persona agent periodically samples generated reels, assesses
+  developer value; the result feeds into enrichment-prompt/`QUALITY_THRESHOLD` tuning.
+  Not built now.
+- **L5 — Review depth → proposal:** a fixed **minimum checklist** (build green, tests
+  green, task verifications run, no ADR violation, no new libs, diff limited to the
+  epic) **plus** situationally deeper for architecturally significant changes.
+- **L6 — "Designed enough" → proposal:** exit criterion = every branch of the decision
+  tree is *resolved or deliberately deferred with a note*; epic tasks can be written
+  unambiguously with verification steps; no "TBD" in the critical path.
+- **L7 — Degree of parallelism → proposal:** limit concurrent subagents to what the
+  strong model can review well (~2–3), each on its own branch; **task board + README
+  status table** as the single source of truth, updated at every epic boundary.
 
-## 6. Grill-Protokoll (Selbst-Grill des starken Modells, 2026-07-23 — Benutzer-Override offen)
+## 6. Grill protocol (self-grill by the strong model, 2026-07-23 — user override open)
 
-> Da autonomes Weiterarbeiten gewünscht war und CLAUDE.md dem starken Modell die Design-Hoheit
-> gibt, wurden diese Fragen im **Selbst-Grill** entschieden (beide Seiten durchgespielt). Alles
-> in ADR 0014 + CLAUDE.md festgehalten. Der Benutzer kann jeden Punkt kippen.
+> Since autonomous continued work was desired and CLAUDE.md gives the strong model design
+> authority, these questions were decided in a **self-grill** (both sides played out).
+> Everything recorded in ADR 0014 + CLAUDE.md. The user can overturn any point.
 
-- **F1 — Scope → ENTSCHIEDEN: A, mit B „mitgenommen".** Die günstigen Engineering-Regeln
-  (L1/L2/L5/L6/L7) gelten sofort (kein Nachteil), Schwerpunkt der *aktiven* Arbeit ist die
-  **UX-Ebene (L3)**. Gegenprobe: B-zuerst wäre billiger, schließt aber die größte Produktlücke
-  nicht; „alles integriert" (C) zu langsam. → A sequenziert schlägt beide.
-- **L1 ADR-Schwelle → ENTSCHIEDEN** (siehe CLAUDE.md): schwer reversibel / Struktur / verworfene
-  Alternative / später referenziert ⇒ ADR; sonst Glossar/Epic-Notiz.
-- **L2 Grillen-vs-bauen → ENTSCHIEDEN:** Grillen bei echter Weggabelung; sonst direkt delegieren,
-  wenn Epic-Tasks eindeutig ohne Entscheidung schreibbar sind.
-- **L3 UX-Prozess → ENTSCHIEDEN:** eigener UX-/Gamification-Pass (vor nutzerseitigen Epics +
-  einmal jetzt ganzheitlich) via **Design-Experten-Session**; Übergabe-Prompt liegt unter
+- **Q1 — Scope → DECIDED: A, with B "carried along".** The cheap engineering rules
+  (L1/L2/L5/L6/L7) apply immediately (no downside), the focus of *active* work is the
+  **UX level (L3)**. Counter-check: B-first would be cheaper, but doesn't close the
+  biggest product gap; "everything integrated" (C) too slow. → A sequenced beats both.
+- **L1 ADR threshold → DECIDED** (see CLAUDE.md): hard to reverse / structural / rejected
+  alternative / referenced later ⇒ ADR; otherwise glossary/epic note.
+- **L2 Grilling-vs-building → DECIDED:** grill on a genuine fork; otherwise delegate
+  directly if epic tasks can be written unambiguously without a decision.
+- **L3 UX process → DECIDED:** its own UX/gamification pass (before user-facing epics +
+  once now holistically) via a **design expert session**; handoff prompt lives at
   `docs/specs/design-expert-handoff-prompt.md`.
-- **L4 Persona-Loop → ENTSCHIEDEN:** geparkt (Zukunftsmusik), Andockpunkt dokumentiert.
-- **L5 Review-Tiefe → ENTSCHIEDEN:** feste Mindest-Checkliste + situativ tiefer.
-- **L6 „designed enough" → ENTSCHIEDEN:** jeder Ast aufgelöst/vertagt, Tasks eindeutig
-  schreibbar, kein „TBD" im kritischen Pfad.
-- **L7 Parallelität → ENTSCHIEDEN:** ~2–3 Subagenten, Task-Board + Status-Tabelle als Wahrheit.
+- **L4 Persona loop → DECIDED:** parked (future music), docking point documented.
+- **L5 Review depth → DECIDED:** fixed minimum checklist + situationally deeper.
+- **L6 "designed enough" → DECIDED:** every branch resolved/deferred, tasks writable
+  unambiguously, no "TBD" in the critical path.
+- **L7 Parallelism → DECIDED:** ~2–3 subagents, task board + status table as the source of truth.
 
-**Nächster konkreter Schritt (nutzt der Benutzer, wenn er mag):** die Design-Experten-Session
-mit dem Übergabe-Prompt starten → deren UX-Vorschläge kommen als Review zurück, bevor gebaut wird.
+**Next concrete step (for the user to take, if desired):** start the design expert session
+with the handoff prompt → its UX proposals come back as a review before anything gets built.
