@@ -194,8 +194,6 @@ buildable:
   whatever answers overflow also answers how layer 2 stays legible.
 - **Should `position_locked` be exposed on the node detail page**, or only inside edit mode? Minor,
   but affects whether a curated placement is discoverable as a property of the node.
-- ~~**Mobile zoom-to-constellation**~~ — **RESOLVED by decision 9:** one canonical position, zoom
-  never recomputes layout.
 - **New (decision 8): how is layer 3 entered?** The owner's model is "with enough zoom and changing
   the mode — how, I don't know yet". Options include a zoom threshold, an explicit mode toggle, or
   tapping a root. Deliberately left open; it is an interaction-design question best answered against
