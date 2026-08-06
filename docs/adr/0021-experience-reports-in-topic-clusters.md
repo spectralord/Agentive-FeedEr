@@ -41,7 +41,7 @@ found by checking the code rather than the plan:
 - This would be the *common* case, not an edge case: clusters are narrow and claim-specific by
   ADR 0013 point 2, while ADR 0007's own examples of reports ("how long I keep a session open",
   "when to use which model") are practice-level — i.e. Skill-Node granularity per ADR 0013
-  point 3. Most reports genuinely match no narrow cluster, so the propose path would dominate
+  point 3. Most reports match no narrow cluster, so the propose path would dominate
   and would also consume the `MAX_CLUSTER_CANDIDATES` budget with report-spawned clusters.
 
 An unmatched report is not a failure: its `skill` tag already places it in the broad Skill-Map

@@ -89,8 +89,8 @@ subscription*, not the API, and preferably triggered from the app.
 - **A generic task table + typed handlers + a Claude Code schedule polling every ~15 min.**
   Proposed by the owner as a fallback *in case* the app could not invoke `claude` directly. It can
   (decision 2), so this is not needed here — an HTTP request that shells out synchronously is
-  simpler than a queue plus a poller. The idea is not discarded, only decoupled: it is a genuine
-  architectural question for work that truly must be asynchronous, parked as **ADR 0025
+  simpler than a queue plus a poller. The idea is not discarded, only decoupled: it is an
+  architectural question for work that must be asynchronous, parked as **ADR 0025
   (proposed)** with its open questions written down.
 - **Keep the placeholder indefinitely.** Rejected: the tab was always meant to hold real content;
   ADR 0017's amendment called the placeholder an interim measure for evaluating flow.

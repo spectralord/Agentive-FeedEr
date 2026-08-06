@@ -4,7 +4,7 @@
   **Dependency clarified 2026-08-01:** ADR 0018 (Skill Guides) is now **accepted**, so this ADR is
   no longer waiting on a *decision*. But decision 1 below gates retirement on Guides having
   **shipped**, and ADR 0018 decision 6 gates *its* build on a corpus that does not exist yet — so
-  this remains genuinely blocked, one step further out than it looks. Do not retire SOTA before
+  this remains blocked, one step further out than it looks. Do not retire SOTA before
   Guides are live and demonstrably carrying the comparative load SOTA carries today.
 - Date: 2026-07-24
 - Related: ADR 0004 (derived labels — this ADR does **not** overturn it), Epic 5 (`/overview`),
@@ -78,7 +78,7 @@ moved since you last read. **The Guide is what the SOTA section was trying to be
 
 - `SotaSection.tsx` and `groupSota()` are removed once Guides ship; `isSota` moves to filter-only
   usage. `/overview` becomes `/archive` (route rename, one nav entry moved into the Library hub).
-- Archive gains search — a genuinely new capability, currently absent app-wide.
+- Archive gains search — a new capability, currently absent app-wide.
 - Anything relying on SOTA framing must migrate to Guides; nothing in the pipeline does today
   (`isSota` is display-side only, per ADR 0004), so the blast radius is UI-only.
 - Some content becomes unreachable via the "best of" framing: reels with `skill = null` have no

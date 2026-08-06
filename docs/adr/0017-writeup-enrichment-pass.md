@@ -16,9 +16,9 @@
 
 ## Context / Problem
 
-The UX design for the Reel Detail view includes a "Write-up" tab: a genuinely longer, more
-discursive piece of writing than the Compact card's one-paragraph `summary` — closer to "what does
-this actually mean, what's the context, what would I compare it to" than a news-brief. No field in
+The UX design for the Reel Detail view includes a "Write-up" tab: a longer, more discursive piece
+of writing than the Compact card's one-paragraph `summary` — closer to "what does this actually
+mean, what's the context, what would I compare it to" than a news-brief. No field in
 `reels` holds this today; `summary` is short by convention (one paragraph), `example` is a short
 sourced snippet, `action` is one sentence. Building the Write-up tab's UI without this field would
 mean either duplicating `summary` (adds a navigation step for zero new information) or leaving the
@@ -37,10 +37,10 @@ this ADR is that change, proposed for grill/review rather than assumed.
    > **AMENDED 2026-07-25 (user decision) — the Write-up tab is never hidden.** The original
    > wording above made the tab conditional on content existing, which would have left it
    > invisible until the enrichment pass ships. The product owner's requirement is the opposite:
-   > **the tab must be present now, before any content exists**, because the point of building
-   > the redesign is to *feel how the surfaces flow together* in a real front end — which cannot
-   > be evaluated from a static prototype, and cannot be evaluated at all for a tab that isn't
-   > rendered. So: when `writeup IS NULL`, the tab still renders, showing **explicitly-marked
+   > **the tab must be present now, before any content exists**, because the redesign needs to be
+   > evaluated as a real front end with surfaces that flow together — which a static prototype
+   > cannot show, and a tab that isn't rendered cannot show at all. So: when `writeup IS NULL`, the
+   > tab still renders, showing **explicitly-marked
    > placeholder content** (clearly labelled as such — not silently duplicated `summary` text
    > passed off as real). The §2.2 tab-hiding rule continues to apply to **Context and Skill**,
    > and Write-up remains the one tab that is always shown, exactly as §2.2 already states.
@@ -69,7 +69,7 @@ this ADR is that change, proposed for grill/review rather than assumed.
 ## Alternatives
 
 - **Lengthen `summary` itself instead of adding a field:** simpler schema, but conflates two
-  different jobs — a fast-scan compact summary and a genuinely longer piece — forcing Compact to
+  different jobs — a fast-scan compact summary and a longer piece — forcing Compact to
   either show all of it (defeats the "compact" card's purpose, reintroduces the over-long-card
   problem earlier iterations moved away from) or truncate awkwardly. Rejected in favor of a
   separate field with a separate purpose.

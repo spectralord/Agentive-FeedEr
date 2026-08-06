@@ -10,11 +10,11 @@
 
 ## 2. Model & Execution Restrictions
 - **No Subagents:** Standardize strictly on **Claude 5 Sonnet** (or current primary single-agent). Do not delegate tasks to subagents. Execute all implementations directly in this session.
-- **Forced Script Blocklist:** You are EXPLICITLY FORBIDDEN from running backend automated loops or data syncs:
-  * Do NOT run `npm run pipeline`
-  * Do NOT run `npm run enrich`
-  * Do NOT run `npm run sync`
-  If verification is required, use mock unit tests. Real data automation runs must only be executed by the user via the Admin UI.
+- **Forced Script Blocklist:** You are EXPLICITLY FORBIDDEN from running the real pipeline (external API calls, real cost):
+  * Do NOT run `npm run job:daily` or `npm run job:cc`
+  * Do NOT invoke `src/jobs/daily.ts` directly
+  These are hard-blocked via `.claude/settings.json` permission deny rules, not just this instruction.
+  If verification is required, use mock unit tests. Real data automation runs must only be executed by the user via the Admin UI (`/api/admin/run`).
 
 ## 3. Feature Development & Design Guidelines
 - **Draft Schema First:** If a new feature requires state or persistent records, write the Drizzle schema changes first. Compile and run migrations before writing backend logic or UI.

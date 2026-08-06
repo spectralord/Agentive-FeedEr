@@ -85,7 +85,7 @@ by definition — it is the owner doing the curating, which is exactly what ADR 
   to Epic 8's grill.
 
 **What would reopen this:** Epic 8 being grilled and built (it supplies the machinery), or a real
-case of a topic the curated feeds genuinely cannot reach — which the 174-Reel corpus does not
+case of a topic the curated feeds cannot reach — which the 174-Reel corpus does not
 currently demonstrate.
 
 ## Options (recorded for the eventual Epic 8 grill — option 3 is the lean, see above)

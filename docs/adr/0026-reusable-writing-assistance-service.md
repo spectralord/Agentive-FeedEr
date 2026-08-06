@@ -24,8 +24,8 @@ duplicates it or refactors it out later — and Experience Reports already exist
 today.
 
 There is no precedent to extend: a grep for existing assist/suggest helpers in `src/lib/` returns
-nothing, and no table currently stores user-modified generated content. This is genuinely new
-surface area, which is the reason it deserves a decision rather than an implementation detail.
+nothing, and no table currently stores user-modified generated content. This is new surface area,
+which is the reason it deserves a decision rather than an implementation detail.
 
 ## Decision (proposed)
 

@@ -32,5 +32,5 @@ pass, not as a second call.
 - `null`-instead-of-guessing makes the sourced-only principle (see ADR 0005) technically
   enforceable.
 - The JSON object is the stable attachment point for later enrichment (deepening).
-- A very large prompt carries a lot of responsibility; schema validation and clear
+- A large prompt carries a lot of responsibility; schema validation and clear
   field instructions are mandatory.

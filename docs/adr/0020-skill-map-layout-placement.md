@@ -14,11 +14,11 @@
 
 ## Context / Problem
 
-The target Skill Map is a sprawling constellation — visually rich, the kind of map you build
-spatial memory of. Sprawling maps normally look good because **a designer hand-placed every
-node**. Agentive-FeedEr's nodes are created by the SkillTagger (Match-or-Propose, ADR 0009) from
-whatever the news stream produced, with **no prerequisite relationships by design** (Skill-*Map*,
-not Skill-*Tree*). Naive auto-layout of an emergent graph looks like spilled spaghetti.
+The Skill Map must support spatial memory across sessions — reflowing on every change breaks that.
+Hand-placed layouts achieve this because **a designer positions every node**. Agentive-FeedEr's
+nodes are created by the SkillTagger (Match-or-Propose, ADR 0009) from whatever the news stream
+produced, with **no prerequisite relationships by design** (Skill-*Map*, not Skill-*Tree*). Naive
+auto-layout of an emergent graph produces overlapping, illegible output.
 
 Two failure modes to avoid, both fatal to the concept:
 1. **Re-flow on change.** If adding a node moves existing ones, spatial memory breaks every night
